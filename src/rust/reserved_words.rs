@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone)]
-struct ReservedWords(Rc<HashMap<&'static str, &'static str>>);
+pub struct ReservedWords(Rc<HashMap<&'static str, &'static str>>);
 impl ReservedWords {
     pub fn new() -> Self {
         let mut map = HashMap::new();
