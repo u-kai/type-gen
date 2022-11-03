@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt::Display};
+use std::collections::BTreeMap;
 
 use serde_json::{Number, Value};
 
@@ -43,15 +43,31 @@ impl From<&str> for Json {
 
 #[cfg(test)]
 mod test_json {
-    use std::collections::BTreeMap;
-
     use super::Json;
+    use std::collections::BTreeMap;
 
     #[test]
     fn test_from_str_to_json() {
         let source = r#"{"key":"value"}"#;
         let mut map = BTreeMap::new();
         map.insert("key".to_string(), Json::String("value".to_string()));
+        let tobe = Json::Object(map);
+        assert_eq!(Json::from(source), tobe);
+        let source = r#"{"key":{"data":[{"id":"0"},{"id":"1"}]}}"#;
+        let mut map = BTreeMap::new();
+        let mut child = BTreeMap::new();
+        let mut child_child_0 = BTreeMap::new();
+        child_child_0.insert("id".to_string(), Json::String("0".to_string()));
+        let mut child_child_1 = BTreeMap::new();
+        child_child_1.insert("id".to_string(), Json::String("1".to_string()));
+        child.insert(
+            "data".to_string(),
+            Json::Array(vec![
+                Json::Object(child_child_0),
+                Json::Object(child_child_1),
+            ]),
+        );
+        map.insert("key".to_string(), Json::Object(child));
         let tobe = Json::Object(map);
         assert_eq!(Json::from(source), tobe);
     }
