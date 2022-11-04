@@ -24,6 +24,7 @@ pub mod traits {
         pub mod filed_comment;
         pub mod filed_statement;
         pub mod filed_visibility;
+        pub mod naming_principal_changer;
     }
     pub mod off_side_rule;
     pub mod optional_checker;
