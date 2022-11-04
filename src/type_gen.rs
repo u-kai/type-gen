@@ -1,22 +1,33 @@
+use std::cell::RefCell;
+
 use crate::{convertor::JsonTypeConvertor, json::Json};
 
 pub struct TypeGenerator<T: JsonTypeConvertor> {
     inner: T,
+    child_type_stack: RefCell<Vec<String>>,
 }
 impl<T: JsonTypeConvertor> TypeGenerator<T> {
     pub fn new(convertor: T) -> Self {
-        Self { inner: convertor }
+        Self {
+            inner: convertor,
+            child_type_stack: RefCell::new(Vec::new()),
+        }
     }
     pub fn gen_from_json_example(&self, json: &str) -> String {
         let json = Json::from(json);
-        match &json {
+        let mut stack = self.child_type_stack.borrow_mut();
+        let root = match &json {
             Json::Null => self.inner.case_null(),
             Json::Number(num) => self.inner.case_number(num),
-            Json::Array(arr) => self.inner.case_array(arr),
+            Json::Array(arr) => self.inner.case_array(arr, &mut stack),
             Json::Boolean(bool) => self.inner.case_boolean(*bool),
             Json::String(str) => self.inner.case_string(str),
-            Json::Object(obj) => self.inner.case_object(obj),
-        }
+            Json::Object(obj) => self.inner.case_object(obj, &mut stack),
+        };
+        stack
+            .iter()
+            .rev()
+            .fold(root, |acc, cur| format!("{}\n{}", acc, cur))
     }
 }
 
