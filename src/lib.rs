@@ -8,7 +8,16 @@ pub mod rust {
 }
 pub mod traits {
     pub mod type_mapper {
+        pub mod array;
+        pub mod optional;
+        pub mod optional_array;
         pub mod primitive;
+    }
+    pub mod type_statements {
+        pub mod type_attr;
+        pub mod type_comment;
+        pub mod type_statement;
+        pub mod type_visibility;
     }
     pub mod filed_attr;
     pub mod filed_comment;
@@ -16,9 +25,6 @@ pub mod traits {
     pub mod off_side_rule;
     pub mod optional_checker;
     pub mod reserved_words;
-    pub mod type_attr;
-    pub mod type_comment;
-    pub mod type_visibility;
 }
 pub mod lang_common {
     pub mod naming_principal;

@@ -1,3 +1,3 @@
 pub trait FiledComment {
-    fn get_comment(&self, filed_key: &str) -> Option<String>;
+    fn add_comment(&self, filed_key: &str, filed_statement: &mut String) -> Option<String>;
 }
