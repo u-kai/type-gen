@@ -11,6 +11,7 @@ pub struct RustStructConvertor {
 }
 
 impl RustStructConvertor {
+    const FILED_DERIMTA: &'static str = ",\n\t";
     pub fn new(
         struct_name: String,
         derives: Vec<String>,
@@ -25,15 +26,19 @@ impl RustStructConvertor {
             pub_fileds,
         }
     }
+    fn pub_struct_line(&self) -> String {
+        format!("pub {}", self.struct_line())
+    }
+    fn struct_line(&self) -> String {
+        format!("struct {} {{", self.struct_name)
+    }
+    fn derive_statement(&self) -> String {
+        let derives = self.derives.join(",");
+        format!("#[derive({})]", derives)
+    }
 }
 
 impl JsonTypeConvertor for RustStructConvertor {
-    fn case_string_with_key(&self, key: &str, str: &str) -> String {
-        String::new()
-    }
-    fn case_string(&self, str: &str) -> String {
-        String::new()
-    }
     fn case_object_with_key(
         &self,
         key: &str,
@@ -47,26 +52,41 @@ impl JsonTypeConvertor for RustStructConvertor {
     fn case_number_with_key(&self, key: &str, num: &serde_json::Number) -> String {
         String::new()
     }
-    fn case_number(&self, num: &serde_json::Number) -> String {
-        String::new()
-    }
     fn case_null_with_key(&self, key: &str) -> String {
-        String::new()
-    }
-    fn case_null(&self) -> String {
-        String::new()
-    }
-    fn case_array(&self, arr: &Vec<Json>) -> String {
         String::new()
     }
     fn case_array_with_key(&self, key: &str, arr: &Vec<Json>) -> String {
         String::new()
     }
-    fn case_boolean(&self, bool: bool) -> String {
-        String::new()
-    }
     fn case_boolean_with_key(&self, key: &str, bool: bool) -> String {
         String::new()
+    }
+    fn case_array(&self, arr: &Vec<Json>) -> String {
+        String::from("todo")
+    }
+    fn case_string_with_key(&self, key: &str, str: &str) -> String {
+        String::new()
+    }
+    fn case_number(&self, num: &serde_json::Number) -> String {
+        if num.is_f64() {
+            return String::from("Option<f64>");
+        }
+        if num.is_i64() {
+            return String::from("Option<isize>");
+        }
+        if num.is_u64() {
+            return String::from("Option<usize>");
+        }
+        panic!("not considering to {}", num);
+    }
+    fn case_string(&self, str: &str) -> String {
+        "String".to_string()
+    }
+    fn case_null(&self) -> String {
+        String::from("Option<String>")
+    }
+    fn case_boolean(&self, _: bool) -> String {
+        String::from("Option<bool>")
     }
 }
 #[cfg(test)]

@@ -21,7 +21,7 @@ impl ReservedWords {
         map.insert("f64", "r#f64");
         Self(Rc::new(map))
     }
-    pub fn get_or_default(&self, key: &str) -> String {
+    pub fn get_or_origin(&self, key: &str) -> String {
         match self.0.get(key) {
             Some(reseved) => reseved.to_string(),
             None => key.to_string(),

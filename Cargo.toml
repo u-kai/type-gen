@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 serde="1"
 serde_json="1"
+npc ={ git = "https://github.com/u-kai/npc.git"}
