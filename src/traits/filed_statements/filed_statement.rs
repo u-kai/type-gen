@@ -1,5 +1,6 @@
 use super::{
     filed_attr::FiledAttribute, filed_comment::FiledComment, filed_visibility::FiledVisibility,
+    optional_checker::OptionalChecker,
 };
 
 pub trait FiledStatement {
@@ -8,5 +9,6 @@ pub trait FiledStatement {
         comment: impl FiledComment,
         attr: impl FiledAttribute,
         visibility: impl FiledVisibility,
+        optional: impl OptionalChecker,
     ) -> String;
 }

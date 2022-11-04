@@ -7,7 +7,7 @@ pub mod rust {
     pub mod rust_struct_convertor;
 }
 pub mod traits {
-    pub mod type_mapper {
+    pub mod json_lang_mapper {
         pub mod array;
         pub mod optional;
         pub mod optional_array;
@@ -25,9 +25,9 @@ pub mod traits {
         pub mod filed_statement;
         pub mod filed_visibility;
         pub mod naming_principal_changer;
+        pub mod optional_checker;
     }
     pub mod off_side_rule;
-    pub mod optional_checker;
     pub mod reserved_words;
 }
 pub mod lang_common {
