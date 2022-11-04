@@ -1,12 +1,12 @@
 use crate::{
     rust::{rust_visibility::RustVisibility, rust_visibility_provider::RustVisibilityProvider},
-    traits::type_statements::type_visibility::TypeVisibility,
+    traits::filed_statements::filed_visibility::FiledVisibility,
 };
 
-pub struct RustTypeVisibilityProvider {
+pub struct RustFiledVisibilityProvider {
     inner: RustVisibilityProvider,
 }
-impl RustTypeVisibilityProvider {
+impl RustFiledVisibilityProvider {
     pub fn new() -> Self {
         Self {
             inner: RustVisibilityProvider::new(),
@@ -17,7 +17,7 @@ impl RustTypeVisibilityProvider {
     }
 }
 
-impl TypeVisibility for RustTypeVisibilityProvider {
+impl FiledVisibility for RustFiledVisibilityProvider {
     fn get_visibility_str(&self, type_key: &str) -> &'static str {
         self.inner.get_visibility_str(type_key)
     }
@@ -28,7 +28,7 @@ mod test_type_visibility {
     use super::*;
     #[test]
     fn get_visibility_str() {
-        let mut visi = RustTypeVisibilityProvider::new();
+        let mut visi = RustFiledVisibilityProvider::new();
         visi.add_visibility("test", RustVisibility::Public);
         let public: &'static str = RustVisibility::Public.into();
         let private: &'static str = RustVisibility::Private.into();
