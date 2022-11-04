@@ -9,6 +9,10 @@ pub mod rust {
 pub mod traits {
     pub mod filed_visibility;
     pub mod off_side_rule;
+    pub mod reserved_words;
     pub mod type_visibility;
+}
+pub mod lang_common {
+    pub mod naming_principal;
 }
 pub mod type_gen;
