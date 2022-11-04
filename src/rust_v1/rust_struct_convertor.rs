@@ -1,5 +1,3 @@
-use std::{cell::RefCell, fs::set_permissions, rc::Rc};
-
 use npc::convertor::NamingPrincipalConvertor;
 
 use crate::{convertor::JsonTypeConvertor, json::Json};
@@ -244,7 +242,7 @@ impl JsonTypeConvertor for RustStructConvertor {
 }
 #[cfg(test)]
 mod rust_type_convertor {
-    use crate::rust::builder::RustStructConvertorBuilder;
+    use crate::rust_v1::builder::RustStructConvertorBuilder;
 
     use super::*;
     const FIELD_SPACE: &str = "\n    ";
