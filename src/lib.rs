@@ -11,6 +11,7 @@ pub mod traits {
     pub mod filed_comment;
     pub mod filed_visibility;
     pub mod off_side_rule;
+    pub mod optional_checker;
     pub mod reserved_words;
     pub mod type_attr;
     pub mod type_comment;
