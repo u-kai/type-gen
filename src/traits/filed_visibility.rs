@@ -1,3 +1,3 @@
 pub trait FiledVisibility {
-    fn get_visibility_str(&self, filed_key: &str) -> String;
+    fn get_visibility_str(&self, filed_key: &str) -> Option<&'static str>;
 }
