@@ -7,6 +7,9 @@ pub mod rust {
     pub mod rust_struct_convertor;
 }
 pub mod traits {
+    pub mod type_mapper {
+        pub mod primitive;
+    }
     pub mod filed_attr;
     pub mod filed_comment;
     pub mod filed_visibility;
