@@ -14,6 +14,7 @@ pub mod traits {
         pub mod primitive;
     }
     pub mod type_statements {
+        pub mod lang_type;
         pub mod type_attr;
         pub mod type_comment;
         pub mod type_statement;
@@ -37,3 +38,9 @@ pub mod lang_common {
 pub mod lang_config;
 pub mod type_gen;
 pub mod type_generator;
+pub mod rust {
+    pub mod rust_visibility;
+    pub mod type_statements {
+        pub mod type_visiblity;
+    }
+}
