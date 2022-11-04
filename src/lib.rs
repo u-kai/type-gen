@@ -6,4 +6,8 @@ pub mod rust {
     pub(super) mod reserved_words;
     pub mod rust_struct_convertor;
 }
+pub mod traits {
+    pub mod filed_visibility;
+    pub mod type_visibility;
+}
 pub mod type_gen;
