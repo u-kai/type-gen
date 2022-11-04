@@ -26,9 +26,9 @@ pub mod traits {
         pub mod filed_visibility;
         pub mod naming_principal_changer;
         pub mod optional_checker;
+        pub mod reserved_words;
     }
     pub mod off_side_rule;
-    pub mod reserved_words;
 }
 pub mod lang_common {
     pub mod naming_principal;
