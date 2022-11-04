@@ -31,6 +31,7 @@ pub mod traits {
     pub mod off_side_rule;
 }
 pub mod lang_common {
+    pub mod filed_comment;
     pub mod naming_principal;
 }
 pub mod lang_config;
