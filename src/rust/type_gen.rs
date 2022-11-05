@@ -1,42 +1,68 @@
 use std::{cell::RefCell, collections::BTreeMap};
 
-use npc::convertor::NamingPrincipalConvertor;
+use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
 
 use crate::{
     json::Json,
-    lang_common::{filed_comment::BaseFiledComment, type_comment::BaseTypeComment},
-    traits::json_lang_mapper::primitive::Primitive,
+    lang_common::{
+        filed_comment::BaseFiledComment, optional_checker::BaseOptionalChecker,
+        type_comment::BaseTypeComment,
+    },
+    traits::{
+        filed_statements::{filed_statement::FiledStatement, optional_checker::OptionalChecker},
+        json_lang_mapper::{
+            array::PrimitiveArray, optional::OptionalPrimitive,
+            optional_array::OptionalPrimitiveArray, primitive::Primitive,
+        },
+        off_side_rule::OffSideRule,
+        type_statements::type_statement::TypeStatement,
+    },
 };
 
 use super::{
     filed_statements::{
-        filed_attr::RustFiledAttributeStore, filed_visibilty::RustFiledVisibilityProvider,
+        filed_attr::{RustFiledAttribute, RustFiledAttributeStore},
+        filed_statement::RustFiledStatement,
+        filed_visibilty::RustFiledVisibilityProvider,
     },
-    json_lang_mapper::primitive::RustJsonPrimitiveMapper,
+    json_lang_mapper::{
+        array::RustJsonArrayMapper, optional::RustJsonOptionalMapper,
+        optional_array::RustJsonOptionalArrayMapper, primitive::RustJsonPrimitiveMapper,
+    },
+    off_side_rule::RustOffSideRule,
     reserved_words::RustReservedWords,
     rust_visibility::RustVisibility,
     type_statements::{
         type_attr::{RustTypeAttribute, RustTypeAttributeStore},
+        type_statement::RustTypeStatement,
         type_visiblity::RustTypeVisibilityProvider,
     },
 };
 struct RustFiledStatements {
     reserved_words: RustReservedWords,
     visi: RustFiledVisibilityProvider,
-    attr: RustFiledAttributeStore,
+    attr: RefCell<RustFiledAttributeStore>,
     comment: BaseFiledComment,
 }
 struct RustTypeStatements {
     visi: RustTypeVisibilityProvider,
     attr: RustTypeAttributeStore,
     comment: BaseTypeComment,
+    offside: RustOffSideRule,
 }
-
+struct RustJsonMapeer {
+    array: RustJsonArrayMapper,
+    optional_array: RustJsonOptionalArrayMapper,
+    primitive: RustJsonPrimitiveMapper,
+    optional: RustJsonOptionalMapper,
+}
 pub struct RustTypeGenerator {
     struct_name: String,
+    optional_checker: BaseOptionalChecker,
     obj_str_stack: RefCell<Vec<String>>,
     type_statements: RustTypeStatements,
     filed_statements: RustFiledStatements,
+    mapper: RustJsonMapeer,
 }
 
 impl RustTypeGenerator {
@@ -45,61 +71,209 @@ impl RustTypeGenerator {
             visi: RustTypeVisibilityProvider::new(),
             attr: RustTypeAttributeStore::new(),
             comment: BaseTypeComment::new("//"),
+            offside: RustOffSideRule::new(),
         };
         let filed_s = RustFiledStatements {
             visi: RustFiledVisibilityProvider::new(),
-            attr: RustFiledAttributeStore::new(),
+            attr: RefCell::new(RustFiledAttributeStore::new()),
             comment: BaseFiledComment::new("//"),
             reserved_words: RustReservedWords::new(),
         };
+        let mapper = RustJsonMapeer {
+            array: RustJsonArrayMapper::new(),
+            optional: RustJsonOptionalMapper::new(),
+            optional_array: RustJsonOptionalArrayMapper::new(),
+            primitive: RustJsonPrimitiveMapper::new(),
+        };
         Self {
             struct_name: struct_name.to_string(),
+            optional_checker: BaseOptionalChecker::default(),
             obj_str_stack: RefCell::new(Vec::new()),
             type_statements: type_s,
             filed_statements: filed_s,
+            mapper,
         }
     }
-    pub fn from_json_example(&self, json: &str) -> String {
+    fn primiteve_case_num(&self, num: &serde_json::Number) -> String {
+        if num.is_f64() {
+            return self.mapper.primitive.case_f64().to_string();
+        }
+        if num.is_i64() {
+            return self.mapper.primitive.case_i64().to_string();
+        }
+        self.mapper.primitive.case_u64().to_string()
+    }
+    fn optional_case_num(&self, num: &serde_json::Number) -> String {
+        if num.is_f64() {
+            return self.mapper.optional.case_f64();
+        }
+        if num.is_i64() {
+            return self.mapper.optional.case_i64();
+        }
+        self.mapper.optional.case_u64()
+    }
+    pub fn from_json_example(self, json: &str) -> String {
         let json = Json::from(json);
         match json {
             Json::String(_) => RustJsonPrimitiveMapper::new().case_string().to_string(),
             Json::Null => RustJsonPrimitiveMapper::new().case_null().to_string(),
-            Json::Number(num) => {
-                if num.is_f64() {
-                    return RustJsonPrimitiveMapper::new().case_f64().to_string();
-                }
-                if num.is_i64() {
-                    return RustJsonPrimitiveMapper::new().case_i64().to_string();
-                }
-                RustJsonPrimitiveMapper::new().case_u64().to_string()
-            }
+            Json::Number(num) => self.primiteve_case_num(&num),
             Json::Boolean(_) => RustJsonPrimitiveMapper::new().case_bool().to_string(),
             Json::Array(arr) => self.case_arr(arr),
-            Json::Object(obj) => self.case_obj(obj),
+            Json::Object(obj) => {
+                self.case_obj(&self.struct_name, &obj);
+                self.obj_str_stack
+                    .into_inner()
+                    .into_iter()
+                    .rev()
+                    .reduce(|acc, cur| format!("{}\n\n{}", acc, cur))
+                    .unwrap()
+            }
         }
     }
-    pub fn case_obj(&self, obj: BTreeMap<String, Json>) -> String {
+    pub fn case_obj(&self, struct_name: &str, obj: &BTreeMap<String, Json>) {
+        let mut result = RustTypeStatement::new().create_statement(
+            struct_name,
+            &self.type_statements.comment,
+            &self.type_statements.attr,
+            &self.type_statements.visi,
+            &self.type_statements.offside,
+        );
         let keys = obj.keys();
         for key in keys {
-            let value = &obj[key];
-            let child_struct_name = format!(
-                "{}{}",
-                self.struct_name,
-                NamingPrincipalConvertor::new(key).to_pascal()
-            );
+            let npc = NamingPrincipalConvertor::new(key);
+            let filed_type_str = match &obj[key] {
+                Json::String(_) => {
+                    if self.optional_checker.is_optional(key.as_str()) {
+                        self.mapper.optional.case_string()
+                    } else {
+                        self.mapper.primitive.case_string().to_string()
+                    }
+                }
+                Json::Null => {
+                    if self.optional_checker.is_optional(key.as_str()) {
+                        self.mapper.optional.case_null()
+                    } else {
+                        self.mapper.primitive.case_null().to_string()
+                    }
+                }
+                Json::Number(num) => {
+                    if self.optional_checker.is_optional(key.as_str()) {
+                        self.optional_case_num(num)
+                    } else {
+                        self.primiteve_case_num(num)
+                    }
+                }
+                Json::Boolean(_) => {
+                    if self.optional_checker.is_optional(key.as_str()) {
+                        self.mapper.optional.case_bool()
+                    } else {
+                        self.mapper.primitive.case_bool().to_string()
+                    }
+                }
+                Json::Object(obj) => {
+                    let child_struct_name = format!("{}{}", struct_name, npc.to_pascal());
+                    self.case_obj(&child_struct_name, obj);
+                    if self.optional_checker.is_optional(key.as_str()) {
+                        format!("Option<{}>", child_struct_name)
+                    } else {
+                        child_struct_name
+                    }
+                }
+                Json::Array(arr) => self.case_arr_with_key(struct_name, key, arr),
+            };
+            let new_key = if !NamingPrincipal::is_snake(key.as_str()) {
+                let new_key = npc.to_snake();
+                self.filed_statements.attr.borrow_mut().set_attr(
+                    &new_key,
+                    RustFiledAttribute::Original(format!("#[serde(rename = {})]", key)),
+                );
+                new_key
+            } else {
+                key.to_string()
+            };
+            result = format!(
+                "{}{}\n",
+                result,
+                RustFiledStatement::new().create_statement(
+                    new_key.as_str(),
+                    filed_type_str.as_str(),
+                    &self.filed_statements.comment,
+                    &self.filed_statements.attr.borrow(),
+                    &self.filed_statements.visi,
+                    &self.filed_statements.reserved_words
+                )
+            )
         }
-        String::new()
+        result.push_str(self.type_statements.offside.end());
+        self.obj_str_stack.borrow_mut().push(result);
     }
     pub fn case_arr(&self, arr: Vec<Json>) -> String {
         String::new()
     }
-    pub fn case_arr_with_key(&self, key: &str, arr: Vec<Json>) -> String {
-        String::new()
+    pub fn case_arr_with_key(&self, struct_name: &str, key: &str, arr: &Vec<Json>) -> String {
+        if arr.len() == 0 {
+            println!(
+                "{} can not define. because array is empty ",
+                self.struct_name
+            );
+            return String::new();
+        }
+        let represent = &arr[0];
+        match represent {
+            Json::String(_) => {
+                if self.optional_checker.is_optional(key) {
+                    self.mapper.optional_array.case_string()
+                } else {
+                    self.mapper.array.case_string().to_string()
+                }
+            }
+            Json::Null => {
+                if self.optional_checker.is_optional(key) {
+                    self.mapper.optional_array.case_null()
+                } else {
+                    self.mapper.array.case_null().to_string()
+                }
+            }
+            Json::Number(num) => {
+                if self.optional_checker.is_optional(key) {
+                    format!("Option<Vec<{}>>", self.primiteve_case_num(num))
+                } else {
+                    format!("Vec<{}>", self.primiteve_case_num(num))
+                }
+            }
+            Json::Boolean(_) => {
+                if self.optional_checker.is_optional(key) {
+                    self.mapper.optional_array.case_bool()
+                } else {
+                    self.mapper.array.case_bool().to_string()
+                }
+            }
+            Json::Array(arr) => self.case_arr_with_key(struct_name, key, arr),
+            Json::Object(obj) => {
+                let npc = NamingPrincipalConvertor::new(key);
+                let child_struct_name = format!("{}{}", struct_name, npc.to_pascal());
+                self.case_obj(&child_struct_name, obj);
+                if self
+                    .optional_checker
+                    .is_optional(child_struct_name.as_str())
+                {
+                    format!("Option<Vec<{}>>", child_struct_name)
+                } else {
+                    format!("Vec<{}>", child_struct_name)
+                }
+            }
+        }
     }
     pub fn set_pub_struct(&mut self, struct_name: &str) {
         self.type_statements
             .visi
             .add_visibility(struct_name, RustVisibility::Public);
+    }
+    pub fn set_pub_filed(&mut self, filed_name: &str) {
+        self.filed_statements
+            .visi
+            .add_visibility(filed_name, RustVisibility::Public);
     }
     pub fn add_derives(&mut self, struct_name: &str, derives: Vec<&str>) {
         self.type_statements.attr.set_attr(
@@ -132,15 +306,17 @@ mod test_rust_type_gen {
 pub struct TestJson {
     data: Option<Vec<TestJsonData>>,
 }
+
 #[derive(Serialize,Desrialize)]
 struct TestJsonData {
     entities: Option<TestJsonDataEntities>,
-    id: Option<f64>,
+    id: Option<i64>,
     test: Option<String>,
 }
+
 #[derive(Serialize,Desrialize)]
 pub struct TestJsonDataEntities {
-    id: Option<f64>,
+    id: Option<i64>,
 }"#
         .to_string();
         let mut rust = RustTypeGenerator::new("TestJson");
@@ -149,6 +325,6 @@ pub struct TestJsonDataEntities {
         rust.add_derives("TestJsonDataEntities", vec!["Serialize", "Desrialize"]);
         rust.set_pub_struct("TestJson");
         rust.set_pub_struct("TestJsonDataEntities");
-        //assert_eq!(rust.from_json_example(complicated_json), tobe);
+        assert_eq!(rust.from_json_example(complicated_json), tobe);
     }
 }

@@ -11,6 +11,7 @@ where
     R: ReservedWords,
 {
     const HEAD_SPACE: &'static str = "    ";
+    const FILED_DERIMITA: &'static str = ",";
     fn create_statement(
         &self,
         filed_key: &str,

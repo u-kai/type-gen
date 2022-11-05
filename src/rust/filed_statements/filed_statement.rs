@@ -34,7 +34,13 @@ impl
     ) -> String {
         let visi = visi.get_visibility_str(filed_key);
         let sub_key = reserved_words.sub_or_default(filed_key);
-        let mut result = self.add_head_space(format!("{}{} : {}", visi, sub_key, filed_type));
+        let mut result = self.add_head_space(format!(
+            "{}{}: {}{}",
+            visi,
+            sub_key,
+            filed_type,
+            Self::FILED_DERIMITA
+        ));
         if let Some(attr) = attr.get_attr(filed_key) {
             result = self.add_head_space(format!("{}\n{}", attr, result));
         };
@@ -83,7 +89,7 @@ mod test_rust_filed_statement {
         let tobe = r#"    // this is test
     // hello
     #[cfg(not(test))]
-    pub r#type : Option<String>"#;
+    pub r#type: Option<String>,"#;
         assert_eq!(
             statement.create_statement(
                 filed_key,
@@ -115,7 +121,7 @@ mod test_rust_filed_statement {
         let tobe = r#"    // this is test
     // hello
     #[cfg(not(test))]
-    pub test : Option<String>"#;
+    pub test: Option<String>,"#;
         assert_eq!(
             statement.create_statement(
                 filed_key,
