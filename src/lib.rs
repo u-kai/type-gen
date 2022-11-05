@@ -43,6 +43,7 @@ pub mod rust {
     pub mod filed_statements {
         pub mod filed_visibilty;
     }
+    pub mod off_side_rule;
     pub mod rust_visibility;
     pub mod rust_visibility_provider;
     pub mod type_statements {
