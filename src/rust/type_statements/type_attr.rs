@@ -7,6 +7,12 @@ pub enum RustTypeAttribute {
     CfgTest,
     Original(String),
 }
+impl RustTypeAttribute {
+    pub fn from_derives(derives: Vec<&str>) -> Self {
+        let derives = derives.iter().map(|s| s.to_string()).collect();
+        Self::Derive(derives)
+    }
+}
 fn derives_to_statement(v: &[String]) -> String {
     let derives = v.join(",");
     format!("#[derive({})]", derives)
@@ -47,7 +53,10 @@ impl RustTypeAttributeStore {
 
 impl TypeAttribution for RustTypeAttributeStore {
     fn get_attr(&self, filed_key: &str) -> Option<String> {
-        self.store.get(filed_key).map(|attr| attr.into())
+        self.store.get(filed_key).map(|attr| {
+            let attr: String = attr.into();
+            format!("{}\n", attr)
+        })
     }
 }
 
@@ -66,7 +75,7 @@ mod rust_type_attr_test {
         );
         assert_eq!(
             attr.get_attr("Test"),
-            Some("#[derive(Serde,Debug)]".to_string())
+            Some("#[derive(Serde,Debug)]\n".to_string())
         );
         assert_eq!(attr.get_attr("Not"), None);
     }
