@@ -34,6 +34,7 @@ pub mod traits {
 pub mod lang_common {
     pub mod filed_comment;
     pub mod naming_principal;
+    pub mod optional_checker;
 }
 pub mod lang_config;
 pub mod type_gen;
