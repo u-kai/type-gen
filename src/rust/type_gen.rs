@@ -287,6 +287,48 @@ impl RustTypeGenerator {
 mod test_rust_type_gen {
     use super::*;
     #[test]
+    fn test_rename_serde() {
+        let complicated_json = r#"
+            {
+                "data":[
+                    {
+                        "userId":12345,
+                        "test":"test-string",
+                        "entities":{
+                            "id":0
+                        }
+                    }
+                ]
+            }
+        "#;
+        let struct_name = "TestJson";
+        let tobe = r#"#[derive(Serialize,Desrialize)]
+pub struct TestJson {
+    data: Option<Vec<TestJsonData>>,
+}
+
+#[derive(Serialize,Desrialize)]
+struct TestJsonData {
+    entities: Option<TestJsonDataEntities>,
+    test: Option<String>,
+    #[serde(rename = userId)]
+    user_id: Option<i64>,
+}
+
+#[derive(Serialize,Desrialize)]
+pub struct TestJsonDataEntities {
+    id: Option<i64>,
+}"#
+        .to_string();
+        let mut rust = RustTypeGenerator::new("TestJson");
+        rust.add_derives("TestJson", vec!["Serialize", "Desrialize"]);
+        rust.add_derives("TestJsonData", vec!["Serialize", "Desrialize"]);
+        rust.add_derives("TestJsonDataEntities", vec!["Serialize", "Desrialize"]);
+        rust.set_pub_struct("TestJson");
+        rust.set_pub_struct("TestJsonDataEntities");
+        assert_eq!(rust.from_json_example(complicated_json), tobe);
+    }
+    #[test]
     fn test_set_pub_struct() {
         let complicated_json = r#"
             {
