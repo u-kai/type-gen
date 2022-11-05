@@ -3,7 +3,7 @@ use crate::traits::off_side_rule::OffSideRule;
 pub struct RustOffSideRule;
 
 impl RustOffSideRule {
-    const START_AND_NEXT_LINE: &'static str = "{\n    ";
+    const START_AND_NEXT_LINE: &'static str = "{\n";
     const END: &'static str = "}";
     pub fn new() -> Self {
         Self
@@ -25,7 +25,7 @@ mod rust_offsiderule {
     fn test_write_fn() {
         let osr = RustOffSideRule::new();
         let tobe = r#"fn main() {
-    println!("hello");
+println!("hello");
 }"#;
         let result = format!(
             r#"fn main() {}println!("hello");

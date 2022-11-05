@@ -46,7 +46,7 @@ mod test_rust_type_statement {
         let struct_name = "Test";
         let rust = RustTypeStatement::new();
         let tobe = r#"struct Test {
-    "#;
+"#;
         let off_side_rule = RustOffSideRule::new();
         let comment = BaseTypeComment::new("//");
         let attr = RustTypeAttributeStore::new();
@@ -74,7 +74,7 @@ mod test_rust_type_statement {
 // hello
 #[derive(Debug,Clone)]
 pub struct Test {
-    "#;
+"#;
         let rust = RustTypeStatement::new();
         assert_eq!(
             rust.create_statement(struct_name, &comment, &attr, &visi, &off_side_rule),
