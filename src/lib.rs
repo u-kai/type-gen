@@ -47,4 +47,10 @@ pub mod rust {
     pub mod type_statements {
         pub mod type_visiblity;
     }
+    pub mod json_lang_mapper {
+        pub mod array;
+        pub mod optional;
+        pub mod optional_array;
+        pub mod primitive;
+    }
 }
