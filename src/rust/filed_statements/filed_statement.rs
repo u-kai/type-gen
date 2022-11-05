@@ -1,3 +1,7 @@
+use std::cell::Ref;
+
+use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
+
 use crate::{
     lang_common::filed_comment::BaseFiledComment,
     rust::reserved_words::RustReservedWords,
@@ -7,7 +11,10 @@ use crate::{
     },
 };
 
-use super::{filed_attr::RustFiledAttributeStore, filed_visibilty::RustFiledVisibilityProvider};
+use super::{
+    filed_attr::{RustFiledAttribute, RustFiledAttributeStore},
+    filed_visibilty::RustFiledVisibilityProvider,
+};
 
 pub struct RustFiledStatement {}
 impl RustFiledStatement {
@@ -28,16 +35,26 @@ impl
         filed_key: &str,
         filed_type: &str,
         comment: &BaseFiledComment,
-        attr: &RustFiledAttributeStore,
+        attr: &mut RustFiledAttributeStore,
         visi: &RustFiledVisibilityProvider,
         reserved_words: &RustReservedWords,
     ) -> String {
         let visi = visi.get_visibility_str(filed_key);
-        let sub_key = reserved_words.sub_or_default(filed_key);
+        let new_key = if !NamingPrincipal::is_snake(filed_key) {
+            let npc = NamingPrincipalConvertor::new(filed_key);
+            let new_key = npc.to_snake();
+            attr.set_attr(
+                &filed_key,
+                RustFiledAttribute::Original(format!("serde(rename = {})", filed_key)),
+            );
+            reserved_words.sub_or_default(&new_key).to_string()
+        } else {
+            reserved_words.sub_or_default(filed_key).to_string()
+        };
         let mut result = self.add_head_space(format!(
             "{}{}: {}{}",
             visi,
-            sub_key,
+            new_key,
             filed_type,
             Self::FILED_DERIMITA
         ));
@@ -82,7 +99,7 @@ mod test_rust_filed_statement {
         let mut attr = RustFiledAttributeStore::new();
         attr.set_attr(
             filed_key,
-            RustFiledAttribute::Original(String::from("#[cfg(not(test))]")),
+            RustFiledAttribute::Original(String::from("cfg(not(test))")),
         );
         let statement = RustFiledStatement::new();
         let reserved_words = RustReservedWords::new();
@@ -95,7 +112,7 @@ mod test_rust_filed_statement {
                 filed_key,
                 filed_type,
                 &comment,
-                &attr,
+                &mut attr,
                 &visi,
                 &reserved_words
             ),
@@ -114,7 +131,7 @@ mod test_rust_filed_statement {
         let mut attr = RustFiledAttributeStore::new();
         attr.set_attr(
             filed_key,
-            RustFiledAttribute::Original(String::from("#[cfg(not(test))]")),
+            RustFiledAttribute::Original(String::from("cfg(not(test))")),
         );
         let statement = RustFiledStatement::new();
         let reserved_words = RustReservedWords::new();
@@ -127,7 +144,7 @@ mod test_rust_filed_statement {
                 filed_key,
                 filed_type,
                 &comment,
-                &attr,
+                &mut attr,
                 &visi,
                 &reserved_words
             ),

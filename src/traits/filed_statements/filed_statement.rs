@@ -17,7 +17,7 @@ where
         filed_key: &str,
         filed_type: &str,
         comment: &C,
-        attr: &A,
+        attr: &mut A,
         visibility: &V,
         reserved: &R,
     ) -> String;
