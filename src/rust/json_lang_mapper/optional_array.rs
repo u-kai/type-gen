@@ -14,29 +14,32 @@ impl RustJsonOptionalArrayMapper {
             inner: RustJsonArrayMapper::new(),
         }
     }
-    fn make_statement(&self, type_: String) -> String {
+    fn make_statement(&self, type_: &str) -> String {
         format!("Option<{}>", type_)
     }
 }
 
 impl OptionalPrimitiveArray for RustJsonOptionalArrayMapper {
     fn case_bool(&self) -> String {
-        self.make_statement(self.inner.case_bool())
+        self.make_statement(&self.inner.case_bool())
     }
     fn case_f64(&self) -> String {
-        self.make_statement(self.inner.case_f64())
+        self.make_statement(&self.inner.case_f64())
     }
     fn case_i64(&self) -> String {
-        self.make_statement(self.inner.case_i64())
+        self.make_statement(&self.inner.case_i64())
     }
     fn case_null(&self) -> String {
-        self.make_statement(self.inner.case_null())
+        self.make_statement(&self.inner.case_null())
     }
     fn case_string(&self) -> String {
-        self.make_statement(self.inner.case_string())
+        self.make_statement(&self.inner.case_string())
     }
     fn case_u64(&self) -> String {
-        self.make_statement(self.inner.case_u64())
+        self.make_statement(&self.inner.case_u64())
+    }
+    fn case_type(&self, type_key: &str) -> String {
+        format!("Option<Vec<{}>>", type_key)
     }
 }
 

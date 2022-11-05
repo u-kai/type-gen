@@ -36,6 +36,9 @@ impl PrimitiveArray for RustJsonArrayMapper {
     fn case_u64(&self) -> String {
         self.make_statement(self.inner.case_u64())
     }
+    fn case_type(&self, type_key: &str) -> String {
+        self.make_statement(type_key)
+    }
 }
 
 #[cfg(test)]

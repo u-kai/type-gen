@@ -1,7 +1,6 @@
 use super::{
     filed_attr::FiledAttribute, filed_comment::FiledComment, filed_statement::FiledStatement,
-    filed_visibility::FiledVisibility, optional_checker::OptionalChecker,
-    reserved_words::ReservedWords,
+    filed_visibility::FiledVisibility, reserved_words::ReservedWords,
 };
 
 pub trait NamingPrincipalChanger<C, A, V, R>

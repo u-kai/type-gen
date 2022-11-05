@@ -175,7 +175,7 @@ impl RustTypeGenerator {
                     let child_struct_name = format!("{}{}", struct_name, npc.to_pascal());
                     self.case_obj(&child_struct_name, obj);
                     if self.optional_checker.is_optional(key.as_str()) {
-                        format!("Option<{}>", child_struct_name)
+                        self.mapper.optional.case_type(child_struct_name.as_str())
                     } else {
                         child_struct_name
                     }
@@ -237,9 +237,13 @@ impl RustTypeGenerator {
             }
             Json::Number(num) => {
                 if self.optional_checker.is_optional(key) {
-                    format!("Option<Vec<{}>>", self.primiteve_case_num(num))
+                    self.mapper
+                        .optional_array
+                        .case_type(self.primiteve_case_num(num).as_str())
                 } else {
-                    format!("Vec<{}>", self.primiteve_case_num(num))
+                    self.mapper
+                        .array
+                        .case_type(self.primiteve_case_num(num).as_str())
                 }
             }
             Json::Boolean(_) => {
@@ -258,9 +262,11 @@ impl RustTypeGenerator {
                     .optional_checker
                     .is_optional(child_struct_name.as_str())
                 {
-                    format!("Option<Vec<{}>>", child_struct_name)
+                    self.mapper
+                        .optional_array
+                        .case_type(child_struct_name.as_str())
                 } else {
-                    format!("Vec<{}>", child_struct_name)
+                    self.mapper.array.case_type(child_struct_name.as_str())
                 }
             }
         }
