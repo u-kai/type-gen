@@ -1,3 +1,3 @@
 pub trait FiledComment {
-    fn get_comment(&self, filed_key: &str) -> Option<&str>;
+    fn get_comments(&self, filed_key: &str) -> Option<&Vec<String>>;
 }

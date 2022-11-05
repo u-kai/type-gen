@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::traits::filed_statements::filed_comment::FiledComment;
 
 type FiledKey = String;
-type Comment = String;
+type Comment = Vec<String>;
 pub struct BaseFiledComment {
     comment_mark: &'static str,
     comment_map: HashMap<FiledKey, Comment>,
@@ -17,23 +17,26 @@ impl BaseFiledComment {
         }
     }
     pub fn add_comment(&mut self, key: &str, comment: &str) {
-        if let Some(prev_comment) = self.get_comment(key) {
-            let new_comment = format!("{}{}", prev_comment, self.create_comment(comment));
+        if self.comment_map.contains_key(key) {
+            let comment = self.create_comment(comment);
             self.comment_map
-                .insert(key.to_string(), new_comment.to_string());
+                .get_mut(key)
+                .as_mut()
+                .unwrap()
+                .push(comment);
             return;
         }
         self.comment_map
-            .insert(key.to_string(), self.create_comment(comment));
+            .insert(key.to_string(), vec![self.create_comment(comment)]);
     }
     fn create_comment(&self, comment: &str) -> String {
-        format!("{} {}\n", self.comment_mark, comment)
+        format!("{} {}", self.comment_mark, comment)
     }
 }
 
 impl FiledComment for BaseFiledComment {
-    fn get_comment(&self, filed_key: &str) -> Option<&str> {
-        self.comment_map.get(filed_key).map(|s| s.as_str())
+    fn get_comments(&self, filed_key: &str) -> Option<&Vec<String>> {
+        self.comment_map.get(filed_key).map(|s| s)
     }
 }
 
@@ -47,12 +50,12 @@ mod test_base_filed_comment {
         filed_comment.add_comment("test", "this is test");
         filed_comment.add_comment("name", "this is name");
         assert_eq!(
-            filed_comment.get_comment("test").unwrap(),
-            &format!("{}\n{}\n", "// Hello world", "// this is test")
+            filed_comment.get_comments("test").unwrap(),
+            &vec!["// Hello world".to_string(), "// this is test".to_string()]
         );
         assert_eq!(
-            filed_comment.get_comment("name").unwrap(),
-            &format!("{}\n", "// this is name")
+            filed_comment.get_comments("name").unwrap(),
+            &vec!["// this is name".to_string()]
         );
     }
 }
