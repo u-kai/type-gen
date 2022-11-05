@@ -40,7 +40,10 @@ pub mod lang_config;
 pub mod type_gen;
 pub mod type_generator;
 pub mod rust {
+    pub mod type_gen;
     pub mod filed_statements {
+        pub mod filed_attr;
+        pub mod filed_statement;
         pub mod filed_visibilty;
     }
     pub mod off_side_rule;
@@ -48,6 +51,8 @@ pub mod rust {
     pub mod rust_visibility;
     pub mod rust_visibility_provider;
     pub mod type_statements {
+        pub mod type_attr;
+        pub mod type_statement;
         pub mod type_visiblity;
     }
     pub mod json_lang_mapper {
