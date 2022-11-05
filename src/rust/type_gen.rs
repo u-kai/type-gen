@@ -21,8 +21,7 @@ use crate::{
 
 use super::{
     filed_statements::{
-        filed_attr::{RustFiledAttribute, RustFiledAttributeStore},
-        filed_statement::RustFiledStatement,
+        filed_attr::RustFiledAttributeStore, filed_statement::RustFiledStatement,
         filed_visibilty::RustFiledVisibilityProvider,
     },
     json_lang_mapper::{
@@ -182,16 +181,6 @@ impl RustTypeGenerator {
                 }
                 Json::Array(arr) => self.case_arr_with_key(struct_name, key, arr),
             };
-            //let new_key = if !NamingPrincipal::is_snake(key.as_str()) {
-            //let new_key = npc.to_snake();
-            //self.filed_statements.attr.borrow_mut().set_attr(
-            //&new_key,
-            //RustFiledAttribute::Original(format!("#[serde(rename = {})]", key)),
-            //);
-            //new_key
-            //} else {
-            //key.to_string()
-            //};
             result = format!(
                 "{}{}\n",
                 result,
