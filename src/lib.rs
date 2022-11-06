@@ -1,13 +1,7 @@
-pub mod convertor;
 pub mod json;
 pub mod json_to_struct;
 pub mod utils {
     pub mod store_fn;
-}
-pub mod rust_v1 {
-    pub(super) mod builder;
-    pub(super) mod reserved_words;
-    pub mod rust_struct_convertor;
 }
 pub mod traits {
     pub mod json_lang_mapper;
@@ -35,8 +29,6 @@ pub mod lang_common {
     pub mod optional_checker;
     pub mod type_comment;
 }
-pub mod lang_config;
-pub mod type_gen;
 pub mod type_generator;
 pub mod rust {
     pub mod type_gen;

@@ -93,7 +93,7 @@ impl RustTypeGenerator {
             }
         }
     }
-    pub fn case_obj(&self, struct_name: &str, obj: &BTreeMap<String, Json>) {
+    fn case_obj(&self, struct_name: &str, obj: &BTreeMap<String, Json>) {
         let mut result = RustTypeStatement::new().create_statement(
             struct_name,
             &self.type_statements.comment,
@@ -160,10 +160,10 @@ impl RustTypeGenerator {
         result.push_str(self.type_statements.offside.end());
         self.obj_str_stack.borrow_mut().push(result);
     }
-    pub fn case_arr(&self, arr: Vec<Json>) -> String {
+    fn case_arr(&self, arr: Vec<Json>) -> String {
         String::new()
     }
-    pub fn case_arr_with_key(&self, struct_name: &str, key: &str, arr: &Vec<Json>) -> String {
+    fn case_arr_with_key(&self, struct_name: &str, key: &str, arr: &Vec<Json>) -> String {
         println!("{}", struct_name);
         if arr.len() == 0 {
             println!(
