@@ -84,6 +84,14 @@ impl RustTypeGeneratorBuilder {
         )
     }
     // visi
+    pub fn set_visibility_to_all_struct(mut self, visi: RustVisibility) -> Self {
+        self.type_statements.visi.set_all_visibility(visi);
+        self
+    }
+    pub fn set_visibility_to_all_filed(mut self, visi: RustVisibility) -> Self {
+        self.filed_statements.visi.set_all_visibility(visi);
+        self
+    }
     pub fn set_visibility_to_struct(mut self, struct_name: &str, visi: RustVisibility) -> Self {
         self.type_statements.visi.add_visibility(struct_name, visi);
         self

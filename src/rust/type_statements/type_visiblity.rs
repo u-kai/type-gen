@@ -12,6 +12,9 @@ impl RustTypeVisibilityProvider {
             inner: RustVisibilityProvider::new(),
         }
     }
+    pub fn set_all_visibility(&mut self, visibility: RustVisibility) {
+        self.inner.set_all_visibility(visibility);
+    }
     pub fn add_visibility(&mut self, type_key: &str, visibility: RustVisibility) {
         self.inner.add_visibility(type_key, visibility);
     }

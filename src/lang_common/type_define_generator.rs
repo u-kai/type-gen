@@ -137,7 +137,6 @@ where
         todo!("case arr")
     }
     fn case_arr_with_key(&self, type_key: &str, key: &str, arr: &Vec<Json>) -> String {
-        println!("{}", type_key);
         if arr.len() == 0 {
             println!("{} can not define. because array is empty ", self.root_type);
             return String::new();
