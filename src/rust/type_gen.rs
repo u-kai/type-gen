@@ -271,7 +271,7 @@ impl RustTypeGenerator {
             .add_visibility(filed_name, RustVisibility::Public);
     }
     pub fn add_derives(&mut self, struct_name: &str, derives: Vec<&str>) {
-        self.type_statements.attr.set_attr(
+        self.type_statements.attr.add_attr(
             struct_name,
             RustTypeAttribute::Derive(derives.iter().map(|s| s.to_string()).collect::<Vec<_>>()),
         )

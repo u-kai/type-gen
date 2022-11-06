@@ -43,7 +43,7 @@ impl RustFiledAttributeStore {
             store: HashMap::new(),
         }
     }
-    pub fn set_attr(&mut self, key: &str, attr: RustFiledAttribute) {
+    pub fn add_attr(&mut self, key: &str, attr: RustFiledAttribute) {
         if let Some(v) = self.store.get_mut(key) {
             v.push(attr);
             return;

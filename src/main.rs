@@ -48,13 +48,13 @@ fn main() {
     //type_gen::rust::rust_visibility::RustVisibility::PubilcSelf,
     //);
     //let mut f_attr = RustFiledAttributeStore::new();
-    //f_attr.set_attr(
+    //f_attr.add_attr(
     //"id",
     //RustFiledAttribute::Original("#[cfg(test)]".to_string()),
     //);
     //let reserved_words = RustReservedWords::new();
     //let mut t_attr = RustTypeAttributeStore::new();
-    //t_attr.set_attr("Test", RustTypeAttribute::Derive(vec!["Debug".to_string()]));
+    //t_attr.add_attr("Test", RustTypeAttribute::Derive(vec!["Debug".to_string()]));
     //let osr = RustOffSideRule::new();
     //let f_statement = RustFiledStatement::new();
     //let t_statement = RustTypeStatement::new();
@@ -62,7 +62,7 @@ fn main() {
     //for key in rust.kv.keys() {
     //let new_key = if !NamingPrincipal::is_snake(&key) {
     //let new_key = NamingPrincipalConvertor::new(&key).to_snake();
-    //f_attr.set_attr(
+    //f_attr.add_attr(
     //new_key.as_str(),
     //RustFiledAttribute::Original(format!("#[serde(rename = {})]", key)),
     //);

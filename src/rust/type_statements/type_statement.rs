@@ -64,7 +64,7 @@ mod test_rust_type_statement {
         comment.add_comment(struct_name, "this is test");
         comment.add_comment(struct_name, "hello");
         let mut attr = RustTypeAttributeStore::new();
-        attr.set_attr(
+        attr.add_attr(
             struct_name,
             RustTypeAttribute::from_derives(vec!["Debug", "Clone"]),
         );

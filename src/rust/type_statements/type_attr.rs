@@ -46,7 +46,7 @@ impl RustTypeAttributeStore {
             store: HashMap::new(),
         }
     }
-    pub fn set_attr(&mut self, key: &str, attr: RustTypeAttribute) {
+    pub fn add_attr(&mut self, key: &str, attr: RustTypeAttribute) {
         self.store.insert(key.to_string(), attr);
     }
 }
@@ -69,7 +69,7 @@ mod rust_type_attr_test {
     #[test]
     fn test_derives() {
         let mut attr = RustTypeAttributeStore::new();
-        attr.set_attr(
+        attr.add_attr(
             "Test",
             super::RustTypeAttribute::Derive(vec!["Serde".to_string(), "Debug".to_string()]),
         );

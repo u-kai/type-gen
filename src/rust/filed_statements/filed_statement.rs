@@ -41,7 +41,7 @@ impl
         let new_key = if !NamingPrincipal::is_snake(filed_key) {
             let npc = NamingPrincipalConvertor::new(filed_key);
             let new_key = npc.to_snake();
-            attr.set_attr(
+            attr.add_attr(
                 &filed_key,
                 RustFiledAttribute::Original(format!("serde(rename = {})", filed_key)),
             );
@@ -95,7 +95,7 @@ mod test_rust_filed_statement {
         let mut visi = RustFiledVisibilityProvider::new();
         visi.add_visibility(filed_key, RustVisibility::Public);
         let mut attr = RustFiledAttributeStore::new();
-        attr.set_attr(
+        attr.add_attr(
             filed_key,
             RustFiledAttribute::Original(String::from("cfg(not(test))")),
         );
@@ -127,7 +127,7 @@ mod test_rust_filed_statement {
         let mut visi = RustFiledVisibilityProvider::new();
         visi.add_visibility(filed_key, RustVisibility::Public);
         let mut attr = RustFiledAttributeStore::new();
-        attr.set_attr(
+        attr.add_attr(
             filed_key,
             RustFiledAttribute::Original(String::from("cfg(not(test))")),
         );
