@@ -48,4 +48,3 @@ pub mod rust {
     }
     pub mod json_lang_mapper;
 }
-pub mod test;
