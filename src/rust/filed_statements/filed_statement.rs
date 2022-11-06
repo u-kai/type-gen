@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
 
 use crate::{
@@ -14,40 +16,40 @@ use super::{
     reserved_words::RustReservedWords,
 };
 
-pub struct RustFiledStatement {}
+pub struct RustFiledStatement {
+    comment: BaseFiledComment,
+    attr: RefCell<RustFiledAttributeStore>,
+    visi: RustFiledVisibilityProvider,
+    reserved_words: RustReservedWords,
+}
 impl RustFiledStatement {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(
+        comment: BaseFiledComment,
+        attr: RefCell<RustFiledAttributeStore>,
+        visi: RustFiledVisibilityProvider,
+        reserved_words: RustReservedWords,
+    ) -> Self {
+        Self {
+            comment,
+            attr,
+            visi,
+            reserved_words,
+        }
     }
 }
-impl
-    FiledStatement<
-        BaseFiledComment,
-        RustFiledAttributeStore,
-        RustFiledVisibilityProvider,
-        RustReservedWords,
-    > for RustFiledStatement
-{
-    fn create_statement(
-        &self,
-        filed_key: &str,
-        filed_type: &str,
-        comment: &BaseFiledComment,
-        attr: &mut RustFiledAttributeStore,
-        visi: &RustFiledVisibilityProvider,
-        reserved_words: &RustReservedWords,
-    ) -> String {
-        let visi = visi.get_visibility_str(filed_key);
+impl FiledStatement for RustFiledStatement {
+    fn create_statement(&self, filed_key: &str, filed_type: &str) -> String {
+        let visi = self.visi.get_visibility_str(filed_key);
         let new_key = if !NamingPrincipal::is_snake(filed_key) {
             let npc = NamingPrincipalConvertor::new(filed_key);
             let new_key = npc.to_snake();
-            attr.add_attr(
+            self.attr.borrow_mut().add_attr(
                 &filed_key,
                 RustFiledAttribute::Original(format!(r#"serde(rename = "{}")"#, filed_key)),
             );
-            reserved_words.sub_or_default(&new_key).to_string()
+            self.reserved_words.sub_or_default(&new_key).to_string()
         } else {
-            reserved_words.sub_or_default(filed_key).to_string()
+            self.reserved_words.sub_or_default(filed_key).to_string()
         };
         let mut result = self.add_head_space(format!(
             "{}{}: {}{}",
@@ -56,10 +58,10 @@ impl
             filed_type,
             Self::FILED_DERIMITA
         ));
-        if let Some(attr) = attr.get_attr(filed_key) {
+        if let Some(attr) = self.attr.borrow().get_attr(filed_key) {
             result = self.add_head_space(format!("{}\n{}", attr, result));
         };
-        if let Some(comments) = comment.get_comments(filed_key) {
+        if let Some(comments) = self.comment.get_comments(filed_key) {
             for comment in comments.iter().rev() {
                 result = format!("{}{}\n{}", Self::HEAD_SPACE, comment, result);
             }
@@ -69,6 +71,8 @@ impl
 }
 #[cfg(test)]
 mod test_rust_filed_statement {
+
+    use std::cell::RefCell;
 
     use crate::{
         lang_common::filed_comment::BaseFiledComment,
@@ -94,26 +98,19 @@ mod test_rust_filed_statement {
         comment.add_comment(filed_key, "hello");
         let mut visi = RustFiledVisibilityProvider::new();
         visi.add_visibility(filed_key, RustVisibility::Public);
-        let mut attr = RustFiledAttributeStore::new();
-        attr.add_attr(
+        let attr = RefCell::new(RustFiledAttributeStore::new());
+        attr.borrow_mut().add_attr(
             filed_key,
             RustFiledAttribute::Original(String::from("cfg(not(test))")),
         );
-        let statement = RustFiledStatement::new();
         let reserved_words = RustReservedWords::new();
+        let statement = RustFiledStatement::new(comment, attr, visi, reserved_words);
         let tobe = r#"    // this is test
     // hello
     #[cfg(not(test))]
     pub r#type: Option<String>,"#;
         assert_eq!(
-            statement.create_statement(
-                filed_key,
-                filed_type,
-                &comment,
-                &mut attr,
-                &visi,
-                &reserved_words
-            ),
+            statement.create_statement(filed_key, filed_type,),
             tobe.to_string()
         );
     }
@@ -126,26 +123,19 @@ mod test_rust_filed_statement {
         comment.add_comment(filed_key, "hello");
         let mut visi = RustFiledVisibilityProvider::new();
         visi.add_visibility(filed_key, RustVisibility::Public);
-        let mut attr = RustFiledAttributeStore::new();
-        attr.add_attr(
+        let attr = RefCell::new(RustFiledAttributeStore::new());
+        attr.borrow_mut().add_attr(
             filed_key,
             RustFiledAttribute::Original(String::from("cfg(not(test))")),
         );
-        let statement = RustFiledStatement::new();
         let reserved_words = RustReservedWords::new();
+        let statement = RustFiledStatement::new(comment, attr, visi, reserved_words);
         let tobe = r#"    // this is test
     // hello
     #[cfg(not(test))]
     pub test: Option<String>,"#;
         assert_eq!(
-            statement.create_statement(
-                filed_key,
-                filed_type,
-                &comment,
-                &mut attr,
-                &visi,
-                &reserved_words
-            ),
+            statement.create_statement(filed_key, filed_type,),
             tobe.to_string()
         );
     }

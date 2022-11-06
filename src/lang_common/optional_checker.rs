@@ -25,7 +25,7 @@ impl BaseOptionalChecker {
     pub fn add_optional(&mut self, type_key: TypeKey, filed_key: OptionFiledKey) {
         push_to_kv_vec(&mut self.optionlas, type_key, filed_key)
     }
-    pub fn add_require(&mut self, type_key: TypeKey, filed_key: OptionFiledKey) {
+    pub fn add_require(&mut self, type_key: TypeKey, filed_key: RequireFiledKey) {
         push_to_kv_vec(&mut self.requires, type_key, filed_key)
     }
 }

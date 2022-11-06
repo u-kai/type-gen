@@ -1,5 +1,6 @@
 use crate::traits::off_side_rule::OffSideRule;
 
+#[derive(Debug, Clone)]
 pub struct RustOffSideRule;
 
 impl RustOffSideRule {

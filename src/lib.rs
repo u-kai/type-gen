@@ -18,7 +18,6 @@ pub mod traits {
         pub mod filed_comment;
         pub mod filed_statement;
         pub mod filed_visibility;
-        pub mod optional_checker;
         pub mod reserved_words;
     }
     pub mod off_side_rule;
@@ -28,10 +27,10 @@ pub mod lang_common {
     pub mod naming_principal;
     pub mod optional_checker;
     pub mod type_comment;
+    pub mod type_define_generator;
 }
 pub mod type_generator;
 pub mod rust {
-    pub mod type_gen;
     pub mod filed_statements {
         pub mod filed_attr;
         pub mod filed_statement;
