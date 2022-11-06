@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::rust::rust_visibility::RustVisibility;
+use super::rust_visibility::RustVisibility;
 
 pub struct RustVisibilityProvider {
     all_visi: Option<RustVisibility>,

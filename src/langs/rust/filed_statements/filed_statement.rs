@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
 
 use crate::{
-    lang_common::filed_comment::BaseFiledComment,
+    langs::common::filed_comment::BaseFiledComment,
     traits::filed_statements::{
         filed_attr::FiledAttribute, filed_comment::FiledComment, filed_statement::FiledStatement,
         filed_visibility::FiledVisibility, reserved_words::ReservedWords,
@@ -72,22 +72,23 @@ impl FiledStatement for RustFiledStatement {
 #[cfg(test)]
 mod test_rust_filed_statement {
 
-    use std::cell::RefCell;
-
     use crate::{
-        lang_common::filed_comment::BaseFiledComment,
-        rust::{
-            filed_statements::{
-                filed_attr::{RustFiledAttribute, RustFiledAttributeStore},
-                filed_visibilty::RustFiledVisibilityProvider,
-                reserved_words::RustReservedWords,
+        langs::{
+            common::filed_comment::BaseFiledComment,
+            rust::{
+                filed_statements::{
+                    filed_attr::{RustFiledAttribute, RustFiledAttributeStore},
+                    filed_visibilty::RustFiledVisibilityProvider,
+                    reserved_words::RustReservedWords,
+                },
+                rust_visibility::RustVisibility,
             },
-            rust_visibility::RustVisibility,
         },
         traits::filed_statements::filed_statement::FiledStatement,
     };
 
     use super::RustFiledStatement;
+    use std::cell::RefCell;
 
     #[test]
     fn pub_comment_and_attr_and_reserved_word() {

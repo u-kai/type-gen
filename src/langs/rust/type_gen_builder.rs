@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use crate::lang_common::{
+use crate::langs::common::{
     filed_comment::BaseFiledComment, optional_checker::BaseOptionalChecker,
     type_comment::BaseTypeComment, type_define_generator::TypeDefineGenerator,
 };
@@ -151,10 +151,8 @@ impl RustTypeGeneratorBuilder {
 
 #[cfg(test)]
 mod test_rust_type_gen_builder {
-    use crate::rust::{
-        rust_visibility::RustVisibility, type_gen_builder::RustTypeGeneratorBuilder,
-        type_statements::type_attr::RustTypeAttribute,
-    };
+    use super::*;
+    use crate::langs::rust::type_statements::type_attr::RustTypeAttribute;
 
     #[test]
     fn test_rust_builder() {

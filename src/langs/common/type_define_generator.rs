@@ -193,8 +193,9 @@ where
 
 #[cfg(test)]
 mod test_type_define_gen {
-    use crate::{
-        lang_common::{filed_comment::BaseFiledComment, type_comment::BaseTypeComment},
+
+    use crate::langs::{
+        common::{filed_comment::BaseFiledComment, type_comment::BaseTypeComment},
         rust::{
             filed_statements::{
                 filed_attr::RustFiledAttributeStore, filed_statement::RustFiledStatement,

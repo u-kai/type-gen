@@ -1,5 +1,7 @@
 use crate::{
-    rust::{rust_visibility::RustVisibility, rust_visibility_provider::RustVisibilityProvider},
+    langs::rust::{
+        rust_visibility::RustVisibility, rust_visibility_provider::RustVisibilityProvider,
+    },
     traits::filed_statements::filed_visibility::FiledVisibility,
 };
 

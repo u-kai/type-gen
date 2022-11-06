@@ -1,4 +1,4 @@
-use type_gen::rust::{
+use type_gen::langs::rust::{
     rust_visibility::RustVisibility, type_gen_builder::RustTypeGeneratorBuilder,
     type_statements::type_attr::RustTypeAttribute,
 };

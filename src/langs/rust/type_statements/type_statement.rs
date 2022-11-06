@@ -1,5 +1,5 @@
 use crate::{
-    lang_common::type_comment::BaseTypeComment,
+    langs::common::type_comment::BaseTypeComment,
     traits::type_statements::{
         type_attr::TypeAttribution, type_comment::TypeComment, type_statement::TypeStatement,
         type_visibility::TypeVisibility,
@@ -47,12 +47,14 @@ impl TypeStatement for RustTypeStatement {
 #[cfg(test)]
 mod test_rust_type_statement {
     use crate::{
-        lang_common::type_comment::BaseTypeComment,
-        rust::{
-            rust_visibility::RustVisibility,
-            type_statements::{
-                type_attr::{RustTypeAttribute, RustTypeAttributeStore},
-                type_visiblity::RustTypeVisibilityProvider,
+        langs::{
+            common::type_comment::BaseTypeComment,
+            rust::{
+                rust_visibility::RustVisibility,
+                type_statements::{
+                    type_attr::{RustTypeAttribute, RustTypeAttributeStore},
+                    type_visiblity::RustTypeVisibilityProvider,
+                },
             },
         },
         traits::type_statements::type_statement::TypeStatement,
