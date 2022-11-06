@@ -74,30 +74,12 @@ impl RustTypeGenerator {
             mapper: JsonRustMapper::new(),
         }
     }
-    fn primiteve_case_num(&self, num: &serde_json::Number) -> String {
-        if num.is_f64() {
-            return self.mapper.case_f64().to_string();
-        }
-        if num.is_i64() {
-            return self.mapper.case_i64().to_string();
-        }
-        self.mapper.case_u64().to_string()
-    }
-    fn optional_case_num(&self, num: &serde_json::Number) -> String {
-        if num.is_f64() {
-            return self.mapper.make_optional_type(self.mapper.case_f64());
-        }
-        if num.is_i64() {
-            return self.mapper.make_optional_type(self.mapper.case_i64());
-        }
-        self.mapper.make_optional_type(self.mapper.case_u64())
-    }
     pub fn from_json_example(self, json: &str) -> String {
         let json = Json::from(json);
         match json {
             Json::String(_) => self.mapper.case_string().to_string(),
             Json::Null => self.mapper.case_null().to_string(),
-            Json::Number(num) => self.primiteve_case_num(&num),
+            Json::Number(num) => self.mapper.case_num(&num),
             Json::Boolean(_) => self.mapper.case_bool().to_string(),
             Json::Array(arr) => self.case_arr(arr),
             Json::Object(obj) => {
@@ -138,9 +120,9 @@ impl RustTypeGenerator {
                 }
                 Json::Number(num) => {
                     if self.optional_checker.is_optional(struct_name, key.as_str()) {
-                        self.optional_case_num(num)
+                        self.mapper.make_optional_type(&self.mapper.case_num(num))
                     } else {
-                        self.primiteve_case_num(num)
+                        self.mapper.case_num(num)
                     }
                 }
                 Json::Boolean(_) => {
@@ -209,9 +191,7 @@ impl RustTypeGenerator {
                 }
             }
             Json::Number(num) => {
-                let array_type = self
-                    .mapper
-                    .make_array_type(self.primiteve_case_num(num).as_str());
+                let array_type = self.mapper.make_array_type(&self.mapper.case_num(num));
                 if self.optional_checker.is_optional(struct_name, key) {
                     self.mapper.make_optional_type(&array_type)
                 } else {

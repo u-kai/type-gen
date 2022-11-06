@@ -8,21 +8,22 @@ impl JsonRustMapper {
 }
 
 impl JsonLangMapper for JsonRustMapper {
-    fn case_u64(&self) -> &'static str {
-        "u64"
-    }
     fn case_string(&self) -> &'static str {
         "String"
     }
     fn case_null(&self) -> &'static str {
         "String"
     }
-    fn case_i64(&self) -> &'static str {
-        "i64"
+    fn case_num(&self, num: &serde_json::Number) -> String {
+        if num.is_f64() {
+            return "f64".to_string();
+        }
+        if num.is_i64() {
+            return "i64".to_string();
+        }
+        "u64".to_string()
     }
-    fn case_f64(&self) -> &'static str {
-        "f64"
-    }
+
     fn case_bool(&self) -> &'static str {
         "bool"
     }
