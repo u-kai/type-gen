@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::traits::filed_statements::filed_comment::FiledComment;
+use crate::{
+    traits::filed_statements::filed_comment::FiledComment, utils::store_fn::push_to_kv_vec,
+};
 
 type FiledKey = String;
 type Comment = Vec<String>;
@@ -17,17 +19,8 @@ impl BaseFiledComment {
         }
     }
     pub fn add_comment(&mut self, key: &str, comment: &str) {
-        if self.comment_map.contains_key(key) {
-            let comment = self.create_comment(comment);
-            self.comment_map
-                .get_mut(key)
-                .as_mut()
-                .unwrap()
-                .push(comment);
-            return;
-        }
-        self.comment_map
-            .insert(key.to_string(), vec![self.create_comment(comment)]);
+        let comment = self.create_comment(comment);
+        push_to_kv_vec(&mut self.comment_map, key.to_string(), comment)
     }
     fn create_comment(&self, comment: &str) -> String {
         format!("{} {}", self.comment_mark, comment)
