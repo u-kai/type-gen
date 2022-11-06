@@ -101,6 +101,14 @@ impl RustTypeGeneratorBuilder {
         self
     }
     // attr
+    pub fn set_attr_to_all_struct(mut self, attrs: Vec<RustTypeAttribute>) -> Self {
+        self.type_statements.attr.set_attr_all(attrs);
+        self
+    }
+    pub fn set_attr_to_all_filed(mut self, attrs: Vec<RustFiledAttribute>) -> Self {
+        self.filed_statements.attr.set_attr_all(attrs);
+        self
+    }
     pub fn add_attr_to_struct(mut self, struct_name: &str, attr: RustTypeAttribute) -> Self {
         self.type_statements.attr.add_attr(struct_name, attr);
         self
