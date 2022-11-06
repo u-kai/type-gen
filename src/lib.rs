@@ -38,9 +38,9 @@ pub mod rust {
         pub mod reserved_words;
     }
     pub mod off_side_rule;
-    pub mod rust_type_gen;
     pub mod rust_visibility;
     pub mod rust_visibility_provider;
+    pub mod type_gen_builder;
     pub mod type_statements {
         pub mod type_attr;
         pub mod type_statement;
