@@ -1,5 +1,4 @@
 pub mod json;
-pub mod json_to_struct;
 pub mod utils {
     pub mod store_fn;
 }
@@ -29,7 +28,6 @@ pub mod lang_common {
     pub mod type_comment;
     pub mod type_define_generator;
 }
-pub mod type_generator;
 pub mod rust {
     pub mod filed_statements {
         pub mod filed_attr;
