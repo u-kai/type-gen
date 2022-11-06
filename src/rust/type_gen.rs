@@ -9,9 +9,8 @@ use crate::{
         type_comment::BaseTypeComment,
     },
     traits::{
-        filed_statements::{filed_statement::FiledStatement, optional_checker::OptionalChecker},
-        json_lang_mapper::JsonLangMapper,
-        off_side_rule::OffSideRule,
+        filed_statements::filed_statement::FiledStatement, json_lang_mapper::JsonLangMapper,
+        off_side_rule::OffSideRule, optional_checker::OptionalChecker,
         type_statements::type_statement::TypeStatement,
     },
 };
@@ -124,28 +123,28 @@ impl RustTypeGenerator {
         for key in keys {
             let filed_type_str = match &obj[key] {
                 Json::String(_) => {
-                    if self.optional_checker.is_optional(key.as_str()) {
+                    if self.optional_checker.is_optional(struct_name, key.as_str()) {
                         self.mapper.make_optional_type(self.mapper.case_string())
                     } else {
                         self.mapper.case_string().to_string()
                     }
                 }
                 Json::Null => {
-                    if self.optional_checker.is_optional(key.as_str()) {
+                    if self.optional_checker.is_optional(struct_name, key.as_str()) {
                         self.mapper.make_optional_type(self.mapper.case_null())
                     } else {
                         self.mapper.case_null().to_string()
                     }
                 }
                 Json::Number(num) => {
-                    if self.optional_checker.is_optional(key.as_str()) {
+                    if self.optional_checker.is_optional(struct_name, key.as_str()) {
                         self.optional_case_num(num)
                     } else {
                         self.primiteve_case_num(num)
                     }
                 }
                 Json::Boolean(_) => {
-                    if self.optional_checker.is_optional(key.as_str()) {
+                    if self.optional_checker.is_optional(struct_name, key.as_str()) {
                         self.mapper.make_optional_type(self.mapper.case_bool())
                     } else {
                         self.mapper.case_bool().to_string()
@@ -155,7 +154,7 @@ impl RustTypeGenerator {
                     let npc = NamingPrincipalConvertor::new(key);
                     let child_struct_name = format!("{}{}", struct_name, npc.to_pascal());
                     self.case_obj(&child_struct_name, obj);
-                    if self.optional_checker.is_optional(key.as_str()) {
+                    if self.optional_checker.is_optional(struct_name, key.as_str()) {
                         self.mapper.make_optional_type(&child_struct_name)
                     } else {
                         child_struct_name
@@ -183,6 +182,7 @@ impl RustTypeGenerator {
         String::new()
     }
     pub fn case_arr_with_key(&self, struct_name: &str, key: &str, arr: &Vec<Json>) -> String {
+        println!("{}", struct_name);
         if arr.len() == 0 {
             println!(
                 "{} can not define. because array is empty ",
@@ -194,7 +194,7 @@ impl RustTypeGenerator {
         match represent {
             Json::String(_) => {
                 let array_type = self.mapper.make_array_type(self.mapper.case_string());
-                if self.optional_checker.is_optional(key) {
+                if self.optional_checker.is_optional(struct_name, key) {
                     self.mapper.make_optional_type(&array_type)
                 } else {
                     array_type
@@ -202,7 +202,7 @@ impl RustTypeGenerator {
             }
             Json::Null => {
                 let array_type = self.mapper.make_array_type(self.mapper.case_null());
-                if self.optional_checker.is_optional(key) {
+                if self.optional_checker.is_optional(struct_name, key) {
                     self.mapper.make_optional_type(&array_type)
                 } else {
                     array_type
@@ -212,7 +212,7 @@ impl RustTypeGenerator {
                 let array_type = self
                     .mapper
                     .make_array_type(self.primiteve_case_num(num).as_str());
-                if self.optional_checker.is_optional(key) {
+                if self.optional_checker.is_optional(struct_name, key) {
                     self.mapper.make_optional_type(&array_type)
                 } else {
                     array_type
@@ -220,7 +220,7 @@ impl RustTypeGenerator {
             }
             Json::Boolean(_) => {
                 let array_type = self.mapper.make_array_type(self.mapper.case_bool());
-                if self.optional_checker.is_optional(key) {
+                if self.optional_checker.is_optional(struct_name, key) {
                     self.mapper.make_optional_type(&array_type)
                 } else {
                     array_type
@@ -232,16 +232,16 @@ impl RustTypeGenerator {
                 let child_struct_name = format!("{}{}", struct_name, npc.to_pascal());
                 self.case_obj(&child_struct_name, obj);
                 let array_type = self.mapper.make_array_type(&child_struct_name);
-                if self
-                    .optional_checker
-                    .is_optional(child_struct_name.as_str())
-                {
+                if self.optional_checker.is_optional(struct_name, key) {
                     self.mapper.make_optional_type(&array_type)
                 } else {
                     array_type
                 }
             }
         }
+    }
+    pub fn add_require(&mut self, struct_name: &'static str, filed_key: &'static str) {
+        self.optional_checker.add_require(struct_name, filed_key)
     }
     pub fn set_pub_struct(&mut self, struct_name: &str) {
         self.type_statements
@@ -264,6 +264,49 @@ impl RustTypeGenerator {
 #[cfg(test)]
 mod test_rust_type_gen {
     use super::*;
+    #[test]
+    fn test_add_optional() {
+        let complicated_json = r#"
+            {
+                "data":[
+                    {
+                        "userId":12345,
+                        "test":"test-string",
+                        "entities":{
+                            "id":0
+                        }
+                    }
+                ]
+            }
+        "#;
+        let struct_name = "TestJson";
+        let tobe = r#"#[derive(Serialize,Desrialize)]
+pub struct TestJson {
+    data: Vec<TestJsonData>,
+}
+
+#[derive(Serialize,Desrialize)]
+struct TestJsonData {
+    entities: Option<TestJsonDataEntities>,
+    test: Option<String>,
+    #[serde(rename = "userId")]
+    user_id: Option<i64>,
+}
+
+#[derive(Serialize,Desrialize)]
+pub struct TestJsonDataEntities {
+    id: Option<i64>,
+}"#
+        .to_string();
+        let mut rust = RustTypeGenerator::new("TestJson");
+        rust.add_derives("TestJson", vec!["Serialize", "Desrialize"]);
+        rust.add_derives("TestJsonData", vec!["Serialize", "Desrialize"]);
+        rust.add_derives("TestJsonDataEntities", vec!["Serialize", "Desrialize"]);
+        rust.add_require("TestJson", "data");
+        rust.set_pub_struct("TestJson");
+        rust.set_pub_struct("TestJsonDataEntities");
+        assert_eq!(rust.from_json_example(complicated_json), tobe);
+    }
     #[test]
     fn test_rename_serde() {
         let complicated_json = r#"
