@@ -75,7 +75,11 @@ where
         }
     }
     fn case_obj(&self, type_key: &str, obj: &BTreeMap<String, Json>) {
-        let mut result = self.type_statement.create_statement(type_key);
+        let mut result = format!(
+            "{} {}",
+            self.type_statement.create_statement(type_key),
+            self.off_side_rule.start()
+        );
         let keys = obj.keys();
         for key in keys {
             let filed_type_str = match &obj[key] {
@@ -267,7 +271,7 @@ pub struct TestJsonDataEntities {
         let f_visi = RustFiledVisibilityProvider::new();
         let osr = RustOffSideRule::new();
         let mapper = JsonRustMapper::new();
-        let t_statement = RustTypeStatement::new(t_comment, t_visi, t_attr, osr.clone());
+        let t_statement = RustTypeStatement::new(t_comment, t_visi, t_attr);
         let f_statement = RustFiledStatement::new(f_comment, RefCell::new(f_attr), f_visi, rw);
         let rust = TypeDefineGenerator::new(
             "TestJson",

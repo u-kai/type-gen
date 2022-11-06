@@ -1,12 +1,8 @@
 use crate::{
     lang_common::type_comment::BaseTypeComment,
-    rust::off_side_rule::RustOffSideRule,
-    traits::{
-        off_side_rule::OffSideRule,
-        type_statements::{
-            type_attr::TypeAttribution, type_comment::TypeComment, type_statement::TypeStatement,
-            type_visibility::TypeVisibility,
-        },
+    traits::type_statements::{
+        type_attr::TypeAttribution, type_comment::TypeComment, type_statement::TypeStatement,
+        type_visibility::TypeVisibility,
     },
 };
 
@@ -16,7 +12,6 @@ pub struct RustTypeStatement {
     comment: BaseTypeComment,
     visi: RustTypeVisibilityProvider,
     attr: RustTypeAttributeStore,
-    off_side_rule: RustOffSideRule,
 }
 
 impl RustTypeStatement {
@@ -24,13 +19,11 @@ impl RustTypeStatement {
         comment: BaseTypeComment,
         visi: RustTypeVisibilityProvider,
         attr: RustTypeAttributeStore,
-        off_side_rule: RustOffSideRule,
     ) -> Self {
         Self {
             comment,
             visi,
             attr,
-            off_side_rule,
         }
     }
 }
@@ -39,8 +32,7 @@ impl TypeStatement for RustTypeStatement {
     const TYPE_STATEMENT: &'static str = "struct";
     fn create_statement(&self, type_key: &str) -> String {
         let visi = self.visi.get_visibility_str(type_key);
-        let rule = self.off_side_rule.start();
-        let mut result = format!("{}{} {} {}", visi, Self::TYPE_STATEMENT, type_key, rule);
+        let mut result = format!("{}{} {}", visi, Self::TYPE_STATEMENT, type_key);
 
         if let Some(attr) = self.attr.get_attr(type_key) {
             result = format!("{}{}", attr, result);
@@ -57,7 +49,6 @@ mod test_rust_type_statement {
     use crate::{
         lang_common::type_comment::BaseTypeComment,
         rust::{
-            off_side_rule::RustOffSideRule,
             rust_visibility::RustVisibility,
             type_statements::{
                 type_attr::{RustTypeAttribute, RustTypeAttributeStore},
@@ -72,19 +63,16 @@ mod test_rust_type_statement {
     #[test]
     fn only_private_struct() {
         let struct_name = "Test";
-        let off_side_rule = RustOffSideRule::new();
         let comment = BaseTypeComment::new("//");
         let attr = RustTypeAttributeStore::new();
         let visi = RustTypeVisibilityProvider::new();
-        let rust = RustTypeStatement::new(comment, visi, attr, off_side_rule);
-        let tobe = r#"struct Test {
-"#;
+        let rust = RustTypeStatement::new(comment, visi, attr);
+        let tobe = r#"struct Test"#;
         assert_eq!(rust.create_statement(struct_name), tobe.to_string());
     }
     #[test]
     fn comment_and_attr_and_pub_visibilty() {
         let struct_name = "Test";
-        let off_side_rule = RustOffSideRule::new();
         let mut comment = BaseTypeComment::new("//");
         comment.add_comment(struct_name, "this is test");
         comment.add_comment(struct_name, "hello");
@@ -98,9 +86,8 @@ mod test_rust_type_statement {
         let tobe = r#"// this is test
 // hello
 #[derive(Debug,Clone)]
-pub struct Test {
-"#;
-        let rust = RustTypeStatement::new(comment, visi, attr, off_side_rule);
+pub struct Test"#;
+        let rust = RustTypeStatement::new(comment, visi, attr);
         assert_eq!(rust.create_statement(struct_name), tobe);
     }
 }
