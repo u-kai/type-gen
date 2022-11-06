@@ -43,7 +43,7 @@ impl
             let new_key = npc.to_snake();
             attr.add_attr(
                 &filed_key,
-                RustFiledAttribute::Original(format!("serde(rename = {})", filed_key)),
+                RustFiledAttribute::Original(format!(r#"serde(rename = "{}")"#, filed_key)),
             );
             reserved_words.sub_or_default(&new_key).to_string()
         } else {

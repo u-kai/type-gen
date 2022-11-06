@@ -140,7 +140,6 @@ impl RustTypeGenerator {
         );
         let keys = obj.keys();
         for key in keys {
-            let npc = NamingPrincipalConvertor::new(key);
             let filed_type_str = match &obj[key] {
                 Json::String(_) => {
                     if self.optional_checker.is_optional(key.as_str()) {
@@ -171,6 +170,7 @@ impl RustTypeGenerator {
                     }
                 }
                 Json::Object(obj) => {
+                    let npc = NamingPrincipalConvertor::new(key);
                     let child_struct_name = format!("{}{}", struct_name, npc.to_pascal());
                     self.case_obj(&child_struct_name, obj);
                     if self.optional_checker.is_optional(key.as_str()) {
