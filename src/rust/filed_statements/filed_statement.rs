@@ -2,7 +2,6 @@ use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal
 
 use crate::{
     lang_common::filed_comment::BaseFiledComment,
-    rust::reserved_words::RustReservedWords,
     traits::filed_statements::{
         filed_attr::FiledAttribute, filed_comment::FiledComment, filed_statement::FiledStatement,
         filed_visibility::FiledVisibility, reserved_words::ReservedWords,
@@ -12,6 +11,7 @@ use crate::{
 use super::{
     filed_attr::{RustFiledAttribute, RustFiledAttributeStore},
     filed_visibilty::RustFiledVisibilityProvider,
+    reserved_words::RustReservedWords,
 };
 
 pub struct RustFiledStatement {}
@@ -76,8 +76,8 @@ mod test_rust_filed_statement {
             filed_statements::{
                 filed_attr::{RustFiledAttribute, RustFiledAttributeStore},
                 filed_visibilty::RustFiledVisibilityProvider,
+                reserved_words::RustReservedWords,
             },
-            reserved_words::RustReservedWords,
             rust_visibility::RustVisibility,
         },
         traits::filed_statements::filed_statement::FiledStatement,

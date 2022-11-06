@@ -25,7 +25,6 @@ pub mod traits {
         pub mod filed_comment;
         pub mod filed_statement;
         pub mod filed_visibility;
-        pub mod naming_principal_changer;
         pub mod optional_checker;
         pub mod reserved_words;
     }
@@ -46,9 +45,9 @@ pub mod rust {
         pub mod filed_attr;
         pub mod filed_statement;
         pub mod filed_visibilty;
+        pub mod reserved_words;
     }
     pub mod off_side_rule;
-    pub mod reserved_words;
     pub mod rust_type_gen;
     pub mod rust_visibility;
     pub mod rust_visibility_provider;

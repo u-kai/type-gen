@@ -22,14 +22,13 @@ use crate::{
 use super::{
     filed_statements::{
         filed_attr::RustFiledAttributeStore, filed_statement::RustFiledStatement,
-        filed_visibilty::RustFiledVisibilityProvider,
+        filed_visibilty::RustFiledVisibilityProvider, reserved_words::RustReservedWords,
     },
     json_lang_mapper::{
         array::RustJsonArrayMapper, optional::RustJsonOptionalMapper,
         optional_array::RustJsonOptionalArrayMapper, primitive::RustJsonPrimitiveMapper,
     },
     off_side_rule::RustOffSideRule,
-    reserved_words::RustReservedWords,
     rust_visibility::RustVisibility,
     type_statements::{
         type_attr::{RustTypeAttribute, RustTypeAttributeStore},
@@ -306,7 +305,7 @@ pub struct TestJson {
 struct TestJsonData {
     entities: Option<TestJsonDataEntities>,
     test: Option<String>,
-    #[serde(rename = userId)]
+    #[serde(rename = "userId")]
     user_id: Option<i64>,
 }
 
