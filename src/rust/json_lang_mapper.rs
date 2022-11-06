@@ -1,13 +1,13 @@
-use crate::traits::json_lang_mapper::primitive::Primitive;
+use crate::traits::json_lang_mapper::JsonLangMapper;
 
-pub struct RustJsonPrimitiveMapper;
-impl RustJsonPrimitiveMapper {
+pub struct JsonRustMapper;
+impl JsonRustMapper {
     pub fn new() -> Self {
         Self
     }
 }
 
-impl Primitive for RustJsonPrimitiveMapper {
+impl JsonLangMapper for JsonRustMapper {
     fn case_u64(&self) -> &'static str {
         "u64"
     }
@@ -25,5 +25,11 @@ impl Primitive for RustJsonPrimitiveMapper {
     }
     fn case_bool(&self) -> &'static str {
         "bool"
+    }
+    fn make_array_type(&self, type_str: &str) -> String {
+        format!("Vec<{}>", type_str)
+    }
+    fn make_optional_type(&self, type_str: &str) -> String {
+        format!("Option<{}>", type_str)
     }
 }

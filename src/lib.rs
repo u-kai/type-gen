@@ -7,13 +7,7 @@ pub mod rust_v1 {
     pub mod rust_struct_convertor;
 }
 pub mod traits {
-    pub mod json_lang_mapper {
-        pub mod array;
-        pub mod json_lang_mapper;
-        pub mod optional;
-        pub mod optional_array;
-        pub mod primitive;
-    }
+    pub mod json_lang_mapper;
     pub mod type_statements {
         pub mod lang_type;
         pub mod type_attr;
@@ -57,11 +51,5 @@ pub mod rust {
         pub mod type_statement;
         pub mod type_visiblity;
     }
-    pub mod json_lang_mapper {
-        pub mod array;
-        pub mod json_lang_mapper;
-        pub mod optional;
-        pub mod optional_array;
-        pub mod primitive;
-    }
+    pub mod json_lang_mapper;
 }
