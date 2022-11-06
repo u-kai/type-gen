@@ -9,6 +9,7 @@ pub mod rust_v1 {
 pub mod traits {
     pub mod json_lang_mapper {
         pub mod array;
+        pub mod json_lang_mapper;
         pub mod optional;
         pub mod optional_array;
         pub mod primitive;
@@ -58,6 +59,7 @@ pub mod rust {
     }
     pub mod json_lang_mapper {
         pub mod array;
+        pub mod json_lang_mapper;
         pub mod optional;
         pub mod optional_array;
         pub mod primitive;
