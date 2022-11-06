@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::traits::filed_statements::filed_attr::FiledAttribute;
+use crate::{
+    traits::filed_statements::filed_attr::FiledAttribute, utils::store_fn::push_to_kv_vec,
+};
 
 pub enum RustFiledAttribute {
     CfgTest,
@@ -44,11 +46,7 @@ impl RustFiledAttributeStore {
         }
     }
     pub fn add_attr(&mut self, key: &str, attr: RustFiledAttribute) {
-        if let Some(v) = self.store.get_mut(key) {
-            v.push(attr);
-            return;
-        }
-        self.store.insert(key.to_string(), vec![attr]);
+        push_to_kv_vec(&mut self.store, key.to_string(), attr)
     }
 }
 

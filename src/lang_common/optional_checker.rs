@@ -1,5 +1,6 @@
 use crate::traits::filed_statements::optional_checker::OptionalChecker;
 
+type TypeKey = &'static str;
 type OptionFiledKey = &'static str;
 type RequireFiledKey = &'static str;
 pub struct BaseOptionalChecker {
