@@ -74,72 +74,70 @@ where
             }
         }
     }
+    fn make_filed_statement_and_staking(
+        &self,
+        type_key: &str,
+        filed_key: &str,
+        obj: &Json,
+    ) -> String {
+        let filed_type = match obj {
+            Json::String(_) => {
+                if self.optional_checker.is_optional(type_key, filed_key) {
+                    self.mapper.make_optional_type(self.mapper.case_string())
+                } else {
+                    self.mapper.case_string().to_string()
+                }
+            }
+            Json::Null => {
+                if self.optional_checker.is_optional(type_key, filed_key) {
+                    self.mapper.make_optional_type(self.mapper.case_null())
+                } else {
+                    self.mapper.case_null().to_string()
+                }
+            }
+            Json::Number(num) => {
+                if self.optional_checker.is_optional(type_key, filed_key) {
+                    self.mapper.make_optional_type(&self.mapper.case_num(num))
+                } else {
+                    self.mapper.case_num(num)
+                }
+            }
+            Json::Boolean(_) => {
+                if self.optional_checker.is_optional(type_key, filed_key) {
+                    self.mapper.make_optional_type(self.mapper.case_bool())
+                } else {
+                    self.mapper.case_bool().to_string()
+                }
+            }
+            Json::Object(obj) => {
+                let child_type_key = self.child_type_key(type_key, filed_key);
+                self.stacking_child_type(&child_type_key, obj);
+                if self.optional_checker.is_optional(type_key, filed_key) {
+                    self.mapper.make_optional_type(&child_type_key)
+                } else {
+                    child_type_key
+                }
+            }
+            Json::Array(arr) => self.case_arr_with_key(type_key, filed_key, arr),
+        };
+        self.filed_statement
+            .create_statement(filed_key, &filed_type)
+    }
     fn stacking_child_type(&self, type_key: &str, obj: &BTreeMap<String, Json>) {
-        let mut result = format!(
+        let child_type = format!(
             "{} {}",
             self.type_statement.create_statement(type_key),
             self.off_side_rule.start()
         );
-        let keys = obj.keys();
-        for key in keys {
-            let filed_type_str = match &obj[key] {
-                Json::String(_) => {
-                    if self.optional_checker.is_optional(type_key, key.as_str()) {
-                        self.mapper.make_optional_type(self.mapper.case_string())
-                    } else {
-                        self.mapper.case_string().to_string()
-                    }
-                }
-                Json::Null => {
-                    if self.optional_checker.is_optional(type_key, key.as_str()) {
-                        self.mapper.make_optional_type(self.mapper.case_null())
-                    } else {
-                        self.mapper.case_null().to_string()
-                    }
-                }
-                Json::Number(num) => {
-                    if self.optional_checker.is_optional(type_key, key.as_str()) {
-                        self.mapper.make_optional_type(&self.mapper.case_num(num))
-                    } else {
-                        self.mapper.case_num(num)
-                    }
-                }
-                Json::Boolean(_) => {
-                    if self.optional_checker.is_optional(type_key, key.as_str()) {
-                        self.mapper.make_optional_type(self.mapper.case_bool())
-                    } else {
-                        self.mapper.case_bool().to_string()
-                    }
-                }
-                Json::Object(obj) => {
-                    //let npc = NamingPrincipalConvertor::new(key);
-                    //let child_type_key = format!("{}{}", type_key, npc.to_pascal());
-                    let child_type_key = self.child_type_key(type_key, key);
-                    self.stacking_child_type(&child_type_key, obj);
-                    if self.optional_checker.is_optional(type_key, key.as_str()) {
-                        self.mapper.make_optional_type(&child_type_key)
-                    } else {
-                        child_type_key
-                    }
-                }
-                Json::Array(arr) => self.case_arr_with_key(type_key, key, arr),
-            };
-            result = format!(
+        let mut child_type = obj.keys().fold(child_type, |acc, key| {
+            format!(
                 "{}{}\n",
-                result,
-                self.filed_statement.create_statement(&key, &filed_type_str)
+                acc,
+                self.make_filed_statement_and_staking(type_key, key.as_str(), &obj[key])
             )
-        }
-        result.push_str(self.off_side_rule.end());
-        self.type_defines.borrow_mut().push(result);
-    }
-    fn child_type_key(&self, parent_type_key: &str, child_key: &str) -> String {
-        let npc = NamingPrincipalConvertor::new(child_key);
-        format!("{}{}", parent_type_key, npc.to_pascal())
-    }
-    fn case_arr(&self, _: Vec<Json>) -> String {
-        //self.mapper.make_array_type(type_str)
-        todo!("case arr")
+        });
+        child_type.push_str(self.off_side_rule.end());
+        self.type_defines.borrow_mut().push(child_type);
     }
     fn case_arr_with_key(&self, type_key: &str, key: &str, arr: &Vec<Json>) -> String {
         if arr.len() == 0 {
@@ -182,8 +180,7 @@ where
             }
             Json::Array(arr) => self.case_arr_with_key(type_key, key, arr),
             Json::Object(obj) => {
-                let npc = NamingPrincipalConvertor::new(key);
-                let child_type_key = format!("{}{}", type_key, npc.to_pascal());
+                let child_type_key = self.child_type_key(type_key, key);
                 self.stacking_child_type(&child_type_key, obj);
                 let array_type = self.mapper.make_array_type(&child_type_key);
                 if self.optional_checker.is_optional(type_key, key) {
@@ -193,6 +190,14 @@ where
                 }
             }
         }
+    }
+    fn child_type_key(&self, parent_type_key: &str, child_key: &str) -> String {
+        let npc = NamingPrincipalConvertor::new(child_key);
+        format!("{}{}", parent_type_key, npc.to_pascal())
+    }
+    fn case_arr(&self, _: Vec<Json>) -> String {
+        //self.mapper.make_array_type(type_str)
+        todo!("case arr")
     }
 }
 
