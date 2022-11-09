@@ -1,4 +1,7 @@
-use std::{collections::HashMap, hash::Hash};
+use std::{
+    collections::{BTreeMap, HashMap},
+    hash::Hash,
+};
 
 pub fn containes_to_kv_vec<K, V>(store: &HashMap<K, Vec<V>>, key: &K, value: &V) -> bool
 where
@@ -10,6 +13,16 @@ where
     } else {
         false
     }
+}
+pub fn push_to_btree_vec<K, V>(store: &mut BTreeMap<K, Vec<V>>, key: K, value: V)
+where
+    K: Hash + Eq + Ord,
+{
+    if let Some(vec) = store.get_mut(&key) {
+        vec.push(value);
+        return;
+    }
+    store.insert(key, vec![value]);
 }
 pub fn push_to_kv_vec<K, V>(store: &mut HashMap<K, Vec<V>>, key: K, value: V)
 where
