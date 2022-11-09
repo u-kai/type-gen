@@ -64,7 +64,7 @@ where
             Json::Boolean(_) => self.mapper.case_bool().to_string(),
             Json::Array(arr) => self.case_arr(arr),
             Json::Object(obj) => {
-                self.return_child_type_name_and_add_type_defines(&self.root_type, &obj);
+                self.stacking_child_type(&self.root_type, &obj);
                 self.type_defines
                     .into_inner()
                     .into_iter()
@@ -74,11 +74,7 @@ where
             }
         }
     }
-    fn return_child_type_name_and_add_type_defines(
-        &self,
-        type_key: &str,
-        obj: &BTreeMap<String, Json>,
-    ) {
+    fn stacking_child_type(&self, type_key: &str, obj: &BTreeMap<String, Json>) {
         let mut result = format!(
             "{} {}",
             self.type_statement.create_statement(type_key),
@@ -119,7 +115,7 @@ where
                     //let npc = NamingPrincipalConvertor::new(key);
                     //let child_type_key = format!("{}{}", type_key, npc.to_pascal());
                     let child_type_key = self.child_type_key(type_key, key);
-                    self.return_child_type_name_and_add_type_defines(&child_type_key, obj);
+                    self.stacking_child_type(&child_type_key, obj);
                     if self.optional_checker.is_optional(type_key, key.as_str()) {
                         self.mapper.make_optional_type(&child_type_key)
                     } else {
@@ -188,7 +184,7 @@ where
             Json::Object(obj) => {
                 let npc = NamingPrincipalConvertor::new(key);
                 let child_type_key = format!("{}{}", type_key, npc.to_pascal());
-                self.return_child_type_name_and_add_type_defines(&child_type_key, obj);
+                self.stacking_child_type(&child_type_key, obj);
                 let array_type = self.mapper.make_array_type(&child_type_key);
                 if self.optional_checker.is_optional(type_key, key) {
                     self.mapper.make_optional_type(&array_type)
