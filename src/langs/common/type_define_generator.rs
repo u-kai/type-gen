@@ -64,7 +64,7 @@ where
             Json::Boolean(_) => self.mapper.case_bool().to_string(),
             Json::Array(arr) => self.case_arr(arr),
             Json::Object(obj) => {
-                self.case_obj(&self.root_type, &obj);
+                self.return_child_type_name_and_add_type_defines(&self.root_type, &obj);
                 self.type_defines
                     .into_inner()
                     .into_iter()
@@ -74,7 +74,11 @@ where
             }
         }
     }
-    fn case_obj(&self, type_key: &str, obj: &BTreeMap<String, Json>) {
+    fn return_child_type_name_and_add_type_defines(
+        &self,
+        type_key: &str,
+        obj: &BTreeMap<String, Json>,
+    ) {
         let mut result = format!(
             "{} {}",
             self.type_statement.create_statement(type_key),
@@ -112,9 +116,10 @@ where
                     }
                 }
                 Json::Object(obj) => {
-                    let npc = NamingPrincipalConvertor::new(key);
-                    let child_type_key = format!("{}{}", type_key, npc.to_pascal());
-                    self.case_obj(&child_type_key, obj);
+                    //let npc = NamingPrincipalConvertor::new(key);
+                    //let child_type_key = format!("{}{}", type_key, npc.to_pascal());
+                    let child_type_key = self.child_type_key(type_key, key);
+                    self.return_child_type_name_and_add_type_defines(&child_type_key, obj);
                     if self.optional_checker.is_optional(type_key, key.as_str()) {
                         self.mapper.make_optional_type(&child_type_key)
                     } else {
@@ -131,6 +136,10 @@ where
         }
         result.push_str(self.off_side_rule.end());
         self.type_defines.borrow_mut().push(result);
+    }
+    fn child_type_key(&self, parent_type_key: &str, child_key: &str) -> String {
+        let npc = NamingPrincipalConvertor::new(child_key);
+        format!("{}{}", parent_type_key, npc.to_pascal())
     }
     fn case_arr(&self, _: Vec<Json>) -> String {
         //self.mapper.make_array_type(type_str)
@@ -179,7 +188,7 @@ where
             Json::Object(obj) => {
                 let npc = NamingPrincipalConvertor::new(key);
                 let child_type_key = format!("{}{}", type_key, npc.to_pascal());
-                self.case_obj(&child_type_key, obj);
+                self.return_child_type_name_and_add_type_defines(&child_type_key, obj);
                 let array_type = self.mapper.make_array_type(&child_type_key);
                 if self.optional_checker.is_optional(type_key, key) {
                     self.mapper.make_optional_type(&array_type)
@@ -191,6 +200,18 @@ where
     }
 }
 
+fn get_json_from_array_json(array_json: Vec<Json>) -> Json {
+    fn get_json_from_obj(obj: BTreeMap<String, Json>) -> Json {
+        Json::Null
+    }
+    //let mut result = BTreeMap::new();
+    Json::Null
+    //array_json.into_iter().for_each(|json| match json {
+    //Json::Object(obj) => {
+    //let json = get_json_from_obj(obj);
+    //}
+    //})
+}
 #[cfg(test)]
 mod test_type_define_gen {
 
@@ -213,6 +234,40 @@ mod test_type_define_gen {
     };
 
     use super::*;
+    #[test]
+    fn test_get_json_from_array_json() {
+        let json = r#"
+            [
+                    {
+                        "name":"kai"
+                    },
+                    {
+                        "userId":12345,
+                        "test":"test-string",
+                        "entities":{
+                            "id":0
+                        }
+                    },
+                    {
+                        "age":20
+                    }
+            ]
+        "#;
+        let json = Json::from(json);
+        let  Json::Array(array) = json else {
+            panic!()
+        };
+        let mut child = BTreeMap::new();
+        child.insert("id".to_string(), Json::Number(0.into()));
+        let mut tobe = BTreeMap::new();
+        tobe.insert("name".to_string(), Json::String("kai".to_string()));
+        tobe.insert("userId".to_string(), Json::Number(12345.into()));
+        tobe.insert("test".to_string(), Json::String("test-string".to_string()));
+        tobe.insert("entities".to_string(), Json::Object(child));
+        tobe.insert("age".to_string(), Json::Number(20.into()));
+        let tobe = Json::Object(tobe);
+        assert_eq!(get_json_from_array_json(array), tobe);
+    }
     #[test]
     fn test_case_rust() {
         let json = r#"
