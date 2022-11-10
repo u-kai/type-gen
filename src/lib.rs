@@ -51,6 +51,7 @@ pub mod langs {
 }
 
 pub mod lang_parsers {
+    pub mod parsers;
     pub mod parser;
     pub mod rust {
         pub mod parser;
