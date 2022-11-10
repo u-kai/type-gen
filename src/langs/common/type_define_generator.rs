@@ -248,18 +248,6 @@ where
     }
 }
 
-fn get_json_from_array_json(array_json: Vec<Json>) -> Json {
-    fn get_json_from_obj(obj: BTreeMap<String, Json>) -> Json {
-        Json::Null
-    }
-    //let mut result = BTreeMap::new();
-    Json::Null
-    //array_json.into_iter().for_each(|json| match json {
-    //Json::Object(obj) => {
-    //let json = get_json_from_obj(obj);
-    //}
-    //})
-}
 #[cfg(test)]
 mod test_type_define_gen {
 
@@ -282,40 +270,40 @@ mod test_type_define_gen {
     };
 
     use super::*;
-    #[test]
-    fn test_get_json_from_array_json() {
-        let json = r#"
-            [
-                    {
-                        "name":"kai"
-                    },
-                    {
-                        "userId":12345,
-                        "test":"test-string",
-                        "entities":{
-                            "id":0
-                        }
-                    },
-                    {
-                        "age":20
-                    }
-            ]
-        "#;
-        let json = Json::from(json);
-        let  Json::Array(array) = json else {
-            panic!()
-        };
-        let mut child = BTreeMap::new();
-        child.insert("id".to_string(), Json::Number(0.into()));
-        let mut tobe = BTreeMap::new();
-        tobe.insert("name".to_string(), Json::String("kai".to_string()));
-        tobe.insert("userId".to_string(), Json::Number(12345.into()));
-        tobe.insert("test".to_string(), Json::String("test-string".to_string()));
-        tobe.insert("entities".to_string(), Json::Object(child));
-        tobe.insert("age".to_string(), Json::Number(20.into()));
-        let tobe = Json::Object(tobe);
-        assert_eq!(get_json_from_array_json(array), tobe);
-    }
+    //#[test]
+    //fn test_get_json_from_array_json() {
+    //let json = r#"
+    //[
+    //{
+    //"name":"kai"
+    //},
+    //{
+    //"userId":12345,
+    //"test":"test-string",
+    //"entities":{
+    //"id":0
+    //}
+    //},
+    //{
+    //"age":20
+    //}
+    //]
+    //"#;
+    //let json = Json::from(json);
+    //let  Json::Array(array) = json else {
+    //panic!()
+    //};
+    //let mut child = BTreeMap::new();
+    //child.insert("id".to_string(), Json::Number(0.into()));
+    //let mut tobe = BTreeMap::new();
+    //tobe.insert("name".to_string(), Json::String("kai".to_string()));
+    //tobe.insert("userId".to_string(), Json::Number(12345.into()));
+    //tobe.insert("test".to_string(), Json::String("test-string".to_string()));
+    //tobe.insert("entities".to_string(), Json::Object(child));
+    //tobe.insert("age".to_string(), Json::Number(20.into()));
+    //let tobe = Json::Object(tobe);
+    //assert_eq!(get_json_from_array_json(array), tobe);
+    //}
     #[test]
     fn test_case_rust() {
         let json = r#"

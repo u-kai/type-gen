@@ -49,3 +49,11 @@ pub mod langs {
         pub mod json_lang_mapper;
     }
 }
+
+pub mod lang_parsers {
+    pub mod parser;
+    pub mod rust {
+        pub mod parser;
+    }
+    pub mod traits;
+}
