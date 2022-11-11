@@ -12,7 +12,10 @@ use crate::{
     utils::store_fn::{push_to_btree_vec, push_to_kv_vec},
 };
 
-use super::optional_checker::BaseOptionalChecker;
+use super::{
+    optional_checker::BaseOptionalChecker,
+    primitive_type_statement_generator::PrimitiveTypeStatementGenerator,
+};
 
 pub type TypeDefine = String;
 
@@ -146,35 +149,13 @@ where
         filed_key: &str,
         obj: Json,
     ) -> String {
+        let primitive_type_generaotor =
+            PrimitiveTypeStatementGenerator::new(&self.mapper, &self.optional_checker);
         let filed_type = match obj {
-            Json::String(_) => {
-                if self.optional_checker.is_optional(type_key, filed_key) {
-                    self.mapper.make_optional_type(self.mapper.case_string())
-                } else {
-                    self.mapper.case_string().to_string()
-                }
-            }
-            Json::Null => {
-                if self.optional_checker.is_optional(type_key, filed_key) {
-                    self.mapper.make_optional_type(self.mapper.case_null())
-                } else {
-                    self.mapper.case_null().to_string()
-                }
-            }
-            Json::Number(num) => {
-                if self.optional_checker.is_optional(type_key, filed_key) {
-                    self.mapper.make_optional_type(&self.mapper.case_num(&num))
-                } else {
-                    self.mapper.case_num(&num)
-                }
-            }
-            Json::Boolean(_) => {
-                if self.optional_checker.is_optional(type_key, filed_key) {
-                    self.mapper.make_optional_type(self.mapper.case_bool())
-                } else {
-                    self.mapper.case_bool().to_string()
-                }
-            }
+            Json::String(_) => primitive_type_generaotor.case_string(type_key, filed_key),
+            Json::Null => primitive_type_generaotor.case_null(type_key, filed_key),
+            Json::Number(num) => primitive_type_generaotor.case_num(type_key, filed_key, &num),
+            Json::Boolean(_) => primitive_type_generaotor.case_boolean(type_key, filed_key),
             Json::Object(obj) => {
                 let child_type_key = self.child_type_key(type_key, filed_key);
                 let child_type_statement = self.make_child_statement(&child_type_key, obj);
@@ -223,6 +204,8 @@ where
             return String::new();
         }
         let mut map = BTreeMap::new();
+        let primitive_type_generaotor =
+            PrimitiveTypeStatementGenerator::new(&self.mapper, &self.optional_checker);
         for obj in arr {
             match obj {
                 Json::Object(obj) => {
@@ -231,36 +214,16 @@ where
                     }
                 }
                 Json::String(_) => {
-                    let array_type = self.mapper.make_array_type(self.mapper.case_string());
-                    return if self.optional_checker.is_optional(type_key, filed_key) {
-                        self.mapper.make_optional_type(&array_type)
-                    } else {
-                        array_type
-                    };
+                    return primitive_type_generaotor.case_string_array(type_key, filed_key)
                 }
                 Json::Null => {
-                    let array_type = self.mapper.make_array_type(self.mapper.case_null());
-                    return if self.optional_checker.is_optional(type_key, filed_key) {
-                        self.mapper.make_optional_type(&array_type)
-                    } else {
-                        array_type
-                    };
+                    return primitive_type_generaotor.case_null_array(type_key, filed_key)
                 }
                 Json::Number(num) => {
-                    let array_type = self.mapper.make_array_type(&self.mapper.case_num(&num));
-                    return if self.optional_checker.is_optional(type_key, filed_key) {
-                        self.mapper.make_optional_type(&array_type)
-                    } else {
-                        array_type
-                    };
+                    return primitive_type_generaotor.case_num_array(type_key, filed_key, &num)
                 }
                 Json::Boolean(_) => {
-                    let array_type = self.mapper.make_array_type(self.mapper.case_bool());
-                    return if self.optional_checker.is_optional(type_key, filed_key) {
-                        self.mapper.make_optional_type(&array_type)
-                    } else {
-                        array_type
-                    };
+                    return primitive_type_generaotor.case_boolean_array(type_key, filed_key)
                 }
                 _ => todo!(),
             }
