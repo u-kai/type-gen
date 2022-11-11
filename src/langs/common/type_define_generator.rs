@@ -15,6 +15,16 @@ use crate::{
 use super::optional_checker::BaseOptionalChecker;
 
 pub type TypeDefine = String;
+
+/// TypeDefine is
+/// ```
+/// struct Test {
+///     id:usize,
+///     name:String,
+/// }
+/// ```
+/// type_key is struct name -> Test<br>
+/// field_key is field name -> id, name...
 pub struct TypeDefineGenerator<M, T, F, O>
 where
     M: JsonLangMapper,
@@ -217,26 +227,26 @@ where
         child_type_key: &str,
         map: BTreeMap<String, Vec<Json>>,
     ) -> String {
-        let child_type_statement = format!(
-            "{} {}",
-            self.type_statement.create_statement(child_type_key),
-            self.off_side_rule.start()
-        );
-        let mut child_type_statement =
-            map.into_iter()
-                .fold(child_type_statement, |acc, (key, mut value)| {
-                    format!(
-                        "{}{}\n",
-                        acc,
-                        self.make_filed_statement_and_staking(
-                            child_type_key,
-                            key.as_str(),
-                            value.pop().unwrap()
-                        )
+        let child_filed_statement = map
+            .into_iter()
+            .fold(String::new(), |acc, (key, mut value)| {
+                format!(
+                    "{}{}\n",
+                    acc,
+                    self.make_filed_statement_and_staking(
+                        child_type_key,
+                        key.as_str(),
+                        value.pop().unwrap()
                     )
-                });
-        child_type_statement.push_str(self.off_side_rule.end());
-        child_type_statement
+                )
+            });
+        format!(
+            "{} {}{}{}",
+            self.type_statement.create_statement(child_type_key),
+            self.off_side_rule.start(),
+            child_filed_statement,
+            self.off_side_rule.end()
+        )
     }
     fn child_type_key(&self, parent_type_key: &str, child_key: &str) -> String {
         let npc = NamingPrincipalConvertor::new(child_key);
