@@ -120,30 +120,9 @@ where
                         self.mapper.case_string().to_string()
                     }
                 }
-                Json::Null => {
-                    String::new()
-                    //if self.optional_checker.is_optional(type_key, filed_key) {
-                    //self.mapper.make_optional_type(self.mapper.case_null())
-                    //} else {
-                    //self.mapper.case_null().to_string()
-                    //}
-                }
-                Json::Number(num) => {
-                    String::new()
-                    //if self.optional_checker.is_optional(type_key, filed_key) {
-                    //self.mapper.make_optional_type(&self.mapper.case_num(&num))
-                    //} else {
-                    //self.mapper.case_num(&num)
-                    //}
-                }
-                Json::Boolean(_) => {
-                    String::new()
-                    //if self.optional_checker.is_optional(type_key, filed_key) {
-                    //self.mapper.make_optional_type(self.mapper.case_bool())
-                    //} else {
-                    //self.mapper.case_bool().to_string()
-                    //}
-                }
+                Json::Null => String::new(),
+                Json::Number(num) => String::new(),
+                Json::Boolean(_) => String::new(),
                 Json::Object(obj) => {
                     let child_type_key = self.child_type_key(type_key, filed_key.as_str());
                     let child_type_statement = self.make_child_statement(&child_type_key, obj);

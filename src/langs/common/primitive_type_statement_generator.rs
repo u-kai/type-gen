@@ -20,7 +20,28 @@ where
             optional_checker,
         }
     }
-    fn case_string(&self, type_key: &str, filed_key: &str) -> String {
+    pub fn case_boolean(&self, type_key: &str, filed_key: &str) -> String {
+        if self.optional_checker.is_optional(type_key, filed_key) {
+            self.mapper.make_optional_type(self.mapper.case_bool())
+        } else {
+            self.mapper.case_bool().to_string()
+        }
+    }
+    pub fn case_num(&self, type_key: &str, filed_key: &str, num: &serde_json::Number) -> String {
+        if self.optional_checker.is_optional(type_key, filed_key) {
+            self.mapper.make_optional_type(&self.mapper.case_num(&num))
+        } else {
+            self.mapper.case_num(&num)
+        }
+    }
+    pub fn case_null(&self, type_key: &str, filed_key: &str) -> String {
+        if self.optional_checker.is_optional(type_key, filed_key) {
+            self.mapper.make_optional_type(self.mapper.case_null())
+        } else {
+            self.mapper.case_null().to_string()
+        }
+    }
+    pub fn case_string(&self, type_key: &str, filed_key: &str) -> String {
         if self.optional_checker.is_optional(type_key, filed_key) {
             self.mapper.make_optional_type(self.mapper.case_string())
         } else {
@@ -32,9 +53,8 @@ where
 #[cfg(test)]
 
 mod test_primitive_type_statement_generator {
-    use std::collections::HashMap;
-
     use super::*;
+    use serde_json::Number;
     struct FakeOptionalChecker {
         type_keys: Vec<&'static str>,
         field_keys: Vec<&'static str>,
@@ -52,7 +72,7 @@ mod test_primitive_type_statement_generator {
         fn case_null(&self) -> &'static str {
             "null"
         }
-        fn case_num(&self, num: &serde_json::Number) -> String {
+        fn case_num(&self, _: &serde_json::Number) -> String {
             "num".to_string()
         }
         fn case_string(&self) -> &'static str {
@@ -66,6 +86,74 @@ mod test_primitive_type_statement_generator {
         }
     }
 
+    #[test]
+    fn test_case_bool() {
+        let mapper = FakeMapper;
+        let type_key = "Test";
+        let optional_filed_key = "test";
+        let require_filed_key = "id";
+        let optional_checker = FakeOptionalChecker {
+            type_keys: vec![type_key],
+            field_keys: vec![optional_filed_key],
+        };
+        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
+        assert_eq!(
+            generator.case_boolean(type_key, optional_filed_key,),
+            "Option<bool>".to_string()
+        );
+        assert_eq!(
+            generator.case_boolean(type_key, require_filed_key,),
+            "bool".to_string()
+        );
+    }
+    #[test]
+    fn test_case_num() {
+        let mapper = FakeMapper;
+        let type_key = "Test";
+        let optional_filed_key = "test";
+        let require_filed_key = "id";
+        let optional_checker = FakeOptionalChecker {
+            type_keys: vec![type_key],
+            field_keys: vec![optional_filed_key],
+        };
+        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
+        assert_eq!(
+            generator.case_num(
+                type_key,
+                optional_filed_key,
+                &Number::from_f64(0_f64).unwrap()
+            ),
+            "Option<num>".to_string()
+        );
+        assert_eq!(
+            generator.case_num(
+                type_key,
+                require_filed_key,
+                &Number::from_f64(0_f64).unwrap()
+            ),
+            "num".to_string()
+        );
+    }
+    #[test]
+    fn test_case_null() {
+        let mapper = FakeMapper;
+        let type_key = "Test";
+        let optional_filed_key = "test";
+        let require_filed_key = "id";
+        let optional_checker = FakeOptionalChecker {
+            type_keys: vec![type_key],
+            field_keys: vec![optional_filed_key],
+        };
+        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
+        assert_eq!(
+            generator.case_null(type_key, optional_filed_key),
+            "Option<null>".to_string()
+        );
+        assert_eq!(
+            generator.case_null(type_key, require_filed_key),
+            "null".to_string()
+        );
+    }
     #[test]
     fn test_case_string() {
         let mapper = FakeMapper;
