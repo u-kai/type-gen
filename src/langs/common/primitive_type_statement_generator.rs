@@ -29,63 +29,44 @@ where
         let array_type = self
             .mapper
             .make_array_type(self.mapper.case_num(num).as_str());
-        if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(&array_type)
-        } else {
-            array_type
-        }
+        self.gen_optional_or_require(type_key, filed_key, array_type)
     }
     pub fn case_null_array(&self, type_key: &str, filed_key: &str) -> String {
         let array_type = self.mapper.make_array_type(self.mapper.case_null());
-        if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(&array_type)
-        } else {
-            array_type
-        }
+        self.gen_optional_or_require(type_key, filed_key, array_type)
     }
 
     pub fn case_boolean_array(&self, type_key: &str, filed_key: &str) -> String {
         let array_type = self.mapper.make_array_type(self.mapper.case_bool());
-        if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(&array_type)
-        } else {
-            array_type
-        }
+        self.gen_optional_or_require(type_key, filed_key, array_type)
     }
     pub fn case_string_array(&self, type_key: &str, filed_key: &str) -> String {
         let array_type = self.mapper.make_array_type(self.mapper.case_string());
-        if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(&array_type)
-        } else {
-            array_type
-        }
+        self.gen_optional_or_require(type_key, filed_key, array_type)
     }
     pub fn case_boolean(&self, type_key: &str, filed_key: &str) -> String {
-        if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(self.mapper.case_bool())
-        } else {
-            self.mapper.case_bool().to_string()
-        }
+        self.gen_optional_or_require(type_key, filed_key, self.mapper.case_bool())
     }
     pub fn case_num(&self, type_key: &str, filed_key: &str, num: &serde_json::Number) -> String {
-        if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(&self.mapper.case_num(&num))
-        } else {
-            self.mapper.case_num(&num)
-        }
+        self.gen_optional_or_require(type_key, filed_key, self.mapper.case_num(num))
     }
     pub fn case_null(&self, type_key: &str, filed_key: &str) -> String {
-        if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(self.mapper.case_null())
-        } else {
-            self.mapper.case_null().to_string()
-        }
+        self.gen_optional_or_require(type_key, filed_key, self.mapper.case_null())
     }
     pub fn case_string(&self, type_key: &str, filed_key: &str) -> String {
+        self.gen_optional_or_require(type_key, filed_key, self.mapper.case_string())
+    }
+    fn gen_optional_or_require(
+        &self,
+        type_key: &str,
+        filed_key: &str,
+        filed_type: impl Into<String>,
+    ) -> String {
+        let filed_type: String = filed_type.into();
         if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(self.mapper.case_string())
+            self.mapper.make_optional_type(filed_type.as_str())
         } else {
-            self.mapper.case_string().to_string()
+            filed_type.into()
         }
     }
 }
