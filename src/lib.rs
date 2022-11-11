@@ -27,6 +27,7 @@ pub mod langs {
         pub mod filed_comment;
         pub mod naming_principal;
         pub mod optional_checker;
+        pub mod primitive_type_statement_generator;
         pub mod type_comment;
         pub mod type_define_generator;
     }
@@ -51,8 +52,8 @@ pub mod langs {
 }
 
 pub mod lang_parsers {
-    pub mod parsers;
     pub mod parser;
+    pub mod parsers;
     pub mod rust {
         pub mod parser;
     }

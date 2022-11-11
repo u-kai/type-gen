@@ -86,6 +86,81 @@ where
             }
         }
     }
+    pub fn gen_from_json_(self, json: &str) -> TypeDefine {
+        let json = Json::from(json);
+        match json {
+            Json::String(_) => self.mapper.case_string().to_string(),
+            Json::Null => self.mapper.case_null().to_string(),
+            Json::Number(num) => self.mapper.case_num(&num),
+            Json::Boolean(_) => self.mapper.case_bool().to_string(),
+            Json::Array(arr) => self.case_arr(arr),
+            Json::Object(obj) => {
+                let root_statement = self.make_type_defines_from_obj(&self.root_type, obj);
+                self.type_defines.borrow_mut().push(root_statement);
+                self.type_defines
+                    .into_inner()
+                    .into_iter()
+                    .rev()
+                    .reduce(|acc, cur| format!("{}\n\n{}", acc, cur))
+                    .unwrap()
+            }
+        }
+    }
+    fn make_type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
+        let filed_statement = obj
+            .into_iter()
+            .fold(String::new(), |acc, (filed_key, v)| match v {
+                Json::String(_) => {
+                    if self
+                        .optional_checker
+                        .is_optional(type_key, filed_key.as_str())
+                    {
+                        self.mapper.make_optional_type(self.mapper.case_string())
+                    } else {
+                        self.mapper.case_string().to_string()
+                    }
+                }
+                Json::Null => {
+                    String::new()
+                    //if self.optional_checker.is_optional(type_key, filed_key) {
+                    //self.mapper.make_optional_type(self.mapper.case_null())
+                    //} else {
+                    //self.mapper.case_null().to_string()
+                    //}
+                }
+                Json::Number(num) => {
+                    String::new()
+                    //if self.optional_checker.is_optional(type_key, filed_key) {
+                    //self.mapper.make_optional_type(&self.mapper.case_num(&num))
+                    //} else {
+                    //self.mapper.case_num(&num)
+                    //}
+                }
+                Json::Boolean(_) => {
+                    String::new()
+                    //if self.optional_checker.is_optional(type_key, filed_key) {
+                    //self.mapper.make_optional_type(self.mapper.case_bool())
+                    //} else {
+                    //self.mapper.case_bool().to_string()
+                    //}
+                }
+                Json::Object(obj) => {
+                    let child_type_key = self.child_type_key(type_key, filed_key.as_str());
+                    let child_type_statement = self.make_child_statement(&child_type_key, obj);
+                    self.type_defines.borrow_mut().push(child_type_statement);
+                    if self
+                        .optional_checker
+                        .is_optional(type_key, filed_key.as_str())
+                    {
+                        self.mapper.make_optional_type(&child_type_key)
+                    } else {
+                        child_type_key
+                    }
+                }
+                Json::Array(arr) => self.case_arr_with_key(type_key, filed_key.as_str(), arr),
+            });
+        String::new()
+    }
     fn make_filed_statement_and_staking(
         &self,
         type_key: &str,
@@ -236,6 +311,7 @@ where
                     self.make_filed_statement_and_staking(
                         child_type_key,
                         key.as_str(),
+                        //todo fix value
                         value.pop().unwrap()
                     )
                 )
@@ -316,6 +392,76 @@ mod test_type_define_gen {
     //}
     #[test]
     fn test_case_rust() {
+        let json = r#"
+            {
+                "data":[
+                    {
+                        "userId":12345,
+                        "test":"test-string",
+                        "entities":{
+                            "id":0
+                        }
+                    }
+                ]
+            }
+        "#;
+        let tobe = r#"#[derive(Serialize,Desrialize)]
+pub struct TestJson {
+    data: Vec<TestJsonData>,
+}
+
+#[derive(Serialize,Desrialize)]
+struct TestJsonData {
+    entities: Option<TestJsonDataEntities>,
+    test: Option<String>,
+    #[serde(rename = "userId")]
+    user_id: Option<i64>,
+}
+
+#[derive(Serialize,Desrialize)]
+pub struct TestJsonDataEntities {
+    id: Option<i64>,
+}"#
+        .to_string();
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require("TestJson", "data");
+        let t_comment = BaseTypeComment::new("//");
+        let mut t_attr = RustTypeAttributeStore::new();
+        t_attr.add_attr(
+            "TestJson",
+            RustTypeAttribute::Derive(vec!["Serialize".to_string(), "Desrialize".to_string()]),
+        );
+        t_attr.add_attr(
+            "TestJsonData",
+            RustTypeAttribute::Derive(vec!["Serialize".to_string(), "Desrialize".to_string()]),
+        );
+        t_attr.add_attr(
+            "TestJsonDataEntities",
+            RustTypeAttribute::Derive(vec!["Serialize".to_string(), "Desrialize".to_string()]),
+        );
+        let mut t_visi = RustTypeVisibilityProvider::new();
+        t_visi.add_visibility("TestJson", RustVisibility::Public);
+        t_visi.add_visibility("TestJsonDataEntities", RustVisibility::Public);
+        let rw = RustReservedWords::new();
+        let f_comment = BaseFiledComment::new("//");
+        let f_attr = RustFiledAttributeStore::new();
+        let f_visi = RustFiledVisibilityProvider::new();
+        let osr = RustOffSideRule::new();
+        let mapper = JsonRustMapper::new();
+        let t_statement = RustTypeStatement::new(t_comment, t_visi, t_attr);
+        let f_statement = RustFiledStatement::new(f_comment, RefCell::new(f_attr), f_visi, rw);
+        let rust = TypeDefineGenerator::new(
+            "TestJson",
+            mapper,
+            t_statement,
+            f_statement,
+            osr,
+            optional_checker,
+        );
+        assert_eq!(rust.gen_from_json_(json), tobe);
+    }
+    #[test]
+    fn test_case_rust_() {
         let json = r#"
             {
                 "data":[
