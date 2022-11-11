@@ -149,13 +149,17 @@ where
         filed_key: &str,
         obj: Json,
     ) -> String {
-        let primitive_type_generaotor =
-            PrimitiveTypeStatementGenerator::new(&self.mapper, &self.optional_checker);
+        let primitive_type_generaotor = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            filed_key,
+            &self.mapper,
+            &self.optional_checker,
+        );
         let filed_type = match obj {
-            Json::String(_) => primitive_type_generaotor.case_string(type_key, filed_key),
-            Json::Null => primitive_type_generaotor.case_null(type_key, filed_key),
-            Json::Number(num) => primitive_type_generaotor.case_num(type_key, filed_key, &num),
-            Json::Boolean(_) => primitive_type_generaotor.case_boolean(type_key, filed_key),
+            Json::String(_) => primitive_type_generaotor.case_string(),
+            Json::Null => primitive_type_generaotor.case_null(),
+            Json::Number(num) => primitive_type_generaotor.case_num(&num),
+            Json::Boolean(_) => primitive_type_generaotor.case_boolean(),
             Json::Object(obj) => {
                 let child_type_key = self.child_type_key(type_key, filed_key);
                 let child_type_statement = self.make_child_statement(&child_type_key, obj);
@@ -204,8 +208,12 @@ where
             return String::new();
         }
         let mut map = BTreeMap::new();
-        let primitive_type_generaotor =
-            PrimitiveTypeStatementGenerator::new(&self.mapper, &self.optional_checker);
+        let primitive_type_generaotor = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            filed_key,
+            &self.mapper,
+            &self.optional_checker,
+        );
         for obj in arr {
             match obj {
                 Json::Object(obj) => {
@@ -213,18 +221,10 @@ where
                         push_to_btree_vec(&mut map, k, v)
                     }
                 }
-                Json::String(_) => {
-                    return primitive_type_generaotor.case_string_array(type_key, filed_key)
-                }
-                Json::Null => {
-                    return primitive_type_generaotor.case_null_array(type_key, filed_key)
-                }
-                Json::Number(num) => {
-                    return primitive_type_generaotor.case_num_array(type_key, filed_key, &num)
-                }
-                Json::Boolean(_) => {
-                    return primitive_type_generaotor.case_boolean_array(type_key, filed_key)
-                }
+                Json::String(_) => return primitive_type_generaotor.case_string_array(),
+                Json::Null => return primitive_type_generaotor.case_null_array(),
+                Json::Number(num) => return primitive_type_generaotor.case_num_array(&num),
+                Json::Boolean(_) => return primitive_type_generaotor.case_boolean_array(),
                 _ => todo!(),
             }
         }

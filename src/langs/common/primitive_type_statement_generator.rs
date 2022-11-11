@@ -5,6 +5,8 @@ where
     M: JsonLangMapper,
     O: OptionalChecker,
 {
+    type_key: &'a str,
+    filed_key: &'a str,
     mapper: &'a M,
     optional_checker: &'a O,
 }
@@ -14,56 +16,56 @@ where
     M: JsonLangMapper,
     O: OptionalChecker,
 {
-    pub fn new(mapper: &'a M, optional_checker: &'a O) -> Self {
+    pub fn new(
+        type_key: &'a str,
+        filed_key: &'a str,
+        mapper: &'a M,
+        optional_checker: &'a O,
+    ) -> Self {
         Self {
+            type_key,
+            filed_key,
             mapper,
             optional_checker,
         }
     }
-    pub fn case_num_array(
-        &self,
-        type_key: &str,
-        filed_key: &str,
-        num: &serde_json::Number,
-    ) -> String {
+    pub fn case_num_array(&self, num: &serde_json::Number) -> String {
         let array_type = self
             .mapper
             .make_array_type(self.mapper.case_num(num).as_str());
-        self.gen_optional_or_require(type_key, filed_key, array_type)
+        self.gen_optional_or_require(array_type)
     }
-    pub fn case_null_array(&self, type_key: &str, filed_key: &str) -> String {
+    pub fn case_null_array(&self) -> String {
         let array_type = self.mapper.make_array_type(self.mapper.case_null());
-        self.gen_optional_or_require(type_key, filed_key, array_type)
+        self.gen_optional_or_require(array_type)
     }
 
-    pub fn case_boolean_array(&self, type_key: &str, filed_key: &str) -> String {
+    pub fn case_boolean_array(&self) -> String {
         let array_type = self.mapper.make_array_type(self.mapper.case_bool());
-        self.gen_optional_or_require(type_key, filed_key, array_type)
+        self.gen_optional_or_require(array_type)
     }
-    pub fn case_string_array(&self, type_key: &str, filed_key: &str) -> String {
+    pub fn case_string_array(&self) -> String {
         let array_type = self.mapper.make_array_type(self.mapper.case_string());
-        self.gen_optional_or_require(type_key, filed_key, array_type)
+        self.gen_optional_or_require(array_type)
     }
-    pub fn case_boolean(&self, type_key: &str, filed_key: &str) -> String {
-        self.gen_optional_or_require(type_key, filed_key, self.mapper.case_bool())
+    pub fn case_boolean(&self) -> String {
+        self.gen_optional_or_require(self.mapper.case_bool())
     }
-    pub fn case_num(&self, type_key: &str, filed_key: &str, num: &serde_json::Number) -> String {
-        self.gen_optional_or_require(type_key, filed_key, self.mapper.case_num(num))
+    pub fn case_num(&self, num: &serde_json::Number) -> String {
+        self.gen_optional_or_require(self.mapper.case_num(num))
     }
-    pub fn case_null(&self, type_key: &str, filed_key: &str) -> String {
-        self.gen_optional_or_require(type_key, filed_key, self.mapper.case_null())
+    pub fn case_null(&self) -> String {
+        self.gen_optional_or_require(self.mapper.case_null())
     }
-    pub fn case_string(&self, type_key: &str, filed_key: &str) -> String {
-        self.gen_optional_or_require(type_key, filed_key, self.mapper.case_string())
+    pub fn case_string(&self) -> String {
+        self.gen_optional_or_require(self.mapper.case_string())
     }
-    fn gen_optional_or_require(
-        &self,
-        type_key: &str,
-        filed_key: &str,
-        filed_type: impl Into<String>,
-    ) -> String {
+    fn gen_optional_or_require(&self, filed_type: impl Into<String>) -> String {
         let filed_type: String = filed_type.into();
-        if self.optional_checker.is_optional(type_key, filed_key) {
+        if self
+            .optional_checker
+            .is_optional(self.type_key, self.filed_key)
+        {
             self.mapper.make_optional_type(filed_type.as_str())
         } else {
             filed_type.into()
@@ -74,6 +76,7 @@ where
 #[cfg(test)]
 
 mod test_primitive_type_statement_generator {
+
     use super::*;
     use serde_json::Number;
     struct FakeOptionalChecker {
@@ -117,15 +120,23 @@ mod test_primitive_type_statement_generator {
             type_keys: vec![type_key],
             field_keys: vec![optional_filed_key],
         };
-        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            optional_filed_key,
+            &mapper,
+            &optional_checker,
+        );
         assert_eq!(
-            generator.case_boolean_array(type_key, optional_filed_key,),
+            generator.case_boolean_array(),
             "Option<Vec<bool>>".to_string()
         );
-        assert_eq!(
-            generator.case_boolean_array(type_key, require_filed_key,),
-            "Vec<bool>".to_string()
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            require_filed_key,
+            &mapper,
+            &optional_checker,
         );
+        assert_eq!(generator.case_boolean_array(), "Vec<bool>".to_string());
     }
     #[test]
     fn test_case_num_array() {
@@ -137,21 +148,24 @@ mod test_primitive_type_statement_generator {
             type_keys: vec![type_key],
             field_keys: vec![optional_filed_key],
         };
-        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
-        assert_eq!(
-            generator.case_num_array(
-                type_key,
-                optional_filed_key,
-                &Number::from_f64(0_f64).unwrap()
-            ),
-            "Option<Vec<num>>".to_string()
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            optional_filed_key,
+            &mapper,
+            &optional_checker,
         );
         assert_eq!(
-            generator.case_num_array(
-                type_key,
-                require_filed_key,
-                &Number::from_f64(0_f64).unwrap()
-            ),
+            generator.case_num_array(&Number::from_f64(0_f64).unwrap()),
+            "Option<Vec<num>>".to_string()
+        );
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            require_filed_key,
+            &mapper,
+            &optional_checker,
+        );
+        assert_eq!(
+            generator.case_num_array(&Number::from_f64(0_f64).unwrap()),
             "Vec<num>".to_string()
         );
     }
@@ -165,15 +179,20 @@ mod test_primitive_type_statement_generator {
             type_keys: vec![type_key],
             field_keys: vec![optional_filed_key],
         };
-        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
-        assert_eq!(
-            generator.case_null_array(type_key, optional_filed_key),
-            "Option<Vec<null>>".to_string()
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            optional_filed_key,
+            &mapper,
+            &optional_checker,
         );
-        assert_eq!(
-            generator.case_null_array(type_key, require_filed_key),
-            "Vec<null>".to_string()
+        assert_eq!(generator.case_null_array(), "Option<Vec<null>>".to_string());
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            require_filed_key,
+            &mapper,
+            &optional_checker,
         );
+        assert_eq!(generator.case_null_array(), "Vec<null>".to_string());
     }
     #[test]
     fn test_case_string_array() {
@@ -185,15 +204,23 @@ mod test_primitive_type_statement_generator {
             type_keys: vec![type_key],
             field_keys: vec![optional_filed_key],
         };
-        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            optional_filed_key,
+            &mapper,
+            &optional_checker,
+        );
         assert_eq!(
-            generator.case_string_array(type_key, optional_filed_key),
+            generator.case_string_array(),
             "Option<Vec<string>>".to_string()
         );
-        assert_eq!(
-            generator.case_string_array(type_key, require_filed_key),
-            "Vec<string>".to_string()
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            require_filed_key,
+            &mapper,
+            &optional_checker,
         );
+        assert_eq!(generator.case_string_array(), "Vec<string>".to_string());
     }
     #[test]
     fn test_case_num() {
@@ -205,21 +232,24 @@ mod test_primitive_type_statement_generator {
             type_keys: vec![type_key],
             field_keys: vec![optional_filed_key],
         };
-        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
-        assert_eq!(
-            generator.case_num(
-                type_key,
-                optional_filed_key,
-                &Number::from_f64(0_f64).unwrap()
-            ),
-            "Option<num>".to_string()
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            optional_filed_key,
+            &mapper,
+            &optional_checker,
         );
         assert_eq!(
-            generator.case_num(
-                type_key,
-                require_filed_key,
-                &Number::from_f64(0_f64).unwrap()
-            ),
+            generator.case_num(&Number::from_f64(0_f64).unwrap()),
+            "Option<num>".to_string()
+        );
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            require_filed_key,
+            &mapper,
+            &optional_checker,
+        );
+        assert_eq!(
+            generator.case_num(&Number::from_f64(0_f64).unwrap()),
             "num".to_string()
         );
     }
@@ -233,15 +263,20 @@ mod test_primitive_type_statement_generator {
             type_keys: vec![type_key],
             field_keys: vec![optional_filed_key],
         };
-        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
-        assert_eq!(
-            generator.case_null(type_key, optional_filed_key),
-            "Option<null>".to_string()
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            optional_filed_key,
+            &mapper,
+            &optional_checker,
         );
-        assert_eq!(
-            generator.case_null(type_key, require_filed_key),
-            "null".to_string()
+        assert_eq!(generator.case_null(), "Option<null>".to_string());
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            require_filed_key,
+            &mapper,
+            &optional_checker,
         );
+        assert_eq!(generator.case_null(), "null".to_string());
     }
     #[test]
     fn test_case_string() {
@@ -253,14 +288,19 @@ mod test_primitive_type_statement_generator {
             type_keys: vec![type_key],
             field_keys: vec![optional_filed_key],
         };
-        let generator = PrimitiveTypeStatementGenerator::new(&mapper, &optional_checker);
-        assert_eq!(
-            generator.case_string(type_key, optional_filed_key),
-            "Option<string>".to_string()
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            optional_filed_key,
+            &mapper,
+            &optional_checker,
         );
-        assert_eq!(
-            generator.case_string(type_key, require_filed_key),
-            "string".to_string()
+        assert_eq!(generator.case_string(), "Option<string>".to_string());
+        let generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            require_filed_key,
+            &mapper,
+            &optional_checker,
         );
+        assert_eq!(generator.case_string(), "string".to_string());
     }
 }
