@@ -17,6 +17,53 @@ use super::{
 };
 
 pub type TypeDefine = String;
+struct ChildTypeDefine {
+    name: String,
+    key: String,
+}
+impl ChildTypeDefine {
+    fn new(parent_type_key: &str, key: impl Into<String>) -> Self {
+        let key: String = key.into();
+        let npc = NamingPrincipalConvertor::new(&key);
+        let name = format!("{}{}", parent_type_key, npc.to_pascal());
+        Self {
+            name,
+            key: key.into(),
+        }
+    }
+    fn ref_type_key(&self) -> &str {
+        &self.name
+    }
+    fn for_type_key(self) -> String {
+        self.name
+    }
+    fn for_parent_filed(
+        &self,
+        parent_type_key: &str,
+        optional_checker: &impl OptionalChecker,
+        mapper: &impl JsonLangMapper,
+    ) -> String {
+        if optional_checker.is_optional(parent_type_key, &self.key) {
+            mapper.make_optional_type(&self.name)
+        } else {
+            self.name.clone()
+        }
+    }
+    fn for_parent_array_filed(
+        &self,
+        parent_type_key: &str,
+        optional_checker: &impl OptionalChecker,
+        mapper: &impl JsonLangMapper,
+    ) -> String {
+        println!("parent_key = {}", parent_type_key);
+        println!("self.name = {}", self.key);
+        if optional_checker.is_optional(parent_type_key, &self.key) {
+            mapper.make_optional_type(&mapper.make_array_type(&self.name))
+        } else {
+            mapper.make_array_type(&self.name)
+        }
+    }
+}
 
 /// TypeDefine is
 /// ```
@@ -112,6 +159,10 @@ where
             _ => panic!("this method is not obj or array case json -> {:?}", json),
         }
     }
+    fn case_arr(&self, _: Vec<Json>) -> String {
+        //self.mapper.make_array_type(type_str)
+        todo!("case arr")
+    }
     /// ### array containe some type is not consider example below
     /// \["hello",0,{"name":"kai"}\]<br>
     /// above case is retrun Array(String)<>
@@ -120,31 +171,19 @@ where
     // type_key is TestObj
     // filed_key is test
     //
-    fn child_type_key(&self, parent_type_key: &str, child_key: &str) -> String {
-        let npc = NamingPrincipalConvertor::new(child_key);
-        format!("{}{}", parent_type_key, npc.to_pascal())
-    }
-    fn case_arr(&self, _: Vec<Json>) -> String {
-        //self.mapper.make_array_type(type_str)
-        todo!("case arr")
-    }
     fn type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
         let (filed_statement, childrens) = obj.into_iter().fold(
             (String::new(), None),
             |(filed_statement, childrens), (filed_key, v)| match v {
                 Json::Object(obj) => {
-                    let child_type_key = self.child_type_key(type_key, &filed_key);
+                    let child_type = ChildTypeDefine::new(&type_key, &filed_key);
                     let child_type_statement = format!(
                         "{}{}",
                         childrens.unwrap_or_default(),
-                        self.type_defines_from_obj(&child_type_key, obj)
+                        self.type_defines_from_obj(child_type.ref_type_key(), obj)
                     );
-                    let child_type_key = if self.optional_checker.is_optional(type_key, &filed_key)
-                    {
-                        self.mapper.make_optional_type(&child_type_key)
-                    } else {
-                        child_type_key
-                    };
+                    let child_type_key =
+                        child_type.for_parent_filed(type_key, &self.optional_checker, &self.mapper);
                     let filed_statement = format!(
                         "{}{}\n",
                         filed_statement,
@@ -161,20 +200,17 @@ where
                     let rep = arr.remove(0);
                     match rep {
                         Json::Object(obj) => {
-                            let child_type_key = self.child_type_key(type_key, &filed_key);
+                            let child_type = ChildTypeDefine::new(&type_key, &filed_key);
                             let child_type_statement = format!(
                                 "{}{}",
                                 childrens.unwrap_or_default(),
-                                self.type_defines_from_obj(&child_type_key, obj)
+                                self.type_defines_from_obj(child_type.ref_type_key(), obj)
                             );
-                            println!("child_type_statement = {}", child_type_statement);
-                            let array_type = self.mapper.make_array_type(&child_type_key);
-                            let child_type_key =
-                                if self.optional_checker.is_optional(type_key, &filed_key) {
-                                    self.mapper.make_optional_type(&array_type)
-                                } else {
-                                    array_type
-                                };
+                            let child_type_key = child_type.for_parent_array_filed(
+                                type_key,
+                                &self.optional_checker,
+                                &self.mapper,
+                            );
                             let filed_statement = format!(
                                 "{}{}\n",
                                 filed_statement,
