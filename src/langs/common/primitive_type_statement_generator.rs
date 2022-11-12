@@ -1,4 +1,7 @@
-use crate::traits::{json_lang_mapper::JsonLangMapper, optional_checker::OptionalChecker};
+use crate::{
+    json::Json,
+    traits::{json_lang_mapper::JsonLangMapper, optional_checker::OptionalChecker},
+};
 
 pub struct PrimitiveTypeStatementGenerator<'a, M, O>
 where
@@ -27,6 +30,24 @@ where
             filed_key,
             mapper,
             optional_checker,
+        }
+    }
+    pub fn from_json(&self, json: Json) -> String {
+        match json {
+            Json::String(_) => self.case_string(),
+            Json::Null => self.case_null(),
+            Json::Number(num) => self.case_num(&num),
+            Json::Boolean(_) => self.case_boolean(),
+            _ => panic!("this method is not obj or array case json -> {:?}", json),
+        }
+    }
+    pub fn from_json_to_array(&self, json: Json) -> String {
+        match json {
+            Json::String(_) => self.case_string_array(),
+            Json::Null => self.case_null_array(),
+            Json::Number(num) => self.case_num_array(&num),
+            Json::Boolean(_) => self.case_boolean_array(),
+            _ => panic!("this method is not obj or array case json -> {:?}", json),
         }
     }
     pub fn case_num_array(&self, num: &serde_json::Number) -> String {

@@ -132,34 +132,22 @@ where
         filed_key: &str,
         json: Json,
     ) -> String {
-        let primitive_type_generator = PrimitiveTypeStatementGenerator::new(
+        PrimitiveTypeStatementGenerator::new(
             type_key,
             &filed_key,
             &self.mapper,
             &self.optional_checker,
-        );
-        match json {
-            Json::String(_) => primitive_type_generator.case_string_array(),
-            Json::Null => primitive_type_generator.case_null_array(),
-            Json::Number(num) => primitive_type_generator.case_num_array(&num),
-            Json::Boolean(_) => primitive_type_generator.case_boolean_array(),
-            _ => panic!("this method is not obj or array case json -> {:?}", json),
-        }
+        )
+        .from_json_to_array(json)
     }
     fn primitive_type_generaotor(&self, type_key: &str, filed_key: &str, json: Json) -> String {
-        let primitive_type_generator = PrimitiveTypeStatementGenerator::new(
+        PrimitiveTypeStatementGenerator::new(
             type_key,
             &filed_key,
             &self.mapper,
             &self.optional_checker,
-        );
-        match json {
-            Json::String(_) => primitive_type_generator.case_string(),
-            Json::Null => primitive_type_generator.case_null(),
-            Json::Number(num) => primitive_type_generator.case_num(&num),
-            Json::Boolean(_) => primitive_type_generator.case_boolean(),
-            _ => panic!("this method is not obj or array case json -> {:?}", json),
-        }
+        )
+        .from_json(json)
     }
     fn case_arr(&self, _: Vec<Json>) -> String {
         //self.mapper.make_array_type(type_str)
@@ -266,10 +254,7 @@ where
         for (filed_key, v) in arr {
             for json in v {
                 match json {
-                    Json::Object(obj) => {
-                        let data = "";
-                        let data = "";
-                    }
+                    Json::Object(obj) => childrens = self.type_defines_from_obj(type_key, obj),
                     _ => {
                         self.stack_filed_statement(
                             &mut filed_statement,
