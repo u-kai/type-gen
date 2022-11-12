@@ -4,6 +4,7 @@ use npc::convertor::NamingPrincipalConvertor;
 
 use crate::{
     json::Json,
+    langs::rust::filed_statements::filed_statement,
     traits::{
         filed_statements::filed_statement::FiledStatement, json_lang_mapper::JsonLangMapper,
         off_side_rule::OffSideRule, optional_checker::OptionalChecker,
@@ -175,7 +176,7 @@ where
     fn type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
         let (filed_statement, childrens) = obj.into_iter().fold(
             (String::new(), None),
-            |(filed_statement, childrens), (filed_key, v)| match v {
+            |(mut filed_statement, childrens), (filed_key, v)| match v {
                 Json::Object(obj) => {
                     let child_type = ChildTypeDefine::new(&type_key, &filed_key);
                     let child_type_statement = format!(
@@ -235,35 +236,22 @@ where
                                 return (filed_statement, Some(child_type_statement));
                             }
                             _ => {
-                                return (
-                                    format!(
-                                        "{}{}\n",
-                                        filed_statement,
-                                        self.filed_statement.create_statement(
-                                            &filed_key,
-                                            &self.primitive_array_type_generaotor(
-                                                type_key, &filed_key, json
-                                            ),
-                                        )
-                                    ),
-                                    childrens,
-                                )
+                                self.stack_array_filed_statement(
+                                    &mut filed_statement,
+                                    type_key,
+                                    &filed_key,
+                                    json,
+                                );
+                                return (filed_statement, childrens);
                             }
                         }
                     }
                     panic!()
                 }
-                _ => (
-                    format!(
-                        "{}{}\n",
-                        filed_statement,
-                        self.filed_statement.create_statement(
-                            &filed_key,
-                            &self.primitive_type_generaotor(type_key, &filed_key, v),
-                        )
-                    ),
-                    childrens,
-                ),
+                _ => {
+                    self.stack_filed_statement(&mut filed_statement, type_key, &filed_key, v);
+                    (filed_statement, childrens)
+                }
             },
         );
         self.create_type_statement(type_key, filed_statement, childrens.unwrap_or_default())
@@ -275,7 +263,7 @@ where
     ) -> String {
         let mut filed_statement = String::new();
         let mut childrens = String::new();
-        for (key, v) in arr {
+        for (filed_key, v) in arr {
             for json in v {
                 match json {
                     Json::Object(obj) => {
@@ -283,12 +271,11 @@ where
                         let data = "";
                     }
                     _ => {
-                        filed_statement += &format!(
-                            "{}\n",
-                            self.filed_statement.create_statement(
-                                &key,
-                                &self.primitive_type_generaotor(type_key, &key, json),
-                            )
+                        self.stack_filed_statement(
+                            &mut filed_statement,
+                            type_key,
+                            &filed_key,
+                            json,
                         );
                         break;
                     }
@@ -296,6 +283,36 @@ where
             }
         }
         self.create_type_statement(type_key, filed_statement, childrens)
+    }
+    fn stack_array_filed_statement(
+        &self,
+        filed_statement: &mut String,
+        type_key: &str,
+        filed_key: &str,
+        json: Json,
+    ) {
+        *filed_statement += &format!(
+            "{}\n",
+            self.filed_statement.create_statement(
+                &filed_key,
+                &self.primitive_array_type_generaotor(type_key, filed_key, json),
+            )
+        );
+    }
+    fn stack_filed_statement(
+        &self,
+        filed_statement: &mut String,
+        type_key: &str,
+        filed_key: &str,
+        json: Json,
+    ) {
+        *filed_statement += &format!(
+            "{}\n",
+            self.filed_statement.create_statement(
+                &filed_key,
+                &self.primitive_type_generaotor(type_key, filed_key, json),
+            )
+        );
     }
     fn create_type_statement(
         &self,
