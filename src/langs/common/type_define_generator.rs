@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use npc::convertor::NamingPrincipalConvertor;
 
@@ -297,6 +297,7 @@ where
     O: OptionalChecker,
 {
     type_key: &'a str,
+    filed_key: &'a str,
     arr: Vec<Json>,
     mapper: &'a M,
     optional_checker: &'a O,
@@ -306,15 +307,39 @@ where
     M: JsonLangMapper,
     O: OptionalChecker,
 {
-    pub fn new(type_key: &'a str, arr: Vec<Json>, mapper: &'a M, optional_checker: &'a O) -> Self {
+    pub fn new(
+        type_key: &'a str,
+        filed_key: &'a str,
+        arr: Vec<Json>,
+        mapper: &'a M,
+        optional_checker: &'a O,
+    ) -> Self {
         Self {
             type_key,
+            filed_key,
             arr,
             mapper,
             optional_checker,
         }
     }
-    pub fn convert(&self) -> String {
+    pub fn convert(self) -> String {
+        //let mut map = BTreeMap::new();
+        for json in self.arr {
+            match json {
+                Json::Object(obj) => {
+                    ();
+                }
+                _ => {
+                    let p = PrimitiveTypeStatementGenerator::new(
+                        self.type_key,
+                        self.filed_key,
+                        self.mapper,
+                        self.optional_checker,
+                    );
+                    return p.from_json(json);
+                }
+            }
+        }
         String::new()
     }
 }
@@ -369,15 +394,15 @@ mod test_type_define_gen {
         };
         let mapper = FakeMapper;
         let optional_checker = BaseOptionalChecker::default();
-        let convertor = ArrayJsonConvertor::new("Test", json, &mapper, &optional_checker);
-        let tobe = "struct Test {
+        let convertor = ArrayJsonConvertor::new("Test", "obj", json, &mapper, &optional_checker);
+        let tobe = "struct TestObj {
     age: Option<usize>,
     id: Option<usize>,
     name: Option<String>,
     obj: Option<TestObj>,
 }
 
-struct TestObj {
+struct TestObjObj {
     name: Option<String>,
 }
 
