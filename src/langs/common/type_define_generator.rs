@@ -266,14 +266,7 @@ where
                 ),
             },
         );
-        format!(
-            "{} {}{}{}\n\n{}",
-            self.type_statement.create_statement(type_key),
-            self.off_side_rule.start(),
-            filed_statement,
-            self.off_side_rule.end(),
-            childrens.unwrap_or_default()
-        )
+        self.create_type_statement(type_key, filed_statement, childrens.unwrap_or_default())
     }
     fn type_defines_from_arr_obj(
         &self,
@@ -302,6 +295,14 @@ where
                 }
             }
         }
+        self.create_type_statement(type_key, filed_statement, childrens)
+    }
+    fn create_type_statement(
+        &self,
+        type_key: &str,
+        filed_statement: String,
+        childrens: String,
+    ) -> String {
         format!(
             "{} {}{}{}\n\n{}",
             self.type_statement.create_statement(type_key),
