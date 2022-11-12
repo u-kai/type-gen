@@ -97,51 +97,49 @@ where
             Json::Number(num) => self.mapper.case_num(&num),
             Json::Boolean(_) => self.mapper.case_bool().to_string(),
             Json::Array(arr) => self.case_arr(arr),
-            Json::Object(obj) => {
-                let root_statement = self.make_type_defines_from_obj(&self.root_type, obj);
-                self.type_defines.borrow_mut().push(root_statement);
-                self.type_defines
-                    .into_inner()
-                    .into_iter()
-                    .rev()
-                    .reduce(|acc, cur| format!("{}\n\n{}", acc, cur))
-                    .unwrap()
-            }
+            Json::Object(obj) => self.make_type_defines_from_obj(&self.root_type, obj),
         }
     }
     fn make_type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
-        let filed_statement = obj
-            .into_iter()
-            .fold(String::new(), |acc, (filed_key, v)| match v {
-                Json::String(_) => {
-                    if self
-                        .optional_checker
-                        .is_optional(type_key, filed_key.as_str())
-                    {
-                        self.mapper.make_optional_type(self.mapper.case_string())
-                    } else {
-                        self.mapper.case_string().to_string()
-                    }
-                }
-                Json::Null => String::new(),
-                Json::Number(num) => String::new(),
-                Json::Boolean(_) => String::new(),
+        let (filed_statement, childrens) = obj.into_iter().fold(
+            (String::new(), None),
+            |(filed_statement, childrens), (filed_key, v)| match v {
                 Json::Object(obj) => {
                     let child_type_key = self.child_type_key(type_key, filed_key.as_str());
-                    let child_type_statement = self.make_child_statement(&child_type_key, obj);
-                    self.type_defines.borrow_mut().push(child_type_statement);
-                    if self
-                        .optional_checker
-                        .is_optional(type_key, filed_key.as_str())
+                    let child_type_statement = format!(
+                        "{}{}\n\n",
+                        childrens.unwrap_or_default(),
+                        self.make_type_defines_from_obj(&child_type_key, obj)
+                    );
+                    let child_type_key = if self.optional_checker.is_optional(type_key, &filed_key)
                     {
                         self.mapper.make_optional_type(&child_type_key)
                     } else {
                         child_type_key
-                    }
+                    };
+                    let filed_statement = format!(
+                        "{}{}\n",
+                        filed_statement,
+                        self.filed_statement
+                            .create_statement(&filed_key, &child_type_key)
+                    );
+                    (filed_statement, Some(child_type_statement))
                 }
-                Json::Array(arr) => self.case_arr_with_key(type_key, filed_key.as_str(), arr),
-            });
-        String::new()
+                Json::Array(arr) => (String::new(), None), //self.case_arr_with_key(type_key, filed_key.as_str(), arr),
+                _ => (
+                    self.primitive_type_generaotor(type_key, &filed_key, v),
+                    None,
+                ),
+            },
+        );
+        format!(
+            "{} {}{}{}\n\n{}",
+            self.type_statement.create_statement(type_key),
+            self.off_side_rule.start(),
+            filed_statement,
+            self.off_side_rule.end(),
+            childrens.unwrap_or_default()
+        )
     }
     fn make_filed_statement_and_staking(
         &self,
@@ -194,6 +192,21 @@ where
         child_type_statement
     }
 
+    fn primitive_type_generaotor(&self, type_key: &str, filed_key: &str, json: Json) -> String {
+        let primitive_type_generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            &filed_key,
+            &self.mapper,
+            &self.optional_checker,
+        );
+        match json {
+            Json::String(_) => primitive_type_generator.case_string(),
+            Json::Null => primitive_type_generator.case_null(),
+            Json::Number(num) => primitive_type_generator.case_num(&num),
+            Json::Boolean(_) => primitive_type_generator.case_boolean(),
+            _ => panic!("this method is not obj or array case json -> {:?}", json),
+        }
+    }
     /// ### array containe some type is not consider example below
     /// \["hello",0,{"name":"kai"}\]<br>
     /// above case is retrun Array(String)<>
@@ -280,7 +293,10 @@ where
 mod test_type_define_gen {
 
     use crate::langs::{
-        common::{filed_comment::BaseFiledComment, type_comment::BaseTypeComment},
+        common::{
+            filed_comment::BaseFiledComment, primitive_type_statement_generator::FakeMapper,
+            type_comment::BaseTypeComment,
+        },
         rust::{
             filed_statements::{
                 filed_attr::RustFiledAttributeStore, filed_statement::RustFiledStatement,
@@ -298,112 +314,73 @@ mod test_type_define_gen {
     };
 
     use super::*;
-    //#[test]
-    //fn test_get_json_from_array_json() {
-    //let json = r#"
-    //[
-    //{
-    //"name":"kai"
-    //},
-    //{
-    //"userId":12345,
-    //"test":"test-string",
-    //"entities":{
-    //"id":0
-    //}
-    //},
-    //{
-    //"age":20
-    //}
-    //]
-    //"#;
-    //let json = Json::from(json);
-    //let  Json::Array(array) = json else {
-    //panic!()
-    //};
-    //let mut child = BTreeMap::new();
-    //child.insert("id".to_string(), Json::Number(0.into()));
-    //let mut tobe = BTreeMap::new();
-    //tobe.insert("name".to_string(), Json::String("kai".to_string()));
-    //tobe.insert("userId".to_string(), Json::Number(12345.into()));
-    //tobe.insert("test".to_string(), Json::String("test-string".to_string()));
-    //tobe.insert("entities".to_string(), Json::Object(child));
-    //tobe.insert("age".to_string(), Json::Number(20.into()));
-    //let tobe = Json::Object(tobe);
-    //assert_eq!(get_json_from_array_json(array), tobe);
-    //}
+    struct FakeTypeStatement {
+        result: String,
+    }
+    impl TypeStatement for FakeTypeStatement {
+        const TYPE_STATEMENT: &'static str = "";
+        fn create_statement(&self, _: &str) -> String {
+            self.result.clone()
+        }
+    }
+    struct FakeFiledStatement;
+    impl FiledStatement for FakeFiledStatement {
+        fn create_statement(&self, filed_key: &str, filed_type: &str) -> String {
+            self.add_head_space(format!(
+                "{}: {}{}",
+                filed_key,
+                filed_type,
+                Self::FILED_DERIMITA
+            ))
+        }
+    }
+    struct FakeOffSideRule;
+
+    impl FakeOffSideRule {
+        const START_AND_NEXT_LINE: &'static str = "{\n";
+        const END: &'static str = "}";
+    }
+    impl OffSideRule for FakeOffSideRule {
+        fn start(&self) -> &'static str {
+            Self::START_AND_NEXT_LINE
+        }
+        fn end(&self) -> &'static str {
+            Self::END
+        }
+    }
     #[test]
-    fn test_case_rust() {
+    fn test_make_define() {
         let json = r#"
             {
-                "data":[
-                    {
-                        "userId":12345,
-                        "test":"test-string",
-                        "entities":{
-                            "id":0
-                        }
-                    }
-                ]
+                "id":0,
+                "name":"kai"
             }
         "#;
-        let tobe = r#"#[derive(Serialize,Desrialize)]
-pub struct TestJson {
-    data: Vec<TestJsonData>,
-}
-
-#[derive(Serialize,Desrialize)]
-struct TestJsonData {
-    entities: Option<TestJsonDataEntities>,
-    test: Option<String>,
-    #[serde(rename = "userId")]
-    user_id: Option<i64>,
-}
-
-#[derive(Serialize,Desrialize)]
-pub struct TestJsonDataEntities {
-    id: Option<i64>,
-}"#
-        .to_string();
+        let struct_name = "Test";
         let mut optional_checker = BaseOptionalChecker::default();
-        optional_checker.add_require("TestJson", "data");
-        let t_comment = BaseTypeComment::new("//");
-        let mut t_attr = RustTypeAttributeStore::new();
-        t_attr.add_attr(
-            "TestJson",
-            RustTypeAttribute::Derive(vec!["Serialize".to_string(), "Desrialize".to_string()]),
-        );
-        t_attr.add_attr(
-            "TestJsonData",
-            RustTypeAttribute::Derive(vec!["Serialize".to_string(), "Desrialize".to_string()]),
-        );
-        t_attr.add_attr(
-            "TestJsonDataEntities",
-            RustTypeAttribute::Derive(vec!["Serialize".to_string(), "Desrialize".to_string()]),
-        );
-        let mut t_visi = RustTypeVisibilityProvider::new();
-        t_visi.add_visibility("TestJson", RustVisibility::Public);
-        t_visi.add_visibility("TestJsonDataEntities", RustVisibility::Public);
-        let rw = RustReservedWords::new();
-        let f_comment = BaseFiledComment::new("//");
-        let f_attr = RustFiledAttributeStore::new();
-        let f_visi = RustFiledVisibilityProvider::new();
-        let osr = RustOffSideRule::new();
-        let mapper = JsonRustMapper::new();
-        let t_statement = RustTypeStatement::new(t_comment, t_visi, t_attr);
-        let f_statement = RustFiledStatement::new(f_comment, RefCell::new(f_attr), f_visi, rw);
-        let rust = TypeDefineGenerator::new(
-            "TestJson",
+        let mapper = FakeMapper;
+        let osr = FakeOffSideRule;
+        optional_checker.add_require(struct_name, "id");
+        let t_statement = FakeTypeStatement {
+            result: format!("struct {}", struct_name),
+        };
+        let f_statement = FakeFiledStatement;
+        let type_gen = TypeDefineGenerator::new(
+            struct_name,
             mapper,
             t_statement,
             f_statement,
             osr,
             optional_checker,
         );
-        assert_eq!(rust.gen_from_json_(json), tobe);
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+}"#;
+        assert_eq!(type_gen.gen_from_json_(json), tobe.to_string());
     }
     #[test]
-    fn test_case_rust_() {
+    fn test_case_rust() {
         let json = r#"
             {
                 "data":[

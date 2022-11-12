@@ -88,27 +88,6 @@ mod test_primitive_type_statement_generator {
             self.type_keys.contains(&type_key) && self.field_keys.contains(&filed_key)
         }
     }
-    struct FakeMapper;
-    impl JsonLangMapper for FakeMapper {
-        fn case_bool(&self) -> &'static str {
-            "bool"
-        }
-        fn case_null(&self) -> &'static str {
-            "null"
-        }
-        fn case_num(&self, _: &serde_json::Number) -> String {
-            "num".to_string()
-        }
-        fn case_string(&self) -> &'static str {
-            "string"
-        }
-        fn make_array_type(&self, type_str: &str) -> String {
-            format!("Vec<{}>", type_str)
-        }
-        fn make_optional_type(&self, type_str: &str) -> String {
-            format!("Option<{}>", type_str)
-        }
-    }
 
     #[test]
     fn test_case_bool_array() {
@@ -156,7 +135,7 @@ mod test_primitive_type_statement_generator {
         );
         assert_eq!(
             generator.case_num_array(&Number::from_f64(0_f64).unwrap()),
-            "Option<Vec<num>>".to_string()
+            "Option<Vec<usize>>".to_string()
         );
         let generator = PrimitiveTypeStatementGenerator::new(
             type_key,
@@ -166,7 +145,7 @@ mod test_primitive_type_statement_generator {
         );
         assert_eq!(
             generator.case_num_array(&Number::from_f64(0_f64).unwrap()),
-            "Vec<num>".to_string()
+            "Vec<usize>".to_string()
         );
     }
     #[test]
@@ -212,7 +191,7 @@ mod test_primitive_type_statement_generator {
         );
         assert_eq!(
             generator.case_string_array(),
-            "Option<Vec<string>>".to_string()
+            "Option<Vec<String>>".to_string()
         );
         let generator = PrimitiveTypeStatementGenerator::new(
             type_key,
@@ -220,7 +199,7 @@ mod test_primitive_type_statement_generator {
             &mapper,
             &optional_checker,
         );
-        assert_eq!(generator.case_string_array(), "Vec<string>".to_string());
+        assert_eq!(generator.case_string_array(), "Vec<String>".to_string());
     }
     #[test]
     fn test_case_num() {
@@ -240,7 +219,7 @@ mod test_primitive_type_statement_generator {
         );
         assert_eq!(
             generator.case_num(&Number::from_f64(0_f64).unwrap()),
-            "Option<num>".to_string()
+            "Option<usize>".to_string()
         );
         let generator = PrimitiveTypeStatementGenerator::new(
             type_key,
@@ -250,7 +229,7 @@ mod test_primitive_type_statement_generator {
         );
         assert_eq!(
             generator.case_num(&Number::from_f64(0_f64).unwrap()),
-            "num".to_string()
+            "usize".to_string()
         );
     }
     #[test]
@@ -294,13 +273,40 @@ mod test_primitive_type_statement_generator {
             &mapper,
             &optional_checker,
         );
-        assert_eq!(generator.case_string(), "Option<string>".to_string());
+        assert_eq!(generator.case_string(), "Option<String>".to_string());
         let generator = PrimitiveTypeStatementGenerator::new(
             type_key,
             require_filed_key,
             &mapper,
             &optional_checker,
         );
-        assert_eq!(generator.case_string(), "string".to_string());
+        assert_eq!(generator.case_string(), "String".to_string());
+    }
+}
+
+pub struct FakeMapper;
+impl FakeMapper {
+    pub fn case_without_num(&self) -> String {
+        "usize".to_string()
+    }
+}
+impl JsonLangMapper for FakeMapper {
+    fn case_bool(&self) -> &'static str {
+        "bool"
+    }
+    fn case_null(&self) -> &'static str {
+        "null"
+    }
+    fn case_num(&self, _: &serde_json::Number) -> String {
+        self.case_without_num()
+    }
+    fn case_string(&self) -> &'static str {
+        "String"
+    }
+    fn make_array_type(&self, type_str: &str) -> String {
+        format!("Vec<{}>", type_str)
+    }
+    fn make_optional_type(&self, type_str: &str) -> String {
+        format!("Option<{}>", type_str)
     }
 }
