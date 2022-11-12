@@ -9,6 +9,7 @@ use crate::{
         off_side_rule::OffSideRule, optional_checker::OptionalChecker,
         type_statements::type_statement::TypeStatement,
     },
+    utils::store_fn::push_to_btree_vec,
 };
 
 use super::{
@@ -196,39 +197,61 @@ where
                     );
                     (filed_statement, Some(child_type_statement))
                 }
-                Json::Array(mut arr) => {
+                Json::Array(arr) => {
                     if arr.len() == 0 {
                         println!("{} can not define. because array is empty ", self.root_type);
                         return (String::new(), None);
                     }
-                    let rep = arr.remove(0);
-                    match rep {
-                        Json::Object(obj) => {
-                            let child_type = ChildTypeDefine::new(&type_key, &filed_key);
-                            let child_type_statement = format!(
-                                "{}{}",
-                                childrens.unwrap_or_default(),
-                                self.type_defines_from_obj(child_type.type_key(), obj)
-                            );
-                            let filed_statement = format!(
-                                "{}{}\n",
-                                filed_statement,
-                                self.filed_statement.create_statement(
-                                    child_type.parent_filed_key(),
-                                    &child_type.for_parent_array_filed(
-                                        type_key,
-                                        &self.optional_checker,
-                                        &self.mapper,
+                    let mut map = BTreeMap::new();
+                    for json in arr {
+                        match json {
+                            Json::Object(obj) => {
+                                for (k, v) in obj.clone() {
+                                    push_to_btree_vec(&mut map, k, v)
+                                }
+                                let child_type = ChildTypeDefine::new(&type_key, &filed_key);
+                                let filed_statement = format!(
+                                    "{}{}\n",
+                                    filed_statement,
+                                    self.filed_statement.create_statement(
+                                        child_type.parent_filed_key(),
+                                        &child_type.for_parent_array_filed(
+                                            type_key,
+                                            &self.optional_checker,
+                                            &self.mapper,
+                                        )
                                     )
+                                );
+                                let child_type_statement = format!(
+                                    "{}{}",
+                                    childrens.unwrap_or_default(),
+                                    self.type_defines_from_obj(child_type.type_key(), obj)
+                                );
+                                //let child_type_statement = format!(
+                                //"{}{}",
+                                //childrens.unwrap_or_default(),
+                                //self.type_defines_from_obj(child_type.parent_filed_key(), obj)
+                                //);
+                                return (filed_statement, Some(child_type_statement));
+                            }
+                            _ => {
+                                return (
+                                    format!(
+                                        "{}{}\n",
+                                        filed_statement,
+                                        self.filed_statement.create_statement(
+                                            &filed_key,
+                                            &self.primitive_array_type_generaotor(
+                                                type_key, &filed_key, json
+                                            ),
+                                        )
+                                    ),
+                                    childrens,
                                 )
-                            );
-                            (filed_statement, Some(child_type_statement))
+                            }
                         }
-                        _ => (
-                            self.primitive_array_type_generaotor(type_key, &filed_key, rep),
-                            childrens,
-                        ),
                     }
+                    panic!()
                 }
                 _ => (
                     format!(
@@ -250,6 +273,42 @@ where
             filed_statement,
             self.off_side_rule.end(),
             childrens.unwrap_or_default()
+        )
+    }
+    fn type_defines_from_arr_obj(
+        &self,
+        type_key: &str,
+        arr: BTreeMap<String, Vec<Json>>,
+    ) -> String {
+        let mut filed_statement = String::new();
+        let mut childrens = String::new();
+        for (key, v) in arr {
+            for json in v {
+                match json {
+                    Json::Object(obj) => {
+                        let data = "";
+                        let data = "";
+                    }
+                    _ => {
+                        filed_statement += &format!(
+                            "{}\n",
+                            self.filed_statement.create_statement(
+                                &key,
+                                &self.primitive_type_generaotor(type_key, &key, json),
+                            )
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+        format!(
+            "{} {}{}{}\n\n{}",
+            self.type_statement.create_statement(type_key),
+            self.off_side_rule.start(),
+            filed_statement,
+            self.off_side_rule.end(),
+            childrens
         )
     }
 }
@@ -458,6 +517,28 @@ struct TestObj {
             make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
             tobe
         );
+    }
+    #[test]
+    fn test_make_define_case_obj_has_primitive_array() {
+        let json = r#"
+            {
+                "id":0,
+                "name":"kai",
+                "pri_array": ["kai","hamabe"]
+            }
+        "#;
+        let struct_name = "Test";
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require(struct_name, "id");
+        let type_gen = make_fake_type_generator(struct_name, optional_checker);
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+    pri_array: Option<Vec<String>>,
+}
+
+"#;
+        assert_eq!(type_gen.gen_from_json(json), tobe.to_string());
     }
     #[test]
     fn test_make_define_case_only_primitive() {

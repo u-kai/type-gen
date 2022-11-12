@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde_json::{Number, Value};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Json {
     Array(Vec<Json>),
     Boolean(bool),
@@ -45,7 +45,6 @@ impl From<&str> for Json {
 mod test_json {
     use super::Json;
     use std::collections::BTreeMap;
-
     #[test]
     fn test_from_str_to_json() {
         let source = r#"{"key":"value"}"#;
