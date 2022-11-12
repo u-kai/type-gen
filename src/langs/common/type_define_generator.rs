@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::BTreeMap};
+use std::collections::BTreeMap;
 
 use npc::convertor::NamingPrincipalConvertor;
 
@@ -9,7 +9,6 @@ use crate::{
         off_side_rule::OffSideRule, optional_checker::OptionalChecker,
         type_statements::type_statement::TypeStatement,
     },
-    utils::store_fn::{push_to_btree_vec, push_to_kv_vec},
 };
 
 use super::{
@@ -36,7 +35,6 @@ where
     O: OffSideRule,
 {
     root_type: String,
-    type_defines: RefCell<Vec<TypeDefine>>,
     optional_checker: BaseOptionalChecker,
     mapper: M,
     type_statement: T,
@@ -61,7 +59,6 @@ where
     ) -> Self {
         Self {
             root_type: root_type.into(),
-            type_defines: RefCell::new(Vec::new()),
             optional_checker,
             mapper,
             type_statement,
@@ -77,80 +74,9 @@ where
             Json::Number(num) => self.mapper.case_num(&num),
             Json::Boolean(_) => self.mapper.case_bool().to_string(),
             Json::Array(arr) => self.case_arr(arr),
-            Json::Object(obj) => {
-                let root_statement = self.make_child_statement(&self.root_type, obj);
-                self.type_defines.borrow_mut().push(root_statement);
-                self.type_defines
-                    .into_inner()
-                    .into_iter()
-                    .rev()
-                    .reduce(|acc, cur| format!("{}\n\n{}", acc, cur))
-                    .unwrap()
-            }
-        }
-    }
-    pub fn gen_from_json_(self, json: &str) -> TypeDefine {
-        let json = Json::from(json);
-        match json {
-            Json::String(_) => self.mapper.case_string().to_string(),
-            Json::Null => self.mapper.case_null().to_string(),
-            Json::Number(num) => self.mapper.case_num(&num),
-            Json::Boolean(_) => self.mapper.case_bool().to_string(),
-            Json::Array(arr) => self.case_arr(arr),
             Json::Object(obj) => self.make_type_defines_from_obj(&self.root_type, obj),
         }
     }
-    fn make_filed_statement_and_staking(
-        &self,
-        type_key: &str,
-        filed_key: &str,
-        obj: Json,
-    ) -> String {
-        let primitive_type_generaotor = PrimitiveTypeStatementGenerator::new(
-            type_key,
-            filed_key,
-            &self.mapper,
-            &self.optional_checker,
-        );
-        let filed_type = match obj {
-            Json::String(_) => primitive_type_generaotor.case_string(),
-            Json::Null => primitive_type_generaotor.case_null(),
-            Json::Number(num) => primitive_type_generaotor.case_num(&num),
-            Json::Boolean(_) => primitive_type_generaotor.case_boolean(),
-            Json::Object(obj) => {
-                let child_type_key = self.child_type_key(type_key, filed_key);
-                let child_type_statement = self.make_child_statement(&child_type_key, obj);
-                self.type_defines.borrow_mut().push(child_type_statement);
-                if self.optional_checker.is_optional(type_key, filed_key) {
-                    self.mapper.make_optional_type(&child_type_key)
-                } else {
-                    child_type_key
-                }
-            }
-            Json::Array(arr) => self.case_arr_with_key(type_key, filed_key, arr),
-        };
-        self.filed_statement
-            .create_statement(filed_key, &filed_type)
-    }
-    fn make_child_statement(&self, child_type_key: &str, obj: BTreeMap<String, Json>) -> String {
-        let child_type_statement = format!(
-            "{} {}",
-            self.type_statement.create_statement(child_type_key),
-            self.off_side_rule.start()
-        );
-        let mut child_type_statement =
-            obj.into_iter()
-                .fold(child_type_statement, |acc, (key, value)| {
-                    format!(
-                        "{}{}\n",
-                        acc,
-                        self.make_filed_statement_and_staking(child_type_key, key.as_str(), value)
-                    )
-                });
-        child_type_statement.push_str(self.off_side_rule.end());
-        child_type_statement
-    }
-
     fn primitive_array_type_generaotor(
         &self,
         type_key: &str,
@@ -189,75 +115,11 @@ where
     /// ### array containe some type is not consider example below
     /// \["hello",0,{"name":"kai"}\]<br>
     /// above case is retrun Array(String)<>
-    fn case_arr_with_key(&self, type_key: &str, filed_key: &str, arr: Vec<Json>) -> String {
-        // case TestObj
-        // {test : [{name:kai,age:20},{name:kai},{name:kai,age:20,like:{lang:rust,actor:hamabe}}]};
-        // type_key is TestObj
-        // filed_key is test
-        //
-        if arr.len() == 0 {
-            println!("{} can not define. because array is empty ", self.root_type);
-            return String::new();
-        }
-        let mut map = BTreeMap::new();
-        let primitive_type_generaotor = PrimitiveTypeStatementGenerator::new(
-            type_key,
-            filed_key,
-            &self.mapper,
-            &self.optional_checker,
-        );
-        for obj in arr {
-            match obj {
-                Json::Object(obj) => {
-                    for (k, v) in obj {
-                        push_to_btree_vec(&mut map, k, v)
-                    }
-                }
-                Json::String(_) => return primitive_type_generaotor.case_string_array(),
-                Json::Null => return primitive_type_generaotor.case_null_array(),
-                Json::Number(num) => return primitive_type_generaotor.case_num_array(&num),
-                Json::Boolean(_) => return primitive_type_generaotor.case_boolean_array(),
-                _ => todo!(),
-            }
-        }
-        // case obj
-        let child_type_key = self.child_type_key(type_key, filed_key);
-        let child_statement = self.make_child_statement_with_arr(&child_type_key, map);
-        self.type_defines.borrow_mut().push(child_statement);
-        let array_type = self.mapper.make_array_type(&child_type_key);
-        if self.optional_checker.is_optional(type_key, filed_key) {
-            self.mapper.make_optional_type(&array_type)
-        } else {
-            array_type
-        }
-    }
-    fn make_child_statement_with_arr(
-        &self,
-        child_type_key: &str,
-        map: BTreeMap<String, Vec<Json>>,
-    ) -> String {
-        let child_filed_statement = map
-            .into_iter()
-            .fold(String::new(), |acc, (key, mut value)| {
-                format!(
-                    "{}{}\n",
-                    acc,
-                    self.make_filed_statement_and_staking(
-                        child_type_key,
-                        key.as_str(),
-                        //todo fix value
-                        value.pop().unwrap()
-                    )
-                )
-            });
-        format!(
-            "{} {}{}{}",
-            self.type_statement.create_statement(child_type_key),
-            self.off_side_rule.start(),
-            child_filed_statement,
-            self.off_side_rule.end()
-        )
-    }
+    // case TestObj
+    // {test : [{name:kai,age:20},{name:kai},{name:kai,age:20,like:{lang:rust,actor:hamabe}}]};
+    // type_key is TestObj
+    // filed_key is test
+    //
     fn child_type_key(&self, parent_type_key: &str, child_key: &str) -> String {
         let npc = NamingPrincipalConvertor::new(child_key);
         format!("{}{}", parent_type_key, npc.to_pascal())
@@ -326,33 +188,6 @@ where
                             childrens,
                         ),
                     }
-                    //let mut map = BTreeMap::new();
-                    //for json in arr {
-                    //match json {
-                    //Json::Object(obj) => {
-                    //for (k, v) in obj {
-                    //push_to_btree_vec(&mut map, k, v)
-                    //}
-                    //}
-                    //_ => {
-                    //return (
-                    //self.primitive_array_type_generaotor(
-                    //type_key, &filed_key, json,
-                    //),
-                    //None,
-                    //)
-                    //}
-                    //}
-                    //}
-                    //// case obj
-                    //let child_type_key = self.child_type_key(type_key, filed_key);
-                    //let child_statement = self.make_child_statement_with_arr(&child_type_key, map);
-                    //let array_type = self.mapper.make_array_type(&child_type_key);
-                    //if self.optional_checker.is_optional(type_key, filed_key) {
-                    //self.mapper.make_optional_type(&array_type)
-                    //} else {
-                    //array_type
-                    //}
                 }
                 _ => (
                     format!(
@@ -380,6 +215,8 @@ where
 
 #[cfg(test)]
 mod test_type_define_gen {
+
+    use std::cell::RefCell;
 
     use crate::langs::{
         common::{
@@ -455,6 +292,63 @@ mod test_type_define_gen {
         )
     }
     #[test]
+    fn test_make_define_case_obj_and_diffarent_type_arr() {
+        let struct_name = "Test";
+        let json = r#"
+            {
+                "id":0,
+                "name":"kai",
+                "result":[
+                    {
+                        "obj": {
+                            "like":"hamabe"
+                        }
+                    },
+                    {
+                        "obj": {
+                            "id":0
+                        }
+                    },
+                    {
+                        "user": {
+                            "id":0,
+                            "name":"kai"
+                        }
+                    }
+                ]
+            }
+        "#;
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+    result: Option<Vec<TestResult>>,
+}
+
+struct TestResult {
+    obj: Option<TestResultObj>,
+    user:Option<TestResultUser>
+}
+
+struct TestResultObj {
+    id: usize,
+    like: String,
+}
+
+struct TestResultUser {
+    id: usize,
+    name: String,
+}
+
+"#;
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require(struct_name, "id");
+        optional_checker.add_require("TestResultObj", "like");
+        assert_eq!(
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
+            tobe
+        );
+    }
+    #[test]
     fn test_make_define_case_obj_and_arr() {
         let struct_name = "Test";
         let json = r#"
@@ -489,7 +383,7 @@ struct TestResultObj {
         optional_checker.add_require(struct_name, "id");
         optional_checker.add_require("TestResultObj", "like");
         assert_eq!(
-            make_fake_type_generator(struct_name, optional_checker).gen_from_json_(json),
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
             tobe
         );
     }
@@ -520,7 +414,7 @@ struct TestObj {
         optional_checker.add_require(struct_name, "id");
         optional_checker.add_require("TestObj", "like");
         assert_eq!(
-            make_fake_type_generator(struct_name, optional_checker).gen_from_json_(json),
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
             tobe
         );
     }
@@ -542,7 +436,7 @@ struct TestObj {
 }
 
 "#;
-        assert_eq!(type_gen.gen_from_json_(json), tobe.to_string());
+        assert_eq!(type_gen.gen_from_json(json), tobe.to_string());
     }
     #[test]
     fn test_case_rust() {
@@ -575,7 +469,9 @@ struct TestJsonData {
 #[derive(Serialize,Desrialize)]
 pub struct TestJsonDataEntities {
     id: Option<i64>,
-}"#
+}
+
+"#
         .to_string();
         let mut optional_checker = BaseOptionalChecker::default();
         optional_checker.add_require("TestJson", "data");

@@ -185,7 +185,9 @@ struct TestJsonData {
 #[derive(Serialize,Desrialize)]
 pub struct TestJsonDataEntities {
     id: Option<i64>,
-}"#
+}
+
+"#
         .to_string();
         let rust = RustTypeGeneratorBuilder::new()
             .add_attr_to_struct(
