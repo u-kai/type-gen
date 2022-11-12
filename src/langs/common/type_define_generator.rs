@@ -74,7 +74,7 @@ where
             Json::Number(num) => self.mapper.case_num(&num),
             Json::Boolean(_) => self.mapper.case_bool().to_string(),
             Json::Array(arr) => self.case_arr(arr),
-            Json::Object(obj) => self.make_type_defines_from_obj(&self.root_type, obj),
+            Json::Object(obj) => self.type_defines_from_obj(&self.root_type, obj),
         }
     }
     fn primitive_array_type_generaotor(
@@ -128,7 +128,7 @@ where
         //self.mapper.make_array_type(type_str)
         todo!("case arr")
     }
-    fn make_type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
+    fn type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
         let (filed_statement, childrens) = obj.into_iter().fold(
             (String::new(), None),
             |(filed_statement, childrens), (filed_key, v)| match v {
@@ -137,7 +137,7 @@ where
                     let child_type_statement = format!(
                         "{}{}",
                         childrens.unwrap_or_default(),
-                        self.make_type_defines_from_obj(&child_type_key, obj)
+                        self.type_defines_from_obj(&child_type_key, obj)
                     );
                     let child_type_key = if self.optional_checker.is_optional(type_key, &filed_key)
                     {
@@ -165,7 +165,7 @@ where
                             let child_type_statement = format!(
                                 "{}{}",
                                 childrens.unwrap_or_default(),
-                                self.make_type_defines_from_obj(&child_type_key, obj)
+                                self.type_defines_from_obj(&child_type_key, obj)
                             );
                             println!("child_type_statement = {}", child_type_statement);
                             let array_type = self.mapper.make_array_type(&child_type_key);
