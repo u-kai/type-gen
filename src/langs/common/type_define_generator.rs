@@ -361,8 +361,28 @@ mod test_type_define_gen {
             Self::END
         }
     }
+    fn make_fake_type_generator(
+        root_key: &str,
+        optional_checker: BaseOptionalChecker,
+    ) -> TypeDefineGenerator<FakeMapper, FakeTypeStatement, FakeFiledStatement, FakeOffSideRule>
+    {
+        let mapper = FakeMapper;
+        let osr = FakeOffSideRule;
+        let t_statement = FakeTypeStatement {
+            result: format!("struct {}", root_key),
+        };
+        let f_statement = FakeFiledStatement;
+        TypeDefineGenerator::new(
+            root_key,
+            mapper,
+            t_statement,
+            f_statement,
+            osr,
+            optional_checker,
+        )
+    }
     #[test]
-    fn test_make_define() {
+    fn test_make_define_case_only_primitive() {
         let json = r#"
             {
                 "id":0,
@@ -371,21 +391,8 @@ mod test_type_define_gen {
         "#;
         let struct_name = "Test";
         let mut optional_checker = BaseOptionalChecker::default();
-        let mapper = FakeMapper;
-        let osr = FakeOffSideRule;
         optional_checker.add_require(struct_name, "id");
-        let t_statement = FakeTypeStatement {
-            result: format!("struct {}", struct_name),
-        };
-        let f_statement = FakeFiledStatement;
-        let type_gen = TypeDefineGenerator::new(
-            struct_name,
-            mapper,
-            t_statement,
-            f_statement,
-            osr,
-            optional_checker,
-        );
+        let type_gen = make_fake_type_generator(struct_name, optional_checker);
         let tobe = r#"struct Test {
     id: usize,
     name: Option<String>,
