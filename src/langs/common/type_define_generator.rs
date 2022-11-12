@@ -101,19 +101,16 @@ where
         }
     }
     fn make_type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
-        println!("type = {}", type_key);
         let (filed_statement, childrens) = obj.into_iter().fold(
             (String::new(), None),
             |(filed_statement, childrens), (filed_key, v)| match v {
                 Json::Object(obj) => {
-                    let child_type_key = self.child_type_key(type_key, filed_key.as_str());
+                    let child_type_key = self.child_type_key(type_key, &filed_key);
                     let child_type_statement = format!(
-                        "{}{}\n\n",
+                        "{}{}",
                         childrens.unwrap_or_default(),
                         self.make_type_defines_from_obj(&child_type_key, obj)
                     );
-                    println!("key = {}", child_type_key);
-                    println!("statement = {}", child_type_statement);
                     let child_type_key = if self.optional_checker.is_optional(type_key, &filed_key)
                     {
                         self.mapper.make_optional_type(&child_type_key)
@@ -129,20 +126,17 @@ where
                     (filed_statement, Some(child_type_statement))
                 }
                 Json::Array(arr) => (String::new(), None), //self.case_arr_with_key(type_key, filed_key.as_str(), arr),
-                _ => {
-                    println!("key = {}", filed_key);
-                    (
-                        format!(
-                            "{}{}\n",
-                            filed_statement,
-                            self.filed_statement.create_statement(
-                                &filed_key,
-                                &self.primitive_type_generaotor(type_key, &filed_key, v),
-                            )
-                        ),
-                        None,
-                    )
-                }
+                _ => (
+                    format!(
+                        "{}{}\n",
+                        filed_statement,
+                        self.filed_statement.create_statement(
+                            &filed_key,
+                            &self.primitive_type_generaotor(type_key, &filed_key, v),
+                        )
+                    ),
+                    None,
+                ),
             },
         );
         format!(
@@ -327,13 +321,12 @@ mod test_type_define_gen {
     };
 
     use super::*;
-    struct FakeTypeStatement {
-        result: String,
-    }
+    struct FakeTypeStatement;
+
     impl TypeStatement for FakeTypeStatement {
         const TYPE_STATEMENT: &'static str = "";
-        fn create_statement(&self, _: &str) -> String {
-            self.result.clone()
+        fn create_statement(&self, type_key: &str) -> String {
+            format!("struct {}", type_key)
         }
     }
     struct FakeFiledStatement;
@@ -368,9 +361,7 @@ mod test_type_define_gen {
     {
         let mapper = FakeMapper;
         let osr = FakeOffSideRule;
-        let t_statement = FakeTypeStatement {
-            result: format!("struct {}", root_key),
-        };
+        let t_statement = FakeTypeStatement;
         let f_statement = FakeFiledStatement;
         TypeDefineGenerator::new(
             root_key,
@@ -380,6 +371,37 @@ mod test_type_define_gen {
             osr,
             optional_checker,
         )
+    }
+    #[test]
+    fn test_make_define_case_obj() {
+        let struct_name = "Test";
+        let json = r#"
+            {
+                "id":0,
+                "name":"kai",
+                "obj": {
+                    "like":"hamabe"
+                }
+            }
+        "#;
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+    obj: Option<TestObj>,
+}
+
+struct TestObj {
+    like: String,
+}
+
+"#;
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require(struct_name, "id");
+        optional_checker.add_require("TestObj", "like");
+        assert_eq!(
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json_(json),
+            tobe
+        );
     }
     #[test]
     fn test_make_define_case_only_primitive() {
