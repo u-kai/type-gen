@@ -100,54 +100,6 @@ where
             Json::Object(obj) => self.make_type_defines_from_obj(&self.root_type, obj),
         }
     }
-    fn make_type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
-        let (filed_statement, childrens) = obj.into_iter().fold(
-            (String::new(), None),
-            |(filed_statement, childrens), (filed_key, v)| match v {
-                Json::Object(obj) => {
-                    let child_type_key = self.child_type_key(type_key, &filed_key);
-                    let child_type_statement = format!(
-                        "{}{}",
-                        childrens.unwrap_or_default(),
-                        self.make_type_defines_from_obj(&child_type_key, obj)
-                    );
-                    let child_type_key = if self.optional_checker.is_optional(type_key, &filed_key)
-                    {
-                        self.mapper.make_optional_type(&child_type_key)
-                    } else {
-                        child_type_key
-                    };
-                    let filed_statement = format!(
-                        "{}{}\n",
-                        filed_statement,
-                        self.filed_statement
-                            .create_statement(&filed_key, &child_type_key)
-                    );
-                    (filed_statement, Some(child_type_statement))
-                }
-                Json::Array(arr) => (String::new(), None), //self.case_arr_with_key(type_key, filed_key.as_str(), arr),
-                _ => (
-                    format!(
-                        "{}{}\n",
-                        filed_statement,
-                        self.filed_statement.create_statement(
-                            &filed_key,
-                            &self.primitive_type_generaotor(type_key, &filed_key, v),
-                        )
-                    ),
-                    None,
-                ),
-            },
-        );
-        format!(
-            "{} {}{}{}\n\n{}",
-            self.type_statement.create_statement(type_key),
-            self.off_side_rule.start(),
-            filed_statement,
-            self.off_side_rule.end(),
-            childrens.unwrap_or_default()
-        )
-    }
     fn make_filed_statement_and_staking(
         &self,
         type_key: &str,
@@ -199,6 +151,26 @@ where
         child_type_statement
     }
 
+    fn primitive_array_type_generaotor(
+        &self,
+        type_key: &str,
+        filed_key: &str,
+        json: Json,
+    ) -> String {
+        let primitive_type_generator = PrimitiveTypeStatementGenerator::new(
+            type_key,
+            &filed_key,
+            &self.mapper,
+            &self.optional_checker,
+        );
+        match json {
+            Json::String(_) => primitive_type_generator.case_string_array(),
+            Json::Null => primitive_type_generator.case_null_array(),
+            Json::Number(num) => primitive_type_generator.case_num_array(&num),
+            Json::Boolean(_) => primitive_type_generator.case_boolean_array(),
+            _ => panic!("this method is not obj or array case json -> {:?}", json),
+        }
+    }
     fn primitive_type_generaotor(&self, type_key: &str, filed_key: &str, json: Json) -> String {
         let primitive_type_generator = PrimitiveTypeStatementGenerator::new(
             type_key,
@@ -294,6 +266,116 @@ where
         //self.mapper.make_array_type(type_str)
         todo!("case arr")
     }
+    fn make_type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
+        let (filed_statement, childrens) = obj.into_iter().fold(
+            (String::new(), None),
+            |(filed_statement, childrens), (filed_key, v)| match v {
+                Json::Object(obj) => {
+                    let child_type_key = self.child_type_key(type_key, &filed_key);
+                    let child_type_statement = format!(
+                        "{}{}",
+                        childrens.unwrap_or_default(),
+                        self.make_type_defines_from_obj(&child_type_key, obj)
+                    );
+                    let child_type_key = if self.optional_checker.is_optional(type_key, &filed_key)
+                    {
+                        self.mapper.make_optional_type(&child_type_key)
+                    } else {
+                        child_type_key
+                    };
+                    let filed_statement = format!(
+                        "{}{}\n",
+                        filed_statement,
+                        self.filed_statement
+                            .create_statement(&filed_key, &child_type_key)
+                    );
+                    (filed_statement, Some(child_type_statement))
+                }
+                Json::Array(mut arr) => {
+                    if arr.len() == 0 {
+                        println!("{} can not define. because array is empty ", self.root_type);
+                        return (String::new(), None);
+                    }
+                    let rep = arr.remove(0);
+                    match rep {
+                        Json::Object(obj) => {
+                            let child_type_key = self.child_type_key(type_key, &filed_key);
+                            let child_type_statement = format!(
+                                "{}{}",
+                                childrens.unwrap_or_default(),
+                                self.make_type_defines_from_obj(&child_type_key, obj)
+                            );
+                            println!("child_type_statement = {}", child_type_statement);
+                            let array_type = self.mapper.make_array_type(&child_type_key);
+                            let child_type_key =
+                                if self.optional_checker.is_optional(type_key, &filed_key) {
+                                    self.mapper.make_optional_type(&array_type)
+                                } else {
+                                    array_type
+                                };
+                            let filed_statement = format!(
+                                "{}{}\n",
+                                filed_statement,
+                                self.filed_statement
+                                    .create_statement(&filed_key, &child_type_key)
+                            );
+                            (filed_statement, Some(child_type_statement))
+                        }
+                        _ => (
+                            self.primitive_array_type_generaotor(type_key, &filed_key, rep),
+                            childrens,
+                        ),
+                    }
+                    //let mut map = BTreeMap::new();
+                    //for json in arr {
+                    //match json {
+                    //Json::Object(obj) => {
+                    //for (k, v) in obj {
+                    //push_to_btree_vec(&mut map, k, v)
+                    //}
+                    //}
+                    //_ => {
+                    //return (
+                    //self.primitive_array_type_generaotor(
+                    //type_key, &filed_key, json,
+                    //),
+                    //None,
+                    //)
+                    //}
+                    //}
+                    //}
+                    //// case obj
+                    //let child_type_key = self.child_type_key(type_key, filed_key);
+                    //let child_statement = self.make_child_statement_with_arr(&child_type_key, map);
+                    //let array_type = self.mapper.make_array_type(&child_type_key);
+                    //if self.optional_checker.is_optional(type_key, filed_key) {
+                    //self.mapper.make_optional_type(&array_type)
+                    //} else {
+                    //array_type
+                    //}
+                }
+                _ => (
+                    format!(
+                        "{}{}\n",
+                        filed_statement,
+                        self.filed_statement.create_statement(
+                            &filed_key,
+                            &self.primitive_type_generaotor(type_key, &filed_key, v),
+                        )
+                    ),
+                    childrens,
+                ),
+            },
+        );
+        format!(
+            "{} {}{}{}\n\n{}",
+            self.type_statement.create_statement(type_key),
+            self.off_side_rule.start(),
+            filed_statement,
+            self.off_side_rule.end(),
+            childrens.unwrap_or_default()
+        )
+    }
 }
 
 #[cfg(test)]
@@ -371,6 +453,45 @@ mod test_type_define_gen {
             osr,
             optional_checker,
         )
+    }
+    #[test]
+    fn test_make_define_case_obj_and_arr() {
+        let struct_name = "Test";
+        let json = r#"
+            {
+                "id":0,
+                "name":"kai",
+                "result":[
+                    {
+                        "obj": {
+                            "like":"hamabe"
+                        }
+                    }
+                ]
+            }
+        "#;
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+    result: Option<Vec<TestResult>>,
+}
+
+struct TestResult {
+    obj: Option<TestResultObj>,
+}
+
+struct TestResultObj {
+    like: String,
+}
+
+"#;
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require(struct_name, "id");
+        optional_checker.add_require("TestResultObj", "like");
+        assert_eq!(
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json_(json),
+            tobe
+        );
     }
     #[test]
     fn test_make_define_case_obj() {
