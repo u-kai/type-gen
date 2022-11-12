@@ -31,11 +31,11 @@ impl ChildTypeDefine {
             key: key.into(),
         }
     }
-    fn ref_type_key(&self) -> &str {
-        &self.name
+    fn parent_filed_key(&self) -> &str {
+        &self.key
     }
-    fn for_type_key(self) -> String {
-        self.name
+    fn type_key(&self) -> &str {
+        &self.name
     }
     fn for_parent_filed(
         &self,
@@ -180,15 +180,19 @@ where
                     let child_type_statement = format!(
                         "{}{}",
                         childrens.unwrap_or_default(),
-                        self.type_defines_from_obj(child_type.ref_type_key(), obj)
+                        self.type_defines_from_obj(child_type.type_key(), obj)
                     );
-                    let child_type_key =
-                        child_type.for_parent_filed(type_key, &self.optional_checker, &self.mapper);
                     let filed_statement = format!(
                         "{}{}\n",
                         filed_statement,
-                        self.filed_statement
-                            .create_statement(&filed_key, &child_type_key)
+                        self.filed_statement.create_statement(
+                            child_type.parent_filed_key(),
+                            &child_type.for_parent_filed(
+                                type_key,
+                                &self.optional_checker,
+                                &self.mapper,
+                            )
+                        )
                     );
                     (filed_statement, Some(child_type_statement))
                 }
@@ -204,18 +208,19 @@ where
                             let child_type_statement = format!(
                                 "{}{}",
                                 childrens.unwrap_or_default(),
-                                self.type_defines_from_obj(child_type.ref_type_key(), obj)
-                            );
-                            let child_type_key = child_type.for_parent_array_filed(
-                                type_key,
-                                &self.optional_checker,
-                                &self.mapper,
+                                self.type_defines_from_obj(child_type.type_key(), obj)
                             );
                             let filed_statement = format!(
                                 "{}{}\n",
                                 filed_statement,
-                                self.filed_statement
-                                    .create_statement(&filed_key, &child_type_key)
+                                self.filed_statement.create_statement(
+                                    child_type.parent_filed_key(),
+                                    &child_type.for_parent_array_filed(
+                                        type_key,
+                                        &self.optional_checker,
+                                        &self.mapper,
+                                    )
+                                )
                             );
                             (filed_statement, Some(child_type_statement))
                         }
