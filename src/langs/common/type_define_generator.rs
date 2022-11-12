@@ -244,31 +244,6 @@ where
         );
         self.create_type_statement(type_key, filed_statement, childrens.unwrap_or_default())
     }
-    fn type_defines_from_arr_obj(
-        &self,
-        type_key: &str,
-        arr: BTreeMap<String, Vec<Json>>,
-    ) -> String {
-        let mut filed_statement = String::new();
-        let mut childrens = String::new();
-        for (filed_key, v) in arr {
-            for json in v {
-                match json {
-                    Json::Object(obj) => childrens = self.type_defines_from_obj(type_key, obj),
-                    _ => {
-                        self.stack_filed_statement(
-                            &mut filed_statement,
-                            type_key,
-                            &filed_key,
-                            json,
-                        );
-                        break;
-                    }
-                }
-            }
-        }
-        self.create_type_statement(type_key, filed_statement, childrens)
-    }
     fn stack_array_filed_statement(
         &self,
         filed_statement: &mut String,
@@ -316,6 +291,33 @@ where
     }
 }
 
+pub(self) struct ArrayJsonConvertor<'a, M, O>
+where
+    M: JsonLangMapper,
+    O: OptionalChecker,
+{
+    type_key: &'a str,
+    arr: Vec<Json>,
+    mapper: &'a M,
+    optional_checker: &'a O,
+}
+impl<'a, M, O> ArrayJsonConvertor<'a, M, O>
+where
+    M: JsonLangMapper,
+    O: OptionalChecker,
+{
+    pub fn new(type_key: &'a str, arr: Vec<Json>, mapper: &'a M, optional_checker: &'a O) -> Self {
+        Self {
+            type_key,
+            arr,
+            mapper,
+            optional_checker,
+        }
+    }
+    pub fn convert(&self) -> String {
+        String::new()
+    }
+}
 #[cfg(test)]
 mod test_type_define_gen {
 
@@ -343,6 +345,45 @@ mod test_type_define_gen {
     };
 
     use super::*;
+    #[test]
+    fn test_array_json_to_type() {
+        let json = r#"[
+            {
+                "id":0,
+                "name":"kai"
+            },
+            {
+                "id":1,
+                "name":"hamabe",
+                "age":22
+            },
+            {
+                "obj":{
+                    "name":"kai"
+                }
+            }
+        ]"#;
+        let json = match Json::from(json) {
+            Json::Array(array) => array,
+            _ => panic!(),
+        };
+        let mapper = FakeMapper;
+        let optional_checker = BaseOptionalChecker::default();
+        let convertor = ArrayJsonConvertor::new("Test", json, &mapper, &optional_checker);
+        let tobe = "struct Test {
+    age: Option<usize>,
+    id: Option<usize>,
+    name: Option<String>,
+    obj: Option<TestObj>,
+}
+
+struct TestObj {
+    name: Option<String>,
+}
+
+";
+        assert_eq!(convertor.convert(), tobe);
+    }
     struct FakeTypeStatement;
 
     impl TypeStatement for FakeTypeStatement {
