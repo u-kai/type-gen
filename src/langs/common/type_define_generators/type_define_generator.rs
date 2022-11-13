@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
 
-use npc::convertor::NamingPrincipalConvertor;
-
 use crate::{
     json::Json,
     langs::common::optional_checker::BaseOptionalChecker,
@@ -88,75 +86,83 @@ where
     // type_key is TestObj
     // filed_key is test
     //
-    fn type_defines_from_obj(&self, type_key: &TypeKey, obj: BTreeMap<String, Json>) -> String {
+    fn type_defines_from_obj(
+        &self,
+        parent_type_key: &TypeKey,
+        obj: BTreeMap<String, Json>,
+    ) -> String {
         let (filed_statements, childrens) = obj.into_iter().fold(
             (String::new(), None),
-            |(mut filed_statements, childrens), (filed_key, filed_value)| match filed_value {
-                Json::Object(obj) => {
-                    let child_key = FiledKey::new(filed_key);
-                    let child_type = TypeKey::from_parent(&type_key, &child_key);
-                    let child_type_statement = format!(
-                        "{}{}",
-                        childrens.unwrap_or_default(),
-                        self.type_defines_from_obj(&child_type, obj)
-                    );
-                    filed_statements += &self.filed_statement.create_statement(
-                        &child_key,
-                        &FiledType::case_obj(
-                            &type_key,
-                            &child_key,
-                            &self.mapper,
-                            &self.optional_checker,
-                        ),
-                    );
-                    (filed_statements, Some(child_type_statement))
-                }
-                Json::Array(arr) => {
-                    if arr.len() == 0 {
-                        println!(
-                            "{} can not define. because array is empty ",
-                            self.root_type.value()
-                        );
-                        return (String::new(), None);
+            |(mut filed_statements, mut childrens), (filed_key, json)| {
+                let parent_filed_key = FiledKey::new(filed_key);
+                let child_type_key = TypeKey::from_parent(&parent_type_key, &parent_filed_key);
+                match json {
+                    Json::Object(obj) => {
+                        childrens = Some(format!(
+                            "{}{}",
+                            childrens.unwrap_or_default(),
+                            self.type_defines_from_obj(&child_type_key, obj)
+                        ));
+                        filed_statements.push_str(&self.filed_statement.create_statement(
+                            &parent_filed_key,
+                            &FiledType::case_obj(
+                                &parent_type_key,
+                                &parent_filed_key,
+                                &self.mapper,
+                                &self.optional_checker,
+                            ),
+                        ));
+                        (filed_statements, childrens)
                     }
-                    let filed_key = FiledKey::new(filed_key);
-                    let convertor = ArrayJsonConvertor::new(
-                        type_key,
-                        &filed_key,
-                        arr,
-                        &self.mapper,
-                        &self.optional_checker,
-                        &self.type_statement,
-                        &self.filed_statement,
-                    );
-                    let (filed_, child) = convertor.filed_statement_and_childrens();
-                    let child_type_statement = format!(
-                        "{}{}",
-                        childrens.unwrap_or_default(),
-                        child.unwrap_or_default()
-                    );
-                    (
-                        format!("{}{}", filed_statements, filed_),
-                        Some(child_type_statement),
-                    )
-                }
-                _ => {
-                    let filed_key = FiledKey::new(filed_key);
-                    filed_statements += &self.filed_statement.create_statement(
-                        &filed_key,
-                        &FiledType::case_primitive(
-                            &type_key,
-                            &filed_key,
+                    Json::Array(arr) => {
+                        if arr.len() == 0 {
+                            println!(
+                                "{} can not define. because array is empty ",
+                                self.root_type.value()
+                            );
+                            return (String::new(), None);
+                        }
+                        let convertor = ArrayJsonConvertor::new(
+                            parent_type_key,
+                            &parent_filed_key,
+                            arr,
                             &self.mapper,
                             &self.optional_checker,
-                            filed_value,
-                        ),
-                    );
-                    (filed_statements, childrens)
+                            &self.type_statement,
+                            &self.filed_statement,
+                        );
+                        let (filed_, child) = convertor.filed_statement_and_childrens();
+                        let child_type_statement = format!(
+                            "{}{}",
+                            childrens.unwrap_or_default(),
+                            child.unwrap_or_default()
+                        );
+                        (
+                            format!("{}{}", filed_statements, filed_),
+                            Some(child_type_statement),
+                        )
+                    }
+                    _ => {
+                        filed_statements += &self.filed_statement.create_statement(
+                            &parent_filed_key,
+                            &FiledType::case_primitive(
+                                &parent_type_key,
+                                &parent_filed_key,
+                                &self.mapper,
+                                &self.optional_checker,
+                                json,
+                            ),
+                        );
+                        (filed_statements, childrens)
+                    }
                 }
             },
         );
-        self.create_type_statement(type_key, filed_statements, childrens.unwrap_or_default())
+        self.create_type_statement(
+            parent_type_key,
+            filed_statements,
+            childrens.unwrap_or_default(),
+        )
     }
     fn create_type_statement(
         &self,
