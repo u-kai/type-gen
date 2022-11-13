@@ -16,7 +16,7 @@ use crate::{
     utils::store_fn::push_to_btree_vec,
 };
 
-use super::{filed_key::FiledKey, type_key::TypeKey};
+use super::{filed_key::FiledKey, filed_type::FiledType, type_key::TypeKey};
 
 pub type TypeDefine = String;
 
@@ -177,11 +177,17 @@ where
                     );
                     filed_statements += &self.filed_statement.create_statement(
                         child_key.value(),
-                        "", //&child_type.for_parent_filed(
-                            //type_key,
-                            //&self.optional_checker,
-                            //&self.mapper,
-                            //),
+                        FiledType::case_obj(
+                            &type_key,
+                            &child_key,
+                            &self.mapper,
+                            &self.optional_checker,
+                        )
+                        .value(), //&child_type.for_parent_filed(
+                                  //type_key,
+                                  //&self.optional_checker,
+                                  //&self.mapper,
+                                  //),
                     );
                     (filed_statements, Some(child_type_statement))
                 }
