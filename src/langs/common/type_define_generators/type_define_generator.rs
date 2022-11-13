@@ -155,7 +155,7 @@ where
     ) -> (String, Option<String>) {
         // case primitive type
         match arr.get(0) {
-            Some(Json::Object(_)) => (),
+            Some(Json::Object(_) | Json::Array(_)) => (),
             _ => {
                 let rep = arr[0].clone();
                 let filed_statement = if is_collect_vec {
@@ -230,7 +230,8 @@ where
                         push_to_btree_vec(&mut map, k, v);
                     }
                 }
-                _ => panic!("this case is define above"),
+                Json::Array(arr) => return self.collect_obj_from_json_array(arr),
+                _ => panic!("this case is define above {:#?}", json),
             }
         }
         map
