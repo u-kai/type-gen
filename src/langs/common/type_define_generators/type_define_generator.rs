@@ -16,23 +16,9 @@ use crate::{
     utils::store_fn::push_to_btree_vec,
 };
 
+use super::{filed_key::FiledKey, type_key::TypeKey};
+
 pub type TypeDefine = String;
-/// FiledKey represent type filed name
-/// ```
-/// struct Test {
-///     // id is FiledKey
-///     id: usize
-/// }
-/// ```
-struct FiledKey(String);
-/// TypeKey represent type name
-/// ```
-/// // Test is TypeKey
-/// struct Test {
-///     id: usize
-/// }
-/// ```
-struct TypeKey(String);
 
 struct ChildTypeDefine {
     name: String,
@@ -99,7 +85,7 @@ where
     F: FiledStatement,
     O: OffSideRule,
 {
-    root_type: String,
+    root_type: TypeKey,
     optional_checker: BaseOptionalChecker,
     mapper: M,
     type_statement: T,
@@ -123,7 +109,7 @@ where
         optional_checker: BaseOptionalChecker,
     ) -> Self {
         Self {
-            root_type: root_type.into(),
+            root_type: TypeKey::new(root_type),
             optional_checker,
             mapper,
             type_statement,
@@ -177,34 +163,38 @@ where
     // type_key is TestObj
     // filed_key is test
     //
-    fn type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
+    fn type_defines_from_obj(&self, type_key: &TypeKey, obj: BTreeMap<String, Json>) -> String {
         let (filed_statements, childrens) = obj.into_iter().fold(
             (String::new(), None),
             |(mut filed_statements, childrens), (filed_key, filed_value)| match filed_value {
                 Json::Object(obj) => {
-                    let child_type = ChildTypeDefine::new(&type_key, &filed_key);
+                    let child_key = FiledKey::new(filed_key);
+                    let child_type = TypeKey::from_parent(&type_key, &child_key);
                     let child_type_statement = format!(
                         "{}{}",
                         childrens.unwrap_or_default(),
-                        self.type_defines_from_obj(child_type.type_key(), obj)
+                        self.type_defines_from_obj(&child_type, obj)
                     );
                     filed_statements += &self.filed_statement.create_statement(
-                        child_type.parent_filed_key(),
-                        &child_type.for_parent_filed(
-                            type_key,
-                            &self.optional_checker,
-                            &self.mapper,
-                        ),
+                        child_key.value(),
+                        "", //&child_type.for_parent_filed(
+                            //type_key,
+                            //&self.optional_checker,
+                            //&self.mapper,
+                            //),
                     );
                     (filed_statements, Some(child_type_statement))
                 }
                 Json::Array(arr) => {
                     if arr.len() == 0 {
-                        println!("{} can not define. because array is empty ", self.root_type);
+                        println!(
+                            "{} can not define. because array is empty ",
+                            self.root_type.value()
+                        );
                         return (String::new(), None);
                     }
                     let convertor = ArrayJsonConvertor::new(
-                        type_key,
+                        type_key.value(),
                         &filed_key,
                         arr,
                         &self.mapper,
@@ -226,13 +216,17 @@ where
                 _ => {
                     filed_statements += &self.filed_statement.create_statement(
                         &filed_key,
-                        &self.primitive_type_generaotor(type_key, &filed_key, filed_value),
+                        &self.primitive_type_generaotor(type_key.value(), &filed_key, filed_value),
                     );
                     (filed_statements, childrens)
                 }
             },
         );
-        self.create_type_statement(type_key, filed_statements, childrens.unwrap_or_default())
+        self.create_type_statement(
+            type_key.value(),
+            filed_statements,
+            childrens.unwrap_or_default(),
+        )
     }
     fn create_type_statement(
         &self,

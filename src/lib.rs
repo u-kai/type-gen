@@ -26,6 +26,7 @@ pub mod langs {
     pub mod common {
         pub mod type_define_generators {
             pub mod filed_key;
+            pub mod filed_type;
             pub mod type_define_generator;
             pub mod type_key;
         }

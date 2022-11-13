@@ -15,12 +15,11 @@ impl TypeKey {
     pub fn value(&self) -> &str {
         &self.0
     }
-    pub fn from_parent(parent: TypeKey, self_filed: &FiledKey) -> Self {
-        Self::new(format!(
-            "{}{}",
-            parent.value(),
-            self_filed.to_type_key().value()
-        ))
+    pub fn drain(self) -> String {
+        self.0
+    }
+    pub fn from_parent(parent: &TypeKey, self_filed: &FiledKey) -> Self {
+        Self::new(self_filed.to_type_key(parent).drain())
     }
 }
 
@@ -34,7 +33,7 @@ mod test_type_key {
         let parent = TypeKey::new("Parent");
         let this_filed_key = FiledKey::new("child");
         assert_eq!(
-            TypeKey::from_parent(parent, &this_filed_key).value(),
+            TypeKey::from_parent(&parent, &this_filed_key).value(),
             "ParentChild"
         );
     }

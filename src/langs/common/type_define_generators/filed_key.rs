@@ -17,19 +17,28 @@ impl FiledKey {
     pub fn value(&self) -> &str {
         &self.0
     }
-    pub fn to_type_key(&self) -> TypeKey {
+    pub fn drain(self) -> String {
+        self.0
+    }
+    //pub fn to_filed_type(&self)-> String {
+
+    //}
+    pub fn to_type_key(&self, parent: &TypeKey) -> TypeKey {
         let npc = NamingPrincipalConvertor::new(&self.0);
-        TypeKey::new(npc.to_pascal())
+        TypeKey::new(format!("{}{}", parent.value(), npc.to_pascal()))
     }
 }
 
 #[cfg(test)]
 mod test_filed_key {
-    use crate::langs::common::type_define_generators::filed_key::FiledKey;
+    use crate::langs::common::type_define_generators::{filed_key::FiledKey, type_key::TypeKey};
 
     #[test]
     fn test_to_type_key() {
-        let filed_key = FiledKey::new("test");
-        assert_eq!(filed_key.to_type_key().value(), "Test");
+        let filed_key = FiledKey::new("user_id");
+        assert_eq!(
+            filed_key.to_type_key(&TypeKey::new("Test")).value(),
+            "TestUserId"
+        );
     }
 }
