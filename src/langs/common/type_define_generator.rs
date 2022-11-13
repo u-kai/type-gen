@@ -172,17 +172,13 @@ where
                         childrens.unwrap_or_default(),
                         self.type_defines_from_obj(child_type.type_key(), obj)
                     );
-                    let filed_statements = format!(
-                        "{}{}",
-                        filed_statements,
-                        self.filed_statement.create_statement(
-                            child_type.parent_filed_key(),
-                            &child_type.for_parent_filed(
-                                type_key,
-                                &self.optional_checker,
-                                &self.mapper,
-                            )
-                        )
+                    filed_statements += &self.filed_statement.create_statement(
+                        child_type.parent_filed_key(),
+                        &child_type.for_parent_filed(
+                            type_key,
+                            &self.optional_checker,
+                            &self.mapper,
+                        ),
                     );
                     (filed_statements, Some(child_type_statement))
                 }
@@ -212,47 +208,15 @@ where
                     )
                 }
                 _ => {
-                    self.stack_filed_statement(
-                        &mut filed_statements,
-                        type_key,
+                    filed_statements += &self.filed_statement.create_statement(
                         &filed_key,
-                        filed_value,
+                        &self.primitive_type_generaotor(type_key, &filed_key, filed_value),
                     );
                     (filed_statements, childrens)
                 }
             },
         );
         self.create_type_statement(type_key, filed_statements, childrens.unwrap_or_default())
-    }
-    fn stack_array_filed_statement(
-        &self,
-        filed_statement: &mut String,
-        type_key: &str,
-        filed_key: &str,
-        json: Json,
-    ) {
-        *filed_statement += &format!(
-            "{}",
-            self.filed_statement.create_statement(
-                &filed_key,
-                &self.primitive_array_type_generaotor(type_key, filed_key, json),
-            )
-        );
-    }
-    fn stack_filed_statement(
-        &self,
-        filed_statement: &mut String,
-        type_key: &str,
-        filed_key: &str,
-        json: Json,
-    ) {
-        *filed_statement += &format!(
-            "{}",
-            self.filed_statement.create_statement(
-                &filed_key,
-                &self.primitive_type_generaotor(type_key, filed_key, json),
-            )
-        );
     }
     fn create_type_statement(
         &self,
