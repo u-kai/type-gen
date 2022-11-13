@@ -144,7 +144,6 @@ where
         )
     }
     fn case_arr(&self, _: Vec<Json>) -> String {
-        //self.mapper.make_array_type(type_str)
         todo!("case arr")
     }
     fn make_filed_statement_and_childrens_from_array_json(
@@ -349,6 +348,73 @@ mod test_type_define_gen {
             osr,
             optional_checker,
         )
+    }
+    #[test]
+    fn test_make_define_case_nest_array() {
+        let struct_name = "Test";
+        let json = r#"
+            {
+                "id":0,
+                "name":"kai",
+                "result":[
+                    {
+                        "obj": {
+                            "like":"hamabe"
+                        }
+                    },
+                    {
+                        "obj": {
+                            "id":0,
+                            "arr":[
+                                {
+                                    "id":0
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "user": {
+                            "id":0,
+                            "name":"kai"
+                        }
+                    }
+                ]
+            }
+        "#;
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+    result: Option<Vec<TestResult>>,
+}
+
+struct TestResult {
+    obj: Option<TestResultObj>,
+    user: Option<TestResultUser>,
+}
+
+struct TestResultObj {
+    arr: Option<Vec<TestResultObjArr>>,
+    id: Option<usize>,
+    like: String,
+}
+
+struct TestResultObjArr {
+    id: Option<usize>,
+}
+
+struct TestResultUser {
+    id: Option<usize>,
+    name: Option<String>,
+}
+
+"#;
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require(struct_name, "id");
+        optional_checker.add_require("TestResultObj", "like");
+        assert_eq!(
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
+            tobe
+        );
     }
     #[test]
     fn test_make_define_case_obj_and_diffarent_type_arr() {
