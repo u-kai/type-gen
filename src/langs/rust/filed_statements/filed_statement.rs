@@ -43,16 +43,18 @@ impl FiledStatement for RustFiledStatement {
         let new_key = if !NamingPrincipal::is_snake(filed_key) {
             let npc = NamingPrincipalConvertor::new(filed_key);
             let new_key = npc.to_snake();
-            self.attr.borrow_mut().add_attr(
-                &filed_key,
-                RustFiledAttribute::Original(format!(r#"serde(rename = "{}")"#, filed_key)),
-            );
+            if !self.attr.borrow().containe(&filed_key) {
+                self.attr.borrow_mut().add_attr(
+                    &filed_key,
+                    RustFiledAttribute::Original(format!(r#"serde(rename = "{}")"#, filed_key)),
+                );
+            }
             self.reserved_words.sub_or_default(&new_key).to_string()
         } else {
             self.reserved_words.sub_or_default(filed_key).to_string()
         };
         let mut result = self.add_head_space(format!(
-            "{}{}: {}{}",
+            "{}{}: {}{}\n",
             visi,
             new_key,
             filed_type,
@@ -109,7 +111,8 @@ mod test_rust_filed_statement {
         let tobe = r#"    // this is test
     // hello
     #[cfg(not(test))]
-    pub r#type: Option<String>,"#;
+    pub r#type: Option<String>,
+"#;
         assert_eq!(
             statement.create_statement(filed_key, filed_type,),
             tobe.to_string()
@@ -134,7 +137,8 @@ mod test_rust_filed_statement {
         let tobe = r#"    // this is test
     // hello
     #[cfg(not(test))]
-    pub test: Option<String>,"#;
+    pub test: Option<String>,
+"#;
         assert_eq!(
             statement.create_statement(filed_key, filed_type,),
             tobe.to_string()

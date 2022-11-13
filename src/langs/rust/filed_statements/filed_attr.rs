@@ -36,6 +36,7 @@ impl From<&RustFiledAttribute> for String {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct RustFiledAttributeStore {
     all: Option<Vec<RustFiledAttribute>>,
     store: HashMap<String, Vec<RustFiledAttribute>>,
@@ -53,6 +54,9 @@ impl RustFiledAttributeStore {
     }
     pub fn add_attr(&mut self, key: &str, attr: RustFiledAttribute) {
         push_to_kv_vec(&mut self.store, key.to_string(), attr)
+    }
+    pub fn containe(&self, key: &str) -> bool {
+        self.store.contains_key(key)
     }
 }
 

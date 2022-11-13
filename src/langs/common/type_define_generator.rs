@@ -1,10 +1,9 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::collections::BTreeMap;
 
 use npc::convertor::NamingPrincipalConvertor;
 
 use crate::{
     json::Json,
-    langs::rust::filed_statements::filed_statement,
     traits::{
         filed_statements::filed_statement::FiledStatement, json_lang_mapper::JsonLangMapper,
         off_side_rule::OffSideRule, optional_checker::OptionalChecker,
@@ -60,8 +59,6 @@ impl ChildTypeDefine {
         optional_checker: &impl OptionalChecker,
         mapper: &impl JsonLangMapper,
     ) -> String {
-        println!("parent_key = {}", parent_type_key);
-        println!("self.name = {}", self.key);
         if optional_checker.is_optional(parent_type_key, &self.key) {
             mapper.make_optional_type(&mapper.make_array_type(&self.name))
         } else {
@@ -176,7 +173,7 @@ where
                         self.type_defines_from_obj(child_type.type_key(), obj)
                     );
                     let filed_statement = format!(
-                        "{}{}\n",
+                        "{}{}",
                         filed_statement,
                         self.filed_statement.create_statement(
                             child_type.parent_filed_key(),
@@ -194,50 +191,25 @@ where
                         println!("{} can not define. because array is empty ", self.root_type);
                         return (String::new(), None);
                     }
-                    let mut map = BTreeMap::new();
-                    for json in arr {
-                        match json {
-                            Json::Object(obj) => {
-                                for (k, v) in obj.clone() {
-                                    push_to_btree_vec(&mut map, k, v)
-                                }
-                                let child_type = ChildTypeDefine::new(&type_key, &filed_key);
-                                let filed_statement = format!(
-                                    "{}{}\n",
-                                    filed_statement,
-                                    self.filed_statement.create_statement(
-                                        child_type.parent_filed_key(),
-                                        &child_type.for_parent_array_filed(
-                                            type_key,
-                                            &self.optional_checker,
-                                            &self.mapper,
-                                        )
-                                    )
-                                );
-                                let child_type_statement = format!(
-                                    "{}{}",
-                                    childrens.unwrap_or_default(),
-                                    self.type_defines_from_obj(child_type.type_key(), obj)
-                                );
-                                //let child_type_statement = format!(
-                                //"{}{}",
-                                //childrens.unwrap_or_default(),
-                                //self.type_defines_from_obj(child_type.parent_filed_key(), obj)
-                                //);
-                                return (filed_statement, Some(child_type_statement));
-                            }
-                            _ => {
-                                self.stack_array_filed_statement(
-                                    &mut filed_statement,
-                                    type_key,
-                                    &filed_key,
-                                    json,
-                                );
-                                return (filed_statement, childrens);
-                            }
-                        }
-                    }
-                    panic!()
+                    let convertor = ArrayJsonConvertor::new(
+                        type_key,
+                        &filed_key,
+                        arr,
+                        &self.mapper,
+                        &self.optional_checker,
+                        &self.type_statement,
+                        &self.filed_statement,
+                    );
+                    let (filed_, child) = convertor.filed_statement_and_childrens();
+                    let child_type_statement = format!(
+                        "{}{}",
+                        childrens.unwrap_or_default(),
+                        child.unwrap_or_default()
+                    );
+                    (
+                        format!("{}{}", filed_statement, filed_),
+                        Some(child_type_statement),
+                    )
                 }
                 _ => {
                     self.stack_filed_statement(&mut filed_statement, type_key, &filed_key, v);
@@ -255,7 +227,7 @@ where
         json: Json,
     ) {
         *filed_statement += &format!(
-            "{}\n",
+            "{}",
             self.filed_statement.create_statement(
                 &filed_key,
                 &self.primitive_array_type_generaotor(type_key, filed_key, json),
@@ -270,7 +242,7 @@ where
         json: Json,
     ) {
         *filed_statement += &format!(
-            "{}\n",
+            "{}",
             self.filed_statement.create_statement(
                 &filed_key,
                 &self.primitive_type_generaotor(type_key, filed_key, json),
@@ -401,13 +373,13 @@ where
                 };
                 let childrens = match (childrens, maybe_childrens) {
                     (Some(acc_childrens), Some(childrens)) => {
-                        Some(format!("{}{}\n\n", acc_childrens, childrens))
+                        Some(format!("{}{}", acc_childrens, childrens))
                     }
                     (Some(childrens), None) => Some(childrens),
                     (None, Some(childrens)) => Some(childrens),
                     (None, None) => None,
                 };
-                (format!("{}{}\n", filed_records, filed_statement), childrens)
+                (format!("{}{}", filed_records, filed_statement), childrens)
             },
         );
         let type_define_and_childrens = format!(
@@ -441,7 +413,7 @@ where
                     );
                     return (
                         self.filed_statement
-                            .create_statement(self.filed_key, &p.from_json(json)),
+                            .create_statement(self.filed_key, &p.from_json_to_array(json)),
                         None,
                     );
                 }
@@ -470,13 +442,13 @@ where
                 };
                 let childrens = match (childrens, maybe_childrens) {
                     (Some(acc_childrens), Some(childrens)) => {
-                        Some(format!("{}{}\n\n", acc_childrens, childrens))
+                        Some(format!("{}{}", acc_childrens, childrens))
                     }
                     (Some(childrens), None) => Some(childrens),
                     (None, Some(childrens)) => Some(childrens),
                     (None, None) => None,
                 };
-                (format!("{}{}\n", filed_records, filed_statement), childrens)
+                (format!("{}{}", filed_records, filed_statement), childrens)
             },
         );
         let type_define_and_childrens = format!(
@@ -554,7 +526,9 @@ mod test_type_define_gen {
             &filed_statement,
         );
         let tobe = (
-            "    obj: Option<Vec<TestObj>>,".to_string(),
+            "    obj: Option<Vec<TestObj>>,
+"
+            .to_string(),
             Some(
                 "struct TestObj {
     age: Option<usize>,
@@ -585,7 +559,7 @@ struct TestObjObj {
     impl FiledStatement for FakeFiledStatement {
         fn create_statement(&self, filed_key: &str, filed_type: &str) -> String {
             self.add_head_space(format!(
-                "{}: {}{}",
+                "{}: {}{}\n",
                 filed_key,
                 filed_type,
                 Self::FILED_DERIMITA
@@ -659,17 +633,17 @@ struct TestObjObj {
 
 struct TestResult {
     obj: Option<TestResultObj>,
-    user:Option<TestResultUser>
+    user: Option<TestResultUser>,
 }
 
 struct TestResultObj {
-    id: usize,
+    id: Option<usize>,
     like: String,
 }
 
 struct TestResultUser {
-    id: usize,
-    name: String,
+    id: Option<usize>,
+    name: Option<String>,
 }
 
 "#;
