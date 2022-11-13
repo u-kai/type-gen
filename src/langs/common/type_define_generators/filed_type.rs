@@ -31,6 +31,21 @@ impl FiledType {
             },
         )
     }
+    pub fn case_array_obj(
+        type_key: &TypeKey,
+        filed_key: &FiledKey,
+        mapper: &impl JsonLangMapper,
+        optional_checker: &impl OptionalChecker,
+    ) -> Self {
+        let this = filed_key.to_type_key(type_key);
+        Self(
+            if optional_checker.is_optional(type_key.value(), filed_key.value()) {
+                mapper.make_optional_type(&mapper.make_array_type(this.value()))
+            } else {
+                mapper.make_array_type(&this.drain())
+            },
+        )
+    }
     pub fn case_array_primitive(
         type_key: &TypeKey,
         filed_key: &FiledKey,
@@ -111,6 +126,15 @@ mod test_filed_type {
             Json::String("".to_string()),
         );
         assert_eq!(filed_type.value(), "Option<String>");
+    }
+    #[test]
+    fn test_case_array_obj_filed_type() {
+        let type_key = TypeKey::new("Test");
+        let mapper = FakeMapper;
+        let optional_checker = BaseOptionalChecker::default();
+        let filed_type =
+            FiledType::case_array_obj(&type_key, &FiledKey::new("obj"), &mapper, &optional_checker);
+        assert_eq!(filed_type.value(), "Option<Vec<TestObj>>");
     }
     #[test]
     fn test_case_obj_filed_type() {
