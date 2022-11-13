@@ -9,6 +9,7 @@ use super::type_key::TypeKey;
 ///     id: usize
 /// }
 /// ```
+#[derive(Debug, Clone)]
 pub struct FiledKey(String);
 impl FiledKey {
     pub fn new(key: impl Into<String>) -> Self {

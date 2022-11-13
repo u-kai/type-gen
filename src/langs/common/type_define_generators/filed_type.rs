@@ -73,6 +73,8 @@ impl FiledType {
         optional_checker: &impl OptionalChecker,
         json: Json,
     ) -> Self {
+        println!("type_key = {:#?}", type_key);
+        println!("filed_key = {:#?}", filed_key);
         Self(
             PrimitiveTypeStatementGenerator::new(
                 type_key.value(),
