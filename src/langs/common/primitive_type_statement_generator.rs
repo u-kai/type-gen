@@ -315,6 +315,9 @@ impl JsonLangMapper for FakeMapper {
     fn case_bool(&self) -> &'static str {
         "bool"
     }
+    fn case_any(&self) -> &'static str {
+        "any"
+    }
     fn case_null(&self) -> &'static str {
         "null"
     }

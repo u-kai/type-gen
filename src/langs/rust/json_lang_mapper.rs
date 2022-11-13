@@ -12,7 +12,7 @@ impl JsonLangMapper for JsonRustMapper {
         "String"
     }
     fn case_null(&self) -> &'static str {
-        "String"
+        self.case_any()
     }
     fn case_num(&self, num: &serde_json::Number) -> String {
         if num.is_f64() {
@@ -23,7 +23,9 @@ impl JsonLangMapper for JsonRustMapper {
         }
         "u64".to_string()
     }
-
+    fn case_any(&self) -> &'static str {
+        "serde_json::Value"
+    }
     fn case_bool(&self) -> &'static str {
         "bool"
     }

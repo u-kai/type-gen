@@ -147,9 +147,10 @@ where
                             &self.type_statement,
                             &self.filed_statement,
                         );
-                        let (filed_, child) = convertor.filed_statement_and_childrens();
+                        let (filed_statement, child) = convertor.filed_statement_and_childrens();
+                        filed_statements.push_str(&filed_statement);
                         concat_optional_str(&mut childrens, child.unwrap_or_default());
-                        (format!("{}{}", filed_statements, filed_), childrens)
+                        (filed_statements, childrens)
                     }
                     _ => {
                         filed_statements.push_str(&self.filed_statement.create_statement(
