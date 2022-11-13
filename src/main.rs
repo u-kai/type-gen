@@ -12,7 +12,21 @@ fn main() {
             "name":"u-kai",
             "follower":[
                 {
+                    "id":0,
                     "name":"something"
+                },
+                {
+                    "id":1,
+                    "age":20
+                },
+                {
+                    "id":2,
+                    "data":[
+                        {
+                            "id":0,
+                            "name":"kai"
+                        }
+                    ] 
                 }
             ]
         }

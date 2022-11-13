@@ -162,9 +162,9 @@ where
     // filed_key is test
     //
     fn type_defines_from_obj(&self, type_key: &str, obj: BTreeMap<String, Json>) -> String {
-        let (filed_statement, childrens) = obj.into_iter().fold(
+        let (filed_statements, childrens) = obj.into_iter().fold(
             (String::new(), None),
-            |(mut filed_statement, childrens), (filed_key, v)| match v {
+            |(mut filed_statements, childrens), (filed_key, filed_value)| match filed_value {
                 Json::Object(obj) => {
                     let child_type = ChildTypeDefine::new(&type_key, &filed_key);
                     let child_type_statement = format!(
@@ -172,9 +172,9 @@ where
                         childrens.unwrap_or_default(),
                         self.type_defines_from_obj(child_type.type_key(), obj)
                     );
-                    let filed_statement = format!(
+                    let filed_statements = format!(
                         "{}{}",
-                        filed_statement,
+                        filed_statements,
                         self.filed_statement.create_statement(
                             child_type.parent_filed_key(),
                             &child_type.for_parent_filed(
@@ -184,7 +184,7 @@ where
                             )
                         )
                     );
-                    (filed_statement, Some(child_type_statement))
+                    (filed_statements, Some(child_type_statement))
                 }
                 Json::Array(arr) => {
                     if arr.len() == 0 {
@@ -207,17 +207,22 @@ where
                         child.unwrap_or_default()
                     );
                     (
-                        format!("{}{}", filed_statement, filed_),
+                        format!("{}{}", filed_statements, filed_),
                         Some(child_type_statement),
                     )
                 }
                 _ => {
-                    self.stack_filed_statement(&mut filed_statement, type_key, &filed_key, v);
-                    (filed_statement, childrens)
+                    self.stack_filed_statement(
+                        &mut filed_statements,
+                        type_key,
+                        &filed_key,
+                        filed_value,
+                    );
+                    (filed_statements, childrens)
                 }
             },
         );
-        self.create_type_statement(type_key, filed_statement, childrens.unwrap_or_default())
+        self.create_type_statement(type_key, filed_statements, childrens.unwrap_or_default())
     }
     fn stack_array_filed_statement(
         &self,
