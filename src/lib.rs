@@ -24,12 +24,16 @@ pub mod traits {
 pub mod langs {
 
     pub mod common {
+        pub mod type_define_generators {
+            pub mod filed_key;
+            pub mod type_define_generator;
+            pub mod type_key;
+        }
         pub mod filed_comment;
         pub mod naming_principal;
         pub mod optional_checker;
         pub mod primitive_type_statement_generator;
         pub mod type_comment;
-        pub mod type_define_generator;
     }
     pub mod rust {
         pub mod filed_statements {

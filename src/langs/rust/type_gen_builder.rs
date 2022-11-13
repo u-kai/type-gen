@@ -2,7 +2,8 @@ use std::cell::RefCell;
 
 use crate::langs::common::{
     filed_comment::BaseFiledComment, optional_checker::BaseOptionalChecker,
-    type_comment::BaseTypeComment, type_define_generator::TypeDefineGenerator,
+    type_comment::BaseTypeComment,
+    type_define_generators::type_define_generator::TypeDefineGenerator,
 };
 
 use super::{

@@ -4,6 +4,10 @@ use npc::convertor::NamingPrincipalConvertor;
 
 use crate::{
     json::Json,
+    langs::common::{
+        optional_checker::BaseOptionalChecker,
+        primitive_type_statement_generator::PrimitiveTypeStatementGenerator,
+    },
     traits::{
         filed_statements::filed_statement::FiledStatement, json_lang_mapper::JsonLangMapper,
         off_side_rule::OffSideRule, optional_checker::OptionalChecker,
@@ -12,12 +16,24 @@ use crate::{
     utils::store_fn::push_to_btree_vec,
 };
 
-use super::{
-    optional_checker::BaseOptionalChecker,
-    primitive_type_statement_generator::PrimitiveTypeStatementGenerator,
-};
-
 pub type TypeDefine = String;
+/// FiledKey represent type filed name
+/// ```
+/// struct Test {
+///     // id is FiledKey
+///     id: usize
+/// }
+/// ```
+struct FiledKey(String);
+/// TypeKey represent type name
+/// ```
+/// // Test is TypeKey
+/// struct Test {
+///     id: usize
+/// }
+/// ```
+struct TypeKey(String);
+
 struct ChildTypeDefine {
     name: String,
     key: String,
