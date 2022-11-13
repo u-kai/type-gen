@@ -4,10 +4,7 @@ use npc::convertor::NamingPrincipalConvertor;
 
 use crate::{
     json::Json,
-    langs::common::{
-        optional_checker::BaseOptionalChecker,
-        primitive_type_statement_generator::PrimitiveTypeStatementGenerator,
-    },
+    langs::common::optional_checker::BaseOptionalChecker,
     traits::{
         filed_statements::filed_statement::FiledStatement, json_lang_mapper::JsonLangMapper,
         off_side_rule::OffSideRule, optional_checker::OptionalChecker,
@@ -19,55 +16,6 @@ use crate::{
 use super::{filed_key::FiledKey, filed_type::FiledType, type_key::TypeKey};
 
 pub type TypeDefine = String;
-
-struct ChildTypeDefine {
-    name: String,
-    key: String,
-}
-impl ChildTypeDefine {
-    fn new(parent_type_key: &str, key: impl Into<String>) -> Self {
-        let key: String = key.into();
-        let npc = NamingPrincipalConvertor::new(&key);
-        let name = format!("{}{}", parent_type_key, npc.to_pascal());
-        Self {
-            name,
-            key: key.into(),
-        }
-    }
-    fn parent_filed_key(&self) -> &str {
-        &self.key
-    }
-    fn make_type_key(self) -> String {
-        self.name
-    }
-    fn type_key(&self) -> &str {
-        &self.name
-    }
-    fn for_parent_filed(
-        &self,
-        parent_type_key: &str,
-        optional_checker: &impl OptionalChecker,
-        mapper: &impl JsonLangMapper,
-    ) -> String {
-        if optional_checker.is_optional(parent_type_key, &self.key) {
-            mapper.make_optional_type(&self.name)
-        } else {
-            self.name.clone()
-        }
-    }
-    fn for_parent_array_filed(
-        &self,
-        parent_type_key: &str,
-        optional_checker: &impl OptionalChecker,
-        mapper: &impl JsonLangMapper,
-    ) -> String {
-        if optional_checker.is_optional(parent_type_key, &self.key) {
-            mapper.make_optional_type(&mapper.make_array_type(&self.name))
-        } else {
-            mapper.make_array_type(&self.name)
-        }
-    }
-}
 
 /// TypeDefine is
 /// ```
@@ -128,29 +76,6 @@ where
             Json::Object(obj) => self.type_defines_from_obj(&self.root_type, obj),
         }
     }
-    fn primitive_array_type_generaotor(
-        &self,
-        type_key: &str,
-        filed_key: &str,
-        json: Json,
-    ) -> String {
-        PrimitiveTypeStatementGenerator::new(
-            type_key,
-            &filed_key,
-            &self.mapper,
-            &self.optional_checker,
-        )
-        .from_json_to_array(json)
-    }
-    fn primitive_type_generaotor(&self, type_key: &str, filed_key: &str, json: Json) -> String {
-        PrimitiveTypeStatementGenerator::new(
-            type_key,
-            &filed_key,
-            &self.mapper,
-            &self.optional_checker,
-        )
-        .from_json(json)
-    }
     fn case_arr(&self, _: Vec<Json>) -> String {
         //self.mapper.make_array_type(type_str)
         todo!("case arr")
@@ -176,18 +101,13 @@ where
                         self.type_defines_from_obj(&child_type, obj)
                     );
                     filed_statements += &self.filed_statement.create_statement(
-                        child_key.value(),
-                        FiledType::case_obj(
+                        &child_key,
+                        &FiledType::case_obj(
                             &type_key,
                             &child_key,
                             &self.mapper,
                             &self.optional_checker,
-                        )
-                        .value(), //&child_type.for_parent_filed(
-                                  //type_key,
-                                  //&self.optional_checker,
-                                  //&self.mapper,
-                                  //),
+                        ),
                     );
                     (filed_statements, Some(child_type_statement))
                 }
@@ -199,8 +119,9 @@ where
                         );
                         return (String::new(), None);
                     }
+                    let filed_key = FiledKey::new(filed_key);
                     let convertor = ArrayJsonConvertor::new(
-                        type_key.value(),
+                        type_key,
                         &filed_key,
                         arr,
                         &self.mapper,
@@ -220,23 +141,26 @@ where
                     )
                 }
                 _ => {
+                    let filed_key = FiledKey::new(filed_key);
                     filed_statements += &self.filed_statement.create_statement(
                         &filed_key,
-                        &self.primitive_type_generaotor(type_key.value(), &filed_key, filed_value),
+                        &FiledType::case_primitive(
+                            &type_key,
+                            &filed_key,
+                            &self.mapper,
+                            &self.optional_checker,
+                            filed_value,
+                        ),
                     );
                     (filed_statements, childrens)
                 }
             },
         );
-        self.create_type_statement(
-            type_key.value(),
-            filed_statements,
-            childrens.unwrap_or_default(),
-        )
+        self.create_type_statement(type_key, filed_statements, childrens.unwrap_or_default())
     }
     fn create_type_statement(
         &self,
-        type_key: &str,
+        type_key: &TypeKey,
         filed_statement: String,
         childrens: String,
     ) -> String {
@@ -258,8 +182,8 @@ where
     T: TypeStatement,
     F: FiledStatement,
 {
-    type_key: &'a str,
-    filed_key: &'a str,
+    type_key: &'a TypeKey,
+    filed_key: &'a FiledKey,
     arr: Vec<Json>,
     mapper: &'a M,
     optional_checker: &'a O,
@@ -274,8 +198,8 @@ where
     F: FiledStatement,
 {
     pub fn new(
-        type_key: &'a str,
-        filed_key: &'a str,
+        type_key: &'a TypeKey,
+        filed_key: &'a FiledKey,
         arr: Vec<Json>,
         mapper: &'a M,
         optional_checker: &'a O,
@@ -293,25 +217,30 @@ where
         }
     }
     fn case_obj_filed_statement(&self) -> String {
-        let type_define = ChildTypeDefine::new(self.type_key, self.filed_key);
         self.filed_statement.create_statement(
             self.filed_key,
-            &type_define.for_parent_array_filed(self.type_key, self.optional_checker, self.mapper),
+            &FiledType::case_array_obj(
+                self.type_key,
+                self.filed_key,
+                self.mapper,
+                self.optional_checker,
+            ),
         )
     }
     fn case_obj_non_vec_filed_statement(&self) -> String {
-        let type_define = ChildTypeDefine::new(self.type_key, self.filed_key);
         self.filed_statement.create_statement(
             self.filed_key,
-            &type_define.for_parent_filed(self.type_key, self.optional_checker, self.mapper),
+            &FiledType::case_obj(
+                self.type_key,
+                self.filed_key,
+                self.mapper,
+                self.optional_checker,
+            ),
         )
-    }
-    fn this_type_key(&self) -> String {
-        ChildTypeDefine::new(self.type_key, self.filed_key).make_type_key()
     }
     pub fn non_vec(self) -> (String, Option<String>) {
         let filed_statement = self.case_obj_non_vec_filed_statement();
-        let type_key = self.this_type_key();
+        let type_key = self.filed_key.to_type_key(self.type_key);
         let mut map = BTreeMap::new();
         for json in self.arr {
             match json {
@@ -321,15 +250,17 @@ where
                     }
                 }
                 _ => {
-                    let p = PrimitiveTypeStatementGenerator::new(
-                        self.type_key,
-                        self.filed_key,
-                        self.mapper,
-                        self.optional_checker,
-                    );
                     return (
-                        self.filed_statement
-                            .create_statement(self.filed_key, &p.from_json(json)),
+                        self.filed_statement.create_statement(
+                            self.filed_key,
+                            &FiledType::case_primitive(
+                                self.type_key,
+                                self.filed_key,
+                                self.mapper,
+                                self.optional_checker,
+                                json,
+                            ),
+                        ),
                         None,
                     );
                 }
@@ -342,9 +273,10 @@ where
                     Some(Json::Array(_)) => true,
                     _ => false,
                 };
+                let filed_key = FiledKey::new(key);
                 let child = ArrayJsonConvertor::new(
                     &type_key,
-                    &key,
+                    &filed_key,
                     array_json,
                     self.mapper,
                     self.optional_checker,
@@ -380,7 +312,7 @@ where
     }
     pub fn filed_statement_and_childrens(self) -> (String, Option<String>) {
         let filed_statement = self.case_obj_filed_statement();
-        let type_key = self.this_type_key();
+        let type_key = self.filed_key.to_type_key(self.type_key);
         let mut map = BTreeMap::new();
         for json in self.arr {
             match json {
@@ -390,15 +322,17 @@ where
                     }
                 }
                 _ => {
-                    let p = PrimitiveTypeStatementGenerator::new(
-                        self.type_key,
-                        self.filed_key,
-                        self.mapper,
-                        self.optional_checker,
-                    );
                     return (
-                        self.filed_statement
-                            .create_statement(self.filed_key, &p.from_json_to_array(json)),
+                        self.filed_statement.create_statement(
+                            self.filed_key,
+                            &FiledType::case_array_primitive(
+                                &type_key,
+                                self.filed_key,
+                                self.mapper,
+                                self.optional_checker,
+                                json,
+                            ),
+                        ),
                         None,
                     );
                 }
@@ -411,9 +345,10 @@ where
                     Some(Json::Array(_)) => true,
                     _ => false,
                 };
+                let filed_key = FiledKey::new(key);
                 let child = ArrayJsonConvertor::new(
                     &type_key,
-                    &key,
+                    &filed_key,
                     array_json,
                     self.mapper,
                     self.optional_checker,
@@ -501,9 +436,11 @@ mod test_type_define_gen {
         let optional_checker = BaseOptionalChecker::default();
         let type_statement = FakeTypeStatement;
         let filed_statement = FakeFiledStatement;
+        let type_key = TypeKey::new("Test");
+        let filed_key = FiledKey::new("obj");
         let convertor = ArrayJsonConvertor::new(
-            "Test",
-            "obj",
+            &type_key,
+            &filed_key,
             json,
             &mapper,
             &optional_checker,
@@ -536,17 +473,17 @@ struct TestObjObj {
 
     impl TypeStatement for FakeTypeStatement {
         const TYPE_STATEMENT: &'static str = "";
-        fn create_statement(&self, type_key: &str) -> String {
-            format!("struct {}", type_key)
+        fn create_statement(&self, type_key: &TypeKey) -> String {
+            format!("struct {}", type_key.value())
         }
     }
     struct FakeFiledStatement;
     impl FiledStatement for FakeFiledStatement {
-        fn create_statement(&self, filed_key: &str, filed_type: &str) -> String {
+        fn create_statement(&self, filed_key: &FiledKey, filed_type: &FiledType) -> String {
             self.add_head_space(format!(
                 "{}: {}{}\n",
-                filed_key,
-                filed_type,
+                filed_key.value(),
+                filed_type.value(),
                 Self::FILED_DERIMITA
             ))
         }

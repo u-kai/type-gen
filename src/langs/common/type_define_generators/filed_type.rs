@@ -13,9 +13,12 @@ use super::{filed_key::FiledKey, type_key::TypeKey};
 ///     id: usize
 /// }
 /// ```
-pub(super) struct FiledType(String);
+pub struct FiledType(String);
 
 impl FiledType {
+    pub fn new(value: impl Into<String>) -> Self {
+        Self(value.into())
+    }
     pub fn case_obj(
         type_key: &TypeKey,
         filed_key: &FiledKey,

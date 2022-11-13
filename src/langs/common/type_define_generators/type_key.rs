@@ -7,7 +7,7 @@ use super::filed_key::FiledKey;
 ///     id: usize
 /// }
 /// ```
-pub(super) struct TypeKey(String);
+pub struct TypeKey(String);
 impl TypeKey {
     pub fn new(key: impl Into<String>) -> Self {
         Self(key.into())

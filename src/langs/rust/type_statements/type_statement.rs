@@ -1,5 +1,5 @@
 use crate::{
-    langs::common::type_comment::BaseTypeComment,
+    langs::common::{type_comment::BaseTypeComment, type_define_generators::type_key::TypeKey},
     traits::type_statements::{
         type_attr::TypeAttribution, type_comment::TypeComment, type_statement::TypeStatement,
         type_visibility::TypeVisibility,
@@ -30,7 +30,8 @@ impl RustTypeStatement {
 
 impl TypeStatement for RustTypeStatement {
     const TYPE_STATEMENT: &'static str = "struct";
-    fn create_statement(&self, type_key: &str) -> String {
+    fn create_statement(&self, type_key: &TypeKey) -> String {
+        let type_key = type_key.value();
         let visi = self.visi.get_visibility_str(type_key);
         let mut result = format!("{}{} {}", visi, Self::TYPE_STATEMENT, type_key);
 
@@ -48,7 +49,7 @@ impl TypeStatement for RustTypeStatement {
 mod test_rust_type_statement {
     use crate::{
         langs::{
-            common::type_comment::BaseTypeComment,
+            common::{type_comment::BaseTypeComment, type_define_generators::type_key::TypeKey},
             rust::{
                 rust_visibility::RustVisibility,
                 type_statements::{
@@ -64,32 +65,32 @@ mod test_rust_type_statement {
 
     #[test]
     fn only_private_struct() {
-        let struct_name = "Test";
+        let struct_name = TypeKey::new("Test");
         let comment = BaseTypeComment::new("//");
         let attr = RustTypeAttributeStore::new();
         let visi = RustTypeVisibilityProvider::new();
         let rust = RustTypeStatement::new(comment, visi, attr);
         let tobe = r#"struct Test"#;
-        assert_eq!(rust.create_statement(struct_name), tobe.to_string());
+        assert_eq!(rust.create_statement(&struct_name), tobe.to_string());
     }
     #[test]
     fn comment_and_attr_and_pub_visibilty() {
-        let struct_name = "Test";
+        let struct_name = TypeKey::new("Test");
         let mut comment = BaseTypeComment::new("//");
-        comment.add_comment(struct_name, "this is test");
-        comment.add_comment(struct_name, "hello");
+        comment.add_comment(struct_name.value(), "this is test");
+        comment.add_comment(struct_name.value(), "hello");
         let mut attr = RustTypeAttributeStore::new();
         attr.add_attr(
-            struct_name,
+            struct_name.value(),
             RustTypeAttribute::from_derives(vec!["Debug", "Clone"]),
         );
         let mut visi = RustTypeVisibilityProvider::new();
-        visi.add_visibility(struct_name, RustVisibility::Public);
+        visi.add_visibility(struct_name.value(), RustVisibility::Public);
         let tobe = r#"// this is test
 // hello
 #[derive(Debug,Clone)]
 pub struct Test"#;
         let rust = RustTypeStatement::new(comment, visi, attr);
-        assert_eq!(rust.create_statement(struct_name), tobe);
+        assert_eq!(rust.create_statement(&struct_name), tobe);
     }
 }

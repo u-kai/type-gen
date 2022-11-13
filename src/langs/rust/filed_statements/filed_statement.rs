@@ -3,7 +3,10 @@ use std::cell::RefCell;
 use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
 
 use crate::{
-    langs::common::filed_comment::BaseFiledComment,
+    langs::common::{
+        filed_comment::BaseFiledComment,
+        type_define_generators::{filed_key::FiledKey, filed_type::FiledType},
+    },
     traits::filed_statements::{
         filed_attr::FiledAttribute, filed_comment::FiledComment, filed_statement::FiledStatement,
         filed_visibility::FiledVisibility, reserved_words::ReservedWords,
@@ -38,7 +41,9 @@ impl RustFiledStatement {
     }
 }
 impl FiledStatement for RustFiledStatement {
-    fn create_statement(&self, filed_key: &str, filed_type: &str) -> String {
+    fn create_statement(&self, filed_key: &FiledKey, filed_type: &FiledType) -> String {
+        let filed_key = filed_key.value();
+        let filed_type = filed_type.value();
         let visi = self.visi.get_visibility_str(filed_key);
         let new_key = if !NamingPrincipal::is_snake(filed_key) {
             let npc = NamingPrincipalConvertor::new(filed_key);
@@ -76,7 +81,10 @@ mod test_rust_filed_statement {
 
     use crate::{
         langs::{
-            common::filed_comment::BaseFiledComment,
+            common::{
+                filed_comment::BaseFiledComment,
+                type_define_generators::{filed_key::FiledKey, filed_type::FiledType},
+            },
             rust::{
                 filed_statements::{
                     filed_attr::{RustFiledAttribute, RustFiledAttributeStore},
@@ -113,8 +121,10 @@ mod test_rust_filed_statement {
     #[cfg(not(test))]
     pub r#type: Option<String>,
 "#;
+        let filed_key = FiledKey::new(filed_key);
+        let filed_type = FiledType::new(filed_type);
         assert_eq!(
-            statement.create_statement(filed_key, filed_type,),
+            statement.create_statement(&filed_key, &filed_type,),
             tobe.to_string()
         );
     }
@@ -139,8 +149,10 @@ mod test_rust_filed_statement {
     #[cfg(not(test))]
     pub test: Option<String>,
 "#;
+        let filed_key = FiledKey::new(filed_key);
+        let filed_type = FiledType::new(filed_type);
         assert_eq!(
-            statement.create_statement(filed_key, filed_type,),
+            statement.create_statement(&filed_key, &filed_type),
             tobe.to_string()
         );
     }
