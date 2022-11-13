@@ -14,7 +14,23 @@ use crate::{
 use super::{filed_key::FiledKey, filed_type::FiledType, type_key::TypeKey};
 
 pub type TypeDefine = String;
+fn concat_optional_str(l: &mut Option<String>, r: String) {
+    if let Some(l) = l {
+        l.push_str(&r);
+    } else {
+        *l = Some(r);
+    }
+}
 
+#[test]
+fn test_concat_optional_str() {
+    let mut s = None;
+    concat_optional_str(&mut s, "hello".to_string());
+    assert_eq!(s.unwrap(), "hello".to_string());
+    let mut s = Some("Hello".to_string());
+    concat_optional_str(&mut s, "World".to_string());
+    assert_eq!(s.unwrap(), "HelloWorld".to_string())
+}
 /// TypeDefine is
 /// ```
 /// struct Test {
@@ -46,6 +62,7 @@ where
     F: FiledStatement,
     O: OffSideRule,
 {
+    const TYPE_DEFINE_DERIMITA: &'static str = "\n\n";
     pub fn new(
         root_type: impl Into<String>,
         mapper: M,
@@ -78,8 +95,8 @@ where
         //self.mapper.make_array_type(type_str)
         todo!("case arr")
     }
-    /// ### array containe some type is not consider example below
-    /// \["hello",0,{"name":"kai"}\]<br>
+    /// array containe some type is not consider<br>
+    /// example \["hello",0,{"name":"kai"}\]<br>
     /// above case is retrun Array(String)<>
     // case TestObj
     // {test : [{name:kai,age:20},{name:kai},{name:kai,age:20,like:{lang:rust,actor:hamabe}}]};
@@ -98,11 +115,10 @@ where
                 let child_type_key = TypeKey::from_parent(&parent_type_key, &parent_filed_key);
                 match json {
                     Json::Object(obj) => {
-                        childrens = Some(format!(
-                            "{}{}",
-                            childrens.unwrap_or_default(),
-                            self.type_defines_from_obj(&child_type_key, obj)
-                        ));
+                        concat_optional_str(
+                            &mut childrens,
+                            self.type_defines_from_obj(&child_type_key, obj),
+                        );
                         filed_statements.push_str(&self.filed_statement.create_statement(
                             &parent_filed_key,
                             &FiledType::case_obj(
@@ -132,18 +148,11 @@ where
                             &self.filed_statement,
                         );
                         let (filed_, child) = convertor.filed_statement_and_childrens();
-                        let child_type_statement = format!(
-                            "{}{}",
-                            childrens.unwrap_or_default(),
-                            child.unwrap_or_default()
-                        );
-                        (
-                            format!("{}{}", filed_statements, filed_),
-                            Some(child_type_statement),
-                        )
+                        concat_optional_str(&mut childrens, child.unwrap_or_default());
+                        (format!("{}{}", filed_statements, filed_), childrens)
                     }
                     _ => {
-                        filed_statements += &self.filed_statement.create_statement(
+                        filed_statements.push_str(&self.filed_statement.create_statement(
                             &parent_filed_key,
                             &FiledType::case_primitive(
                                 &parent_type_key,
@@ -152,31 +161,20 @@ where
                                 &self.optional_checker,
                                 json,
                             ),
-                        );
+                        ));
                         (filed_statements, childrens)
                     }
                 }
             },
         );
-        self.create_type_statement(
-            parent_type_key,
-            filed_statements,
-            childrens.unwrap_or_default(),
-        )
-    }
-    fn create_type_statement(
-        &self,
-        type_key: &TypeKey,
-        filed_statement: String,
-        childrens: String,
-    ) -> String {
         format!(
-            "{} {}{}{}\n\n{}",
-            self.type_statement.create_statement(type_key),
+            "{} {}{}{}{}{}",
+            self.type_statement.create_statement(&parent_type_key),
             self.off_side_rule.start(),
-            filed_statement,
+            filed_statements,
             self.off_side_rule.end(),
-            childrens
+            Self::TYPE_DEFINE_DERIMITA,
+            childrens.unwrap_or_default()
         )
     }
 }
