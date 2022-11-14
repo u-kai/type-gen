@@ -211,12 +211,14 @@ where
         type_key: &TypeKey,
     ) -> String {
         self.filed_statement.create_statement(
+            type_key,
             filed_key,
             &FiledType::case_array_obj(type_key, filed_key, &self.mapper, &self.optional_checker),
         )
     }
     fn make_filed_statement_case_obj(&self, filed_key: &FiledKey, type_key: &TypeKey) -> String {
         self.filed_statement.create_statement(
+            type_key,
             filed_key,
             &FiledType::case_obj(type_key, filed_key, &self.mapper, &self.optional_checker),
         )
@@ -243,6 +245,7 @@ where
         json: Json,
     ) -> String {
         self.filed_statement.create_statement(
+            type_key,
             filed_key,
             &FiledType::case_primitive(
                 type_key,
@@ -260,6 +263,7 @@ where
         json: Json,
     ) -> String {
         self.filed_statement.create_statement(
+            type_key,
             filed_key,
             &FiledType::case_array_primitive(
                 type_key,
@@ -309,7 +313,12 @@ mod test_type_define_gen {
     }
     struct FakeFiledStatement;
     impl FiledStatement for FakeFiledStatement {
-        fn create_statement(&self, filed_key: &FiledKey, filed_type: &FiledType) -> String {
+        fn create_statement(
+            &self,
+            _: &TypeKey,
+            filed_key: &FiledKey,
+            filed_type: &FiledType,
+        ) -> String {
             self.add_head_space(format!(
                 "{}: {}{}\n",
                 filed_key.value(),

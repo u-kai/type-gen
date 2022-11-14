@@ -15,8 +15,16 @@ fn main() {
                     "name":"something"
                 },
                 {
-                    "id":null,
                     "age":20
+                },
+                {
+                    "id":0,
+                    "data":[
+                        {
+                            "from":"kanagawa",
+                            "age":20
+                        }
+                    ]
                 }
             ]
         }

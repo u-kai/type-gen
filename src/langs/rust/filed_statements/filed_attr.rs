@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
 use crate::{
-    traits::filed_statements::filed_attr::FiledAttribute, utils::store_fn::push_to_kv_vec,
+    langs::common::type_define_generators::{filed_key::FiledKey, type_key::TypeKey},
+    traits::filed_statements::filed_attr::FiledAttribute,
+    utils::store_fn::push_to_kv_vec,
 };
 
 #[derive(Debug, Clone)]
@@ -37,12 +39,12 @@ impl From<&RustFiledAttribute> for String {
 }
 
 #[derive(Debug, Clone)]
-pub struct RustFiledAttributeStore {
+pub struct RustFiledAttributeStore<'a> {
     all: Option<Vec<RustFiledAttribute>>,
-    store: HashMap<String, Vec<RustFiledAttribute>>,
+    store: HashMap<(&'a str, &'a str), Vec<RustFiledAttribute>>,
 }
 
-impl RustFiledAttributeStore {
+impl<'a> RustFiledAttributeStore<'a> {
     pub fn new() -> Self {
         Self {
             all: None,
@@ -52,23 +54,30 @@ impl RustFiledAttributeStore {
     pub fn set_attr_all(&mut self, attrs: Vec<RustFiledAttribute>) {
         self.all = Some(attrs)
     }
-    pub fn add_attr(&mut self, key: &str, attr: RustFiledAttribute) {
-        push_to_kv_vec(&mut self.store, key.to_string(), attr)
+    pub fn add_attr(
+        &mut self,
+        type_key: &'a TypeKey,
+        filed_key: &'a FiledKey,
+        attr: RustFiledAttribute,
+    ) {
+        push_to_kv_vec(&mut self.store, (type_key.value(), filed_key.value()), attr)
     }
-    pub fn containe(&self, key: &str) -> bool {
-        self.store.contains_key(key)
+    pub fn containe(&self, type_key: &str, filed_key: &str) -> bool {
+        self.store.contains_key(&(type_key, filed_key))
     }
 }
 
-impl FiledAttribute for RustFiledAttributeStore {
-    fn get_attr(&self, filed_key: &str) -> Option<String> {
+impl<'a> FiledAttribute for RustFiledAttributeStore<'a> {
+    fn get_attr(&self, type_key: &TypeKey, filed_key: &FiledKey) -> Option<String> {
         let mut v = Vec::new();
         if let Some(all) = &self.all {
             v.extend(all.clone());
         }
-        self.store.get(filed_key).map(|attr| {
-            v.extend(attr.clone());
-        });
+        self.store
+            .get(&(type_key.value(), filed_key.value()))
+            .map(|attr| {
+                v.extend(attr.clone());
+            });
         if v.len() > 0 {
             return Some(RustFiledAttribute::vec_to_string(v));
         }

@@ -21,9 +21,6 @@ impl FiledKey {
     pub fn drain(self) -> String {
         self.0
     }
-    //pub fn to_filed_type(&self)-> String {
-
-    //}
     pub fn to_type_key(&self, parent: &TypeKey) -> TypeKey {
         let npc = NamingPrincipalConvertor::new(&self.0);
         TypeKey::new(format!("{}{}", parent.value(), npc.to_pascal()))

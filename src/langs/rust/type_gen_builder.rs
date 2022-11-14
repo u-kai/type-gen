@@ -1,9 +1,12 @@
 use std::cell::RefCell;
 
 use crate::langs::common::{
-    filed_comment::BaseFiledComment, optional_checker::BaseOptionalChecker,
+    filed_comment::BaseFiledComment,
+    optional_checker::BaseOptionalChecker,
     type_comment::BaseTypeComment,
-    type_define_generators::type_define_generator::TypeDefineGenerator,
+    type_define_generators::{
+        filed_key::FiledKey, type_define_generator::TypeDefineGenerator, type_key::TypeKey,
+    },
 };
 
 use super::{
@@ -28,18 +31,18 @@ struct TypeStatements {
     visi: RustTypeVisibilityProvider,
     attr: RustTypeAttributeStore,
 }
-struct FiledStatements {
+struct FiledStatements<'a> {
     comment: BaseFiledComment,
     visi: RustFiledVisibilityProvider,
-    attr: RustFiledAttributeStore,
+    attr: RustFiledAttributeStore<'a>,
 }
-pub struct RustTypeGeneratorBuilder {
+pub struct RustTypeGeneratorBuilder<'a> {
     type_statements: TypeStatements,
-    filed_statements: FiledStatements,
+    filed_statements: FiledStatements<'a>,
     opsional_checker: BaseOptionalChecker,
 }
 
-impl RustTypeGeneratorBuilder {
+impl<'a> RustTypeGeneratorBuilder<'a> {
     pub fn new() -> Self {
         let t = TypeStatements {
             comment: BaseTypeComment::new("//"),
@@ -61,8 +64,12 @@ impl RustTypeGeneratorBuilder {
     pub fn build(
         self,
         root_struct_name: &str,
-    ) -> TypeDefineGenerator<JsonRustMapper, RustTypeStatement, RustFiledStatement, RustOffSideRule>
-    {
+    ) -> TypeDefineGenerator<
+        JsonRustMapper,
+        RustTypeStatement,
+        RustFiledStatement<'a>,
+        RustOffSideRule,
+    > {
         let mapper = JsonRustMapper::new();
         let type_statement = RustTypeStatement::new(
             self.type_statements.comment,
@@ -114,8 +121,15 @@ impl RustTypeGeneratorBuilder {
         self.type_statements.attr.add_attr(struct_name, attr);
         self
     }
-    pub fn add_attr_to_filed(mut self, filed_key: &str, attr: RustFiledAttribute) -> Self {
-        self.filed_statements.attr.add_attr(filed_key, attr);
+    pub fn add_attr_to_filed(
+        mut self,
+        type_key: &'a TypeKey,
+        filed_key: &'a FiledKey,
+        attr: RustFiledAttribute,
+    ) -> Self {
+        self.filed_statements
+            .attr
+            .add_attr(type_key, filed_key, attr);
         self
     }
     // comment
