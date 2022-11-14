@@ -156,11 +156,10 @@ where
         parent_filed_key: &FiledKey,
         arr: Vec<Json>,
     ) -> Option<TypeDefine> {
-        if Self::is_primitive(&arr) {
+        if Self::has_childres(&arr) {
             return None;
         };
         let collect_obj = self.collect_obj_from_json_array(arr);
-        println!("collect_obj {:#?}", collect_obj);
         let obj_type_key = parent_filed_key.to_type_key(parent_type_key);
         let (filed_statements, childrens) = collect_obj.into_iter().fold(
             (String::new(), None),
@@ -199,6 +198,9 @@ where
     fn calc_array_json_nest_num(arr: &Vec<Json>) -> usize {
         let init = 1;
         fn rec(arr: &Vec<Json>, nest_count: usize) -> usize {
+            if arr.len() == 0 {
+                return nest_count;
+            }
             let rep = &arr[0];
             match rep {
                 Json::Array(arr) => rec(arr, nest_count + 1),
@@ -210,11 +212,14 @@ where
     fn calc_collected_json_nest_num(collected_json: &Vec<Json>) -> usize {
         Self::calc_array_json_nest_num(collected_json) - 1
     }
-    fn is_primitive(arr: &Vec<Json>) -> bool {
+    fn has_childres(arr: &Vec<Json>) -> bool {
+        if arr.len() == 0 {
+            return true;
+        }
         let rep = &arr[0];
         match rep {
             Json::Object(_) => false,
-            Json::Array(arr) => Self::is_primitive(arr),
+            Json::Array(arr) => Self::has_childres(arr),
             _ => true,
         }
     }
@@ -233,6 +238,16 @@ where
             mapper: &impl JsonLangMapper,
             optional_checker: &BaseOptionalChecker,
         ) -> FiledType {
+            if arr.len() == 0 {
+                return FiledType::case_nest_array_primitive(
+                    type_key,
+                    filed_key,
+                    mapper,
+                    optional_checker,
+                    &Json::Null,
+                    nest_count,
+                );
+            }
             let rep = &arr[0];
             match rep {
                 Json::Object(_) => FiledType::case_nest_array_obj(
@@ -290,7 +305,6 @@ where
                         }
                     }
                     Json::Array(arr) => rec(map, arr),
-
                     _ => {}
                 }
             }
@@ -401,6 +415,33 @@ mod test_type_define_gen {
             osr,
             optional_checker,
         )
+    }
+    #[test]
+    fn test_make_define_case_nest_empty_array() {
+        let struct_name = "Test";
+        let json = r#"
+            {
+                "id":0,
+                "name":"kai",
+                "result":[
+                    [],
+                    []
+                ]
+            }
+        "#;
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+    result: Option<Vec<Vec<null>>>,
+}
+
+"#;
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require(struct_name, "id");
+        assert_eq!(
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
+            tobe
+        );
     }
     #[test]
     fn test_make_define_case_nest_obj_array() {
