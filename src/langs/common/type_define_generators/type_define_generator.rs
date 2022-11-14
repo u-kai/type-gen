@@ -37,6 +37,8 @@ where
     off_side_rule: O,
 }
 
+enum ArrayJsonAccmurator {}
+
 impl<M, T, F, O> TypeDefineGenerator<M, T, F, O>
 where
     M: JsonLangMapper,
@@ -205,6 +207,27 @@ where
         };
         (filed_statement, Some(type_define_and_childrens))
     }
+    fn make_filed_statement_case_array_json(
+        &self,
+        type_key: &TypeKey,
+        filed_key: &FiledKey,
+        arr: &Vec<Json>,
+    ) -> FiledType {
+        let rep = &arr[0];
+        match rep {
+            Json::Object(_) => {
+                FiledType::case_array_obj(type_key, filed_key, &self.mapper, &self.optional_checker)
+            }
+            Json::Array(arr) => self.make_filed_statement_case_array_json(type_key, filed_key, arr),
+            _ => FiledType::case_array_primitive(
+                type_key,
+                filed_key,
+                &self.mapper,
+                &self.optional_checker,
+                rep.clone(),
+            ),
+        }
+    }
     fn make_filed_statement_case_array_obj(
         &self,
         filed_key: &FiledKey,
@@ -233,7 +256,8 @@ where
                     }
                 }
                 Json::Array(arr) => return self.collect_obj_from_json_array(arr),
-                _ => panic!("this case is define above {:#?}", json),
+
+                _ => {}
             }
         }
         map
@@ -358,6 +382,39 @@ mod test_type_define_gen {
             osr,
             optional_checker,
         )
+    }
+    #[test]
+    fn test_make_define_case_double_primitive_array() {
+        let struct_name = "Test";
+        let json = r#"
+            {
+                "id":0,
+                "name":"kai",
+                "result":[
+                    [
+                        1
+                    ],
+                    [
+                        2 
+                    ]
+                ]
+            }
+        "#;
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+    result: Option<Vec<Vec<isize>>>,
+}
+
+
+"#;
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require(struct_name, "id");
+        optional_checker.add_require("TestResultObj", "like");
+        assert_eq!(
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
+            tobe
+        );
     }
     #[test]
     fn test_make_define_case_nest_array() {

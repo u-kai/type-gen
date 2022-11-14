@@ -50,6 +50,20 @@ where
             _ => panic!("this method is not obj or array case json -> {:?}", json),
         }
     }
+    pub fn from_json_to_nest_array(&self, json: &Json, nest_num: usize) -> String {
+        match json {
+            Json::String(_) => self.make_nest_array(self.mapper.case_string(), nest_num),
+            Json::Null => self.make_nest_array(self.mapper.case_null(), nest_num),
+            Json::Number(num) => self.make_nest_array(self.mapper.case_num(&num), nest_num),
+            Json::Boolean(_) => self.make_nest_array(self.mapper.case_bool(), nest_num),
+            _ => panic!("this method is not obj or array case json -> {:?}", json),
+        }
+    }
+    fn make_nest_array(&self, type_filed: impl Into<String>, nest_num: usize) -> String {
+        self.gen_optional_or_require((0..nest_num).fold(type_filed.into(), |acc, _| {
+            self.mapper.make_array_type(&acc)
+        }))
+    }
     pub fn case_num_array(&self, num: &serde_json::Number) -> String {
         let array_type = self
             .mapper
@@ -98,6 +112,8 @@ where
 
 mod test_primitive_type_statement_generator {
 
+    use crate::langs::common::optional_checker::BaseOptionalChecker;
+
     use super::*;
     use serde_json::Number;
     struct FakeOptionalChecker {
@@ -110,6 +126,24 @@ mod test_primitive_type_statement_generator {
         }
     }
 
+    #[test]
+    fn test_case_nest_primitive_array() {
+        let nest_num = 3;
+        let tobe = "Option<Vec<Vec<Vec<null>>>>";
+        let optional_checker = BaseOptionalChecker::default();
+        let mapper = FakeMapper;
+        let ptsg = PrimitiveTypeStatementGenerator::new("Test", "test", &mapper, &optional_checker);
+        assert_eq!(ptsg.from_json_to_nest_array(&Json::Null, nest_num), tobe);
+        let nest_num = 3;
+        let tobe = "Option<Vec<Vec<Vec<String>>>>";
+        let optional_checker = BaseOptionalChecker::default();
+        let mapper = FakeMapper;
+        let ptsg = PrimitiveTypeStatementGenerator::new("Test", "test", &mapper, &optional_checker);
+        assert_eq!(
+            ptsg.from_json_to_nest_array(&Json::String(String::new()), nest_num),
+            tobe
+        );
+    }
     #[test]
     fn test_case_bool_array() {
         let mapper = FakeMapper;

@@ -49,6 +49,24 @@ impl FiledType {
             },
         )
     }
+    pub fn case_nest_array_primitive(
+        type_key: &TypeKey,
+        filed_key: &FiledKey,
+        mapper: &impl JsonLangMapper,
+        optional_checker: &impl OptionalChecker,
+        json: &Json,
+        nest_num: usize,
+    ) -> Self {
+        Self(
+            PrimitiveTypeStatementGenerator::new(
+                type_key.value(),
+                filed_key.value(),
+                mapper,
+                optional_checker,
+            )
+            .from_json_to_nest_array(json, nest_num),
+        )
+    }
     pub fn case_array_primitive(
         type_key: &TypeKey,
         filed_key: &FiledKey,
