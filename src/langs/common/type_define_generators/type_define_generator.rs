@@ -37,8 +37,6 @@ where
     off_side_rule: O,
 }
 
-enum ArrayJsonAccmurator {}
-
 impl<M, T, F, O> TypeDefineGenerator<M, T, F, O>
 where
     M: JsonLangMapper,
@@ -113,13 +111,19 @@ where
                             );
                             return (self.mapper.case_any().to_string(), None);
                         }
-                        let (filed_statement, child) = self
-                            .make_filed_statement_and_childrens_from_array_json(
-                                parent_type_key,
-                                &parent_filed_key,
-                                false,
-                                arr,
-                            );
+                        let filed_statement = self.make_filed_statement_case_array_json(
+                            &parent_type_key,
+                            &parent_filed_key,
+                            &arr,
+                            Self::calc_array_json_nest_num(&arr),
+                        );
+                        println!("filed_statement = {}", filed_statement);
+                        let child = self.make_child_type_defines_from_array_json(
+                            parent_type_key,
+                            &parent_filed_key,
+                            arr,
+                        );
+                        println!("child = {}", child.clone().unwrap_or_default());
                         filed_statements.push_str(&filed_statement);
                         concat_optional_str(&mut childrens, child.unwrap_or_default());
                         (filed_statements, childrens)
@@ -148,95 +152,126 @@ where
     fn case_arr(&self, _: Vec<Json>) -> String {
         todo!("case arr")
     }
-    fn make_filed_statement_and_childrens_from_array_json(
+    fn make_child_type_defines_from_array_json(
         &self,
-        type_key: &TypeKey,
-        filed_key: &FiledKey,
-        is_collect_vec: bool,
+        parent_type_key: &TypeKey,
+        parent_filed_key: &FiledKey,
         arr: Vec<Json>,
-    ) -> (String, Option<String>) {
-        // case primitive type
-        match arr.get(0) {
-            Some(Json::Object(_) | Json::Array(_)) => (),
-            _ => {
-                let rep = arr[0].clone();
-                let filed_statement = if is_collect_vec {
-                    self.make_filed_statement_case_primitive(filed_key, type_key, rep)
-                } else {
-                    self.make_filed_statement_case_array_primitive(filed_key, type_key, rep)
-                };
-                return (filed_statement, None);
-            }
+    ) -> Option<TypeDefine> {
+        if Self::is_primitive(&arr) {
+            return None;
         };
-        // case obj type
         let collect_obj = self.collect_obj_from_json_array(arr);
-        let obj_type_key = filed_key.to_type_key(type_key);
-        let (field_records, childrens) = collect_obj.into_iter().fold(
+        let obj_type_key = parent_filed_key.to_type_key(parent_type_key);
+        let (filed_statements, childrens) = collect_obj.into_iter().fold(
             (String::new(), None),
-            |(mut filed_records, childrens), (key, array_json)| {
-                let json_is_array_type = match array_json.get(0) {
-                    Some(Json::Array(_)) => true,
-                    _ => false,
-                };
-                let obj_filed_key = FiledKey::new(key);
-                let (filed_statement, maybe_childrens) = self
-                    .make_filed_statement_and_childrens_from_array_json(
+            |(mut filed_statements, mut childrens), (filed_key, collected_json)| {
+                let nest_num = Self::calc_collected_json_nest_num(&collected_json);
+                let child_filed_key = FiledKey::new(filed_key);
+                let filed_statement = self.make_filed_statement_case_array_json(
+                    &obj_type_key,
+                    &child_filed_key,
+                    &collected_json,
+                    nest_num,
+                );
+                filed_statements.push_str(&filed_statement);
+                childrens = concat_optionals(
+                    childrens,
+                    self.make_child_type_defines_from_array_json(
                         &obj_type_key,
-                        &obj_filed_key,
-                        !json_is_array_type,
-                        array_json,
-                    );
-                let childrens = concat_optionals(childrens, maybe_childrens);
-                filed_records.push_str(&filed_statement);
-                (filed_records, childrens)
+                        &child_filed_key,
+                        collected_json,
+                    ),
+                );
+                (filed_statements, childrens)
             },
         );
         let type_define_and_childrens = format!(
             "{} {}{}{}{}{}",
             self.type_statement.create_statement(&obj_type_key),
             self.off_side_rule.start(),
-            field_records,
+            filed_statements,
             self.off_side_rule.end(),
             Self::TYPE_DEFINE_DERIMITA,
             childrens.unwrap_or_default()
         );
-        let filed_statement = if is_collect_vec {
-            self.make_filed_statement_case_obj(filed_key, type_key)
-        } else {
-            self.make_filed_statement_case_array_obj(filed_key, type_key)
-        };
-        (filed_statement, Some(type_define_and_childrens))
+        Some(type_define_and_childrens)
+    }
+    fn calc_array_json_nest_num(arr: &Vec<Json>) -> usize {
+        let init = 1;
+        fn rec(arr: &Vec<Json>, nest_count: usize) -> usize {
+            let rep = &arr[0];
+            match rep {
+                Json::Array(arr) => rec(arr, nest_count + 1),
+                _ => nest_count,
+            }
+        }
+        rec(arr, init)
+    }
+    fn calc_collected_json_nest_num(collected_json: &Vec<Json>) -> usize {
+        Self::calc_array_json_nest_num(collected_json) - 1
+    }
+    fn is_primitive(arr: &Vec<Json>) -> bool {
+        let rep = &arr[0];
+        match rep {
+            Json::Object(_) => false,
+            Json::Array(arr) => Self::is_primitive(arr),
+            _ => true,
+        }
     }
     fn make_filed_statement_case_array_json(
         &self,
         type_key: &TypeKey,
         filed_key: &FiledKey,
         arr: &Vec<Json>,
-    ) -> FiledType {
-        let rep = &arr[0];
-        match rep {
-            Json::Object(_) => {
-                FiledType::case_array_obj(type_key, filed_key, &self.mapper, &self.optional_checker)
-            }
-            Json::Array(arr) => self.make_filed_statement_case_array_json(type_key, filed_key, arr),
-            _ => FiledType::case_array_primitive(
-                type_key,
-                filed_key,
-                &self.mapper,
-                &self.optional_checker,
-                rep.clone(),
-            ),
-        }
-    }
-    fn make_filed_statement_case_array_obj(
-        &self,
-        filed_key: &FiledKey,
-        type_key: &TypeKey,
+        nest_count: usize,
     ) -> String {
+        fn nest_rec(
+            type_key: &TypeKey,
+            filed_key: &FiledKey,
+            arr: &Vec<Json>,
+            nest_count: usize,
+            mapper: &impl JsonLangMapper,
+            optional_checker: &BaseOptionalChecker,
+        ) -> FiledType {
+            let rep = &arr[0];
+            match rep {
+                Json::Object(_) => FiledType::case_nest_array_obj(
+                    type_key,
+                    filed_key,
+                    nest_count,
+                    mapper,
+                    optional_checker,
+                ),
+                Json::Array(arr) => nest_rec(
+                    type_key,
+                    filed_key,
+                    arr,
+                    nest_count,
+                    mapper,
+                    optional_checker,
+                ),
+                _ => FiledType::case_nest_array_primitive(
+                    type_key,
+                    filed_key,
+                    mapper,
+                    optional_checker,
+                    rep,
+                    nest_count,
+                ),
+            }
+        }
         self.filed_statement.create_statement(
             type_key,
             filed_key,
-            &FiledType::case_array_obj(type_key, filed_key, &self.mapper, &self.optional_checker),
+            &nest_rec(
+                type_key,
+                filed_key,
+                arr,
+                nest_count,
+                &self.mapper,
+                &self.optional_checker,
+            ),
         )
     }
     fn make_filed_statement_case_obj(&self, filed_key: &FiledKey, type_key: &TypeKey) -> String {
@@ -272,24 +307,6 @@ where
             type_key,
             filed_key,
             &FiledType::case_primitive(
-                type_key,
-                filed_key,
-                &self.mapper,
-                &self.optional_checker,
-                json,
-            ),
-        )
-    }
-    fn make_filed_statement_case_array_primitive(
-        &self,
-        filed_key: &FiledKey,
-        type_key: &TypeKey,
-        json: Json,
-    ) -> String {
-        self.filed_statement.create_statement(
-            type_key,
-            filed_key,
-            &FiledType::case_array_primitive(
                 type_key,
                 filed_key,
                 &self.mapper,
@@ -403,9 +420,8 @@ mod test_type_define_gen {
         let tobe = r#"struct Test {
     id: usize,
     name: Option<String>,
-    result: Option<Vec<Vec<isize>>>,
+    result: Option<Vec<Vec<usize>>>,
 }
-
 
 "#;
         let mut optional_checker = BaseOptionalChecker::default();

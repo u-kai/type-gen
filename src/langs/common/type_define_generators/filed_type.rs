@@ -19,6 +19,13 @@ impl FiledType {
     pub fn new(value: impl Into<String>) -> Self {
         Self(value.into())
     }
+    fn from_nest_array(
+        nest_num: usize,
+        type_filed_str: impl Into<String>,
+        mapper: &impl JsonLangMapper,
+    ) -> String {
+        (0..nest_num).fold(type_filed_str.into(), |acc, _| mapper.make_array_type(&acc))
+    }
     pub fn case_obj(
         type_key: &TypeKey,
         filed_key: &FiledKey,
@@ -31,6 +38,22 @@ impl FiledType {
                 mapper.make_optional_type(this.value())
             } else {
                 this.drain()
+            },
+        )
+    }
+    pub fn case_nest_array_obj(
+        type_key: &TypeKey,
+        filed_key: &FiledKey,
+        nest_num: usize,
+        mapper: &impl JsonLangMapper,
+        optional_checker: &impl OptionalChecker,
+    ) -> Self {
+        let this = filed_key.to_type_key(type_key);
+        Self(
+            if optional_checker.is_optional(type_key.value(), filed_key.value()) {
+                mapper.make_optional_type(&Self::from_nest_array(nest_num, this.value(), mapper))
+            } else {
+                Self::from_nest_array(nest_num, this.value(), mapper)
             },
         )
     }
@@ -120,6 +143,20 @@ mod test_filed_type {
 
     use super::FiledType;
 
+    #[test]
+    fn test_case_nest_array_obj_filed_type() {
+        let type_key = TypeKey::new("Test");
+        let mapper = FakeMapper;
+        let optional_checker = BaseOptionalChecker::default();
+        let filed_type = FiledType::case_nest_array_obj(
+            &type_key,
+            &FiledKey::new("name"),
+            3,
+            &mapper,
+            &optional_checker,
+        );
+        assert_eq!(filed_type.value(), "Option<Vec<Vec<Vec<TestName>>>>");
+    }
     #[test]
     fn test_case_array_primitive_filed_type() {
         let type_key = TypeKey::new("Test");
