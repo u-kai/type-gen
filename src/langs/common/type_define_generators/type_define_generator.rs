@@ -117,13 +117,11 @@ where
                             &arr,
                             Self::calc_array_json_nest_num(&arr),
                         );
-                        println!("filed_statement = {}", filed_statement);
                         let child = self.make_child_type_defines_from_array_json(
                             parent_type_key,
                             &parent_filed_key,
                             arr,
                         );
-                        println!("child = {}", child.clone().unwrap_or_default());
                         filed_statements.push_str(&filed_statement);
                         concat_optional_str(&mut childrens, child.unwrap_or_default());
                         (filed_statements, childrens)
@@ -162,6 +160,7 @@ where
             return None;
         };
         let collect_obj = self.collect_obj_from_json_array(arr);
+        println!("collect_obj {:#?}", collect_obj);
         let obj_type_key = parent_filed_key.to_type_key(parent_type_key);
         let (filed_statements, childrens) = collect_obj.into_iter().fold(
             (String::new(), None),
@@ -282,19 +281,22 @@ where
         )
     }
     fn collect_obj_from_json_array(&self, arr: Vec<Json>) -> BTreeMap<String, Vec<Json>> {
-        let mut map = BTreeMap::new();
-        for json in arr {
-            match json {
-                Json::Object(obj) => {
-                    for (k, v) in obj {
-                        push_to_btree_vec(&mut map, k, v);
+        fn rec(map: &mut BTreeMap<String, Vec<Json>>, arr: Vec<Json>) {
+            for json in arr {
+                match json {
+                    Json::Object(obj) => {
+                        for (k, v) in obj {
+                            push_to_btree_vec(map, k, v);
+                        }
                     }
-                }
-                Json::Array(arr) => return self.collect_obj_from_json_array(arr),
+                    Json::Array(arr) => rec(map, arr),
 
-                _ => {}
+                    _ => {}
+                }
             }
         }
+        let mut map = BTreeMap::new();
+        rec(&mut map, arr);
         map
     }
     fn make_filed_statement_case_primitive(
@@ -399,6 +401,60 @@ mod test_type_define_gen {
             osr,
             optional_checker,
         )
+    }
+    #[test]
+    fn test_make_define_case_nest_obj_array() {
+        let struct_name = "Test";
+        let json = r#"
+            {
+                "id":0,
+                "name":"kai",
+                "result":[
+                    [
+                       {
+                        "obj": [
+                            {
+                                "id":0
+                            }
+                        ]
+                       } 
+                    ],
+                    [
+                        {
+                            "id":0,
+                            "obj": [
+                                {
+                                    "name":"kai"
+                                }
+                            ]
+                        }
+                    ]
+                ]
+            }
+        "#;
+        let tobe = r#"struct Test {
+    id: usize,
+    name: Option<String>,
+    result: Option<Vec<Vec<TestResult>>>,
+}
+
+struct TestResult {
+    id: Option<usize>,
+    obj: Option<Vec<TestResultObj>>,
+}
+
+struct TestResultObj {
+    id: Option<usize>,
+    name: Option<String>,
+}
+
+"#;
+        let mut optional_checker = BaseOptionalChecker::default();
+        optional_checker.add_require(struct_name, "id");
+        assert_eq!(
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
+            tobe
+        );
     }
     #[test]
     fn test_make_define_case_double_primitive_array() {
