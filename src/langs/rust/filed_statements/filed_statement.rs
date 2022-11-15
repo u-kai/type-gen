@@ -47,12 +47,12 @@ impl<'a> FiledStatement for RustFiledStatement<'a> {
         filed_key: &FiledKey,
         filed_type: &FiledType,
     ) -> String {
-        let visi = self.visi.get_visibility_str(filed_key.value());
-        let (new_key, rename_attr) = if !NamingPrincipal::is_snake(filed_key.value()) {
-            let new_key = replace_cannot_use_char(filed_key.value());
+        let visi = self.visi.get_visibility_str(filed_key.original());
+        let (new_key, rename_attr) = if !NamingPrincipal::is_snake(filed_key.original()) {
+            let new_key = replace_cannot_use_char(filed_key.original());
             let npc = NamingPrincipalConvertor::new(&new_key);
             let new_key = npc.to_snake();
-            let rename_attr = format!("#[serde(rename = \"{}\")]\n    ", filed_key.value());
+            let rename_attr = format!("#[serde(rename = \"{}\")]\n    ", filed_key.original());
             (
                 self.reserved_words.sub_or_default(&new_key).to_string(),
                 Some(rename_attr),
@@ -60,7 +60,7 @@ impl<'a> FiledStatement for RustFiledStatement<'a> {
         } else {
             (
                 self.reserved_words
-                    .sub_or_default(filed_key.value())
+                    .sub_or_default(filed_key.original())
                     .to_string(),
                 None,
             )
@@ -76,7 +76,7 @@ impl<'a> FiledStatement for RustFiledStatement<'a> {
         if let Some(attr) = self.attr.borrow().get_attr(type_key, filed_key) {
             result = self.add_head_space(format!("{}\n{}", attr, result));
         };
-        if let Some(comments) = self.comment.get_comments(filed_key.value()) {
+        if let Some(comments) = self.comment.get_comments(filed_key.original()) {
             for comment in comments.iter().rev() {
                 result = format!("{}{}\n{}", Self::HEAD_SPACE, comment, result);
             }
@@ -116,10 +116,10 @@ mod test_rust_filed_statement {
         let filed_key = FiledKey::new("cannot:Use");
         let filed_type = FiledType::new("Option<String>");
         let mut comment = BaseFiledComment::new("//");
-        comment.add_comment(filed_key.value(), "this is test");
-        comment.add_comment(filed_key.value(), "hello");
+        comment.add_comment(filed_key.original(), "this is test");
+        comment.add_comment(filed_key.original(), "hello");
         let mut visi = RustFiledVisibilityProvider::new();
-        visi.add_visibility(filed_key.value(), RustVisibility::Public);
+        visi.add_visibility(filed_key.original(), RustVisibility::Public);
         let attr = RefCell::new(RustFiledAttributeStore::new());
         attr.borrow_mut().add_attr(
             &type_key,
@@ -145,10 +145,10 @@ mod test_rust_filed_statement {
         let filed_key = FiledKey::new("type");
         let filed_type = FiledType::new("Option<String>");
         let mut comment = BaseFiledComment::new("//");
-        comment.add_comment(filed_key.value(), "this is test");
-        comment.add_comment(filed_key.value(), "hello");
+        comment.add_comment(filed_key.original(), "this is test");
+        comment.add_comment(filed_key.original(), "hello");
         let mut visi = RustFiledVisibilityProvider::new();
-        visi.add_visibility(filed_key.value(), RustVisibility::Public);
+        visi.add_visibility(filed_key.original(), RustVisibility::Public);
         let attr = RefCell::new(RustFiledAttributeStore::new());
         attr.borrow_mut().add_attr(
             &type_key,
@@ -173,10 +173,10 @@ mod test_rust_filed_statement {
         let filed_key = FiledKey::new("test");
         let filed_type = FiledType::new("Option<String>");
         let mut comment = BaseFiledComment::new("//");
-        comment.add_comment(filed_key.value(), "this is test");
-        comment.add_comment(filed_key.value(), "hello");
+        comment.add_comment(filed_key.original(), "this is test");
+        comment.add_comment(filed_key.original(), "hello");
         let mut visi = RustFiledVisibilityProvider::new();
-        visi.add_visibility(filed_key.value(), RustVisibility::Public);
+        visi.add_visibility(filed_key.original(), RustVisibility::Public);
         let attr = RefCell::new(RustFiledAttributeStore::new());
         attr.borrow_mut().add_attr(
             &type_key,

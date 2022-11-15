@@ -34,7 +34,7 @@ impl FiledType {
     ) -> Self {
         let this = filed_key.to_type_key(type_key);
         Self(
-            if optional_checker.is_optional(type_key.value(), filed_key.value()) {
+            if optional_checker.is_optional(type_key.value(), filed_key.original()) {
                 mapper.make_optional_type(this.value())
             } else {
                 this.drain()
@@ -50,7 +50,7 @@ impl FiledType {
     ) -> Self {
         let this = filed_key.to_type_key(type_key);
         Self(
-            if optional_checker.is_optional(type_key.value(), filed_key.value()) {
+            if optional_checker.is_optional(type_key.value(), filed_key.original()) {
                 mapper.make_optional_type(&Self::from_nest_array(nest_num, this.value(), mapper))
             } else {
                 Self::from_nest_array(nest_num, this.value(), mapper)
@@ -65,7 +65,7 @@ impl FiledType {
     ) -> Self {
         let this = filed_key.to_type_key(type_key);
         Self(
-            if optional_checker.is_optional(type_key.value(), filed_key.value()) {
+            if optional_checker.is_optional(type_key.value(), filed_key.original()) {
                 mapper.make_optional_type(&mapper.make_array_type(this.value()))
             } else {
                 mapper.make_array_type(&this.drain())
@@ -83,7 +83,7 @@ impl FiledType {
         Self(
             PrimitiveTypeStatementGenerator::new(
                 type_key.value(),
-                filed_key.value(),
+                filed_key.original(),
                 mapper,
                 optional_checker,
             )
@@ -100,7 +100,7 @@ impl FiledType {
         Self(
             PrimitiveTypeStatementGenerator::new(
                 type_key.value(),
-                filed_key.value(),
+                filed_key.original(),
                 mapper,
                 optional_checker,
             )
@@ -117,7 +117,7 @@ impl FiledType {
         Self(
             PrimitiveTypeStatementGenerator::new(
                 type_key.value(),
-                filed_key.value(),
+                filed_key.original(),
                 mapper,
                 optional_checker,
             )

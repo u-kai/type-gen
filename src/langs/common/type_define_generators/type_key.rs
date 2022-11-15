@@ -1,8 +1,5 @@
-use crate::langs::common::utils::replace_cannot_use_char;
-
 use super::filed_key::FiledKey;
 
-#[derive(Debug, Clone)]
 /// TypeKey represent type name
 /// ```
 /// // Test is TypeKey
@@ -10,11 +7,10 @@ use super::filed_key::FiledKey;
 ///     id: usize
 /// }
 /// ```
-///
 pub struct TypeKey(String);
 impl TypeKey {
     pub fn new(key: impl Into<String>) -> Self {
-        Self(replace_cannot_use_char(&key.into()))
+        Self(key.into())
     }
     pub fn value(&self) -> &str {
         &self.0

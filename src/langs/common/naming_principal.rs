@@ -3,4 +3,5 @@ pub enum NamingPrincipal {
     Camel,
     Pascal,
     Chain,
+    Constant,
 }

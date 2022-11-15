@@ -60,7 +60,11 @@ impl<'a> RustFiledAttributeStore<'a> {
         filed_key: &'a FiledKey,
         attr: RustFiledAttribute,
     ) {
-        push_to_kv_vec(&mut self.store, (type_key.value(), filed_key.value()), attr)
+        push_to_kv_vec(
+            &mut self.store,
+            (type_key.value(), filed_key.original()),
+            attr,
+        )
     }
     pub fn containe(&self, type_key: &str, filed_key: &str) -> bool {
         self.store.contains_key(&(type_key, filed_key))
@@ -74,7 +78,7 @@ impl<'a> FiledAttribute for RustFiledAttributeStore<'a> {
             v.extend(all.clone());
         }
         self.store
-            .get(&(type_key.value(), filed_key.value()))
+            .get(&(type_key.value(), filed_key.original()))
             .map(|attr| {
                 v.extend(attr.clone());
             });

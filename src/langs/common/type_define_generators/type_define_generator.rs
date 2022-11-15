@@ -378,7 +378,7 @@ mod test_type_define_gen {
         ) -> String {
             self.add_head_space(format!(
                 "{}: {}{}\n",
-                filed_key.value(),
+                filed_key.original(),
                 filed_type.value(),
                 Self::FILED_DERIMITA
             ))
@@ -429,7 +429,7 @@ mod test_type_define_gen {
         "#;
         let tobe = r#"struct Test {
     name: Option<String>,
-    userprofile: Option<TestUserprofile>,
+    user:profile: Option<TestUserprofile>,
 }
 
 struct TestUserprofile {
