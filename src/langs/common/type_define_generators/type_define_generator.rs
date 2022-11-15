@@ -417,6 +417,33 @@ mod test_type_define_gen {
         )
     }
     #[test]
+    fn test_make_define_case_cannot_use_char_containe_filed_key() {
+        let struct_name = "Test";
+        let json = r#"
+            {
+                "user:profile": {
+                    "name":"kai"
+                },
+                "name":"kai"
+            }
+        "#;
+        let tobe = r#"struct Test {
+    name: Option<String>,
+    userprofile: Option<TestUserprofile>,
+}
+
+struct TestUserprofile {
+    name: Option<String>,
+}
+
+"#;
+        let optional_checker = BaseOptionalChecker::default();
+        assert_eq!(
+            make_fake_type_generator(struct_name, optional_checker).gen_from_json(json),
+            tobe
+        );
+    }
+    #[test]
     fn test_make_define_case_nest_empty_array() {
         let struct_name = "Test";
         let json = r#"

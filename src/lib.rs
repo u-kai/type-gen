@@ -35,6 +35,7 @@ pub mod langs {
         pub mod optional_checker;
         pub mod primitive_type_statement_generator;
         pub mod type_comment;
+        pub mod utils;
     }
     pub mod rust {
         pub mod filed_statements {

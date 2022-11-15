@@ -6,6 +6,7 @@ use crate::{
     langs::common::{
         filed_comment::BaseFiledComment,
         type_define_generators::{filed_key::FiledKey, filed_type::FiledType, type_key::TypeKey},
+        utils::replace_cannot_use_char,
     },
     traits::filed_statements::{
         filed_attr::FiledAttribute, filed_comment::FiledComment, filed_statement::FiledStatement,
@@ -23,33 +24,6 @@ pub struct RustFiledStatement<'a> {
     attr: RefCell<RustFiledAttributeStore<'a>>,
     visi: RustFiledVisibilityProvider,
     reserved_words: RustReservedWords,
-}
-impl<'a> RustFiledStatement<'a> {
-    fn replace_cannot_use_char(str: &str) -> String {
-        str.replace(
-            |c| match c {
-                ':' => true,
-                ';' => true,
-                '#' => true,
-                '$' => true,
-                '%' => true,
-                '&' => true,
-                '~' => true,
-                '=' => true,
-                '|' => true,
-                '\"' => true,
-                '\'' => true,
-                '{' => true,
-                '}' => true,
-                '?' => true,
-                '!' => true,
-                '<' => true,
-                '>' => true,
-                _ => false,
-            },
-            "",
-        )
-    }
 }
 impl<'a> RustFiledStatement<'a> {
     pub fn new(
@@ -75,7 +49,7 @@ impl<'a> FiledStatement for RustFiledStatement<'a> {
     ) -> String {
         let visi = self.visi.get_visibility_str(filed_key.value());
         let (new_key, rename_attr) = if !NamingPrincipal::is_snake(filed_key.value()) {
-            let new_key = Self::replace_cannot_use_char(filed_key.value());
+            let new_key = replace_cannot_use_char(filed_key.value());
             let npc = NamingPrincipalConvertor::new(&new_key);
             let new_key = npc.to_snake();
             let rename_attr = format!("#[serde(rename = \"{}\")]\n    ", filed_key.value());
