@@ -8,6 +8,8 @@ impl RustReservedWords {
     pub fn new() -> Self {
         let mut map = HashMap::new();
         map.insert("type", "r#type");
+        map.insert("ref", "r#ref");
+        map.insert("match", "r#match");
         map.insert("use", "r#use");
         map.insert("as", "r#as");
         map.insert("if", "r#if");
