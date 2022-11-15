@@ -1,12 +1,11 @@
 use std::cell::RefCell;
 
-use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
+use npc::naming_principal::NamingPrincipal;
 
 use crate::{
     langs::common::{
         filed_comment::BaseFiledComment,
         type_define_generators::{filed_key::FiledKey, filed_type::FiledType, type_key::TypeKey},
-        utils::replace_cannot_use_char,
     },
     traits::filed_statements::{
         filed_attr::FiledAttribute, filed_comment::FiledComment, filed_statement::FiledStatement,
@@ -49,9 +48,8 @@ impl<'a> FiledStatement for RustFiledStatement<'a> {
     ) -> String {
         let visi = self.visi.get_visibility_str(filed_key.original());
         let (new_key, rename_attr) = if !NamingPrincipal::is_snake(filed_key.original()) {
-            let new_key = replace_cannot_use_char(filed_key.original());
-            let npc = NamingPrincipalConvertor::new(&new_key);
-            let new_key = npc.to_snake();
+            let new_key =
+                filed_key.rename(crate::langs::common::naming_principal::NamingPrincipal::Snake);
             let rename_attr = format!("#[serde(rename = \"{}\")]\n    ", filed_key.original());
             (
                 self.reserved_words.sub_or_default(&new_key).to_string(),
