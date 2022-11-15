@@ -25,6 +25,33 @@ pub struct RustFiledStatement<'a> {
     reserved_words: RustReservedWords,
 }
 impl<'a> RustFiledStatement<'a> {
+    fn replace_cannot_use_char(str: &str) -> String {
+        str.replace(
+            |c| match c {
+                ':' => true,
+                ';' => true,
+                '#' => true,
+                '$' => true,
+                '%' => true,
+                '&' => true,
+                '~' => true,
+                '=' => true,
+                '|' => true,
+                '\"' => true,
+                '\'' => true,
+                '{' => true,
+                '}' => true,
+                '?' => true,
+                '!' => true,
+                '<' => true,
+                '>' => true,
+                _ => false,
+            },
+            "",
+        )
+    }
+}
+impl<'a> RustFiledStatement<'a> {
     pub fn new(
         comment: BaseFiledComment,
         attr: RefCell<RustFiledAttributeStore<'a>>,
@@ -48,7 +75,8 @@ impl<'a> FiledStatement for RustFiledStatement<'a> {
     ) -> String {
         let visi = self.visi.get_visibility_str(filed_key.value());
         let (new_key, rename_attr) = if !NamingPrincipal::is_snake(filed_key.value()) {
-            let npc = NamingPrincipalConvertor::new(filed_key.value());
+            let new_key = Self::replace_cannot_use_char(filed_key.value());
+            let npc = NamingPrincipalConvertor::new(&new_key);
             let new_key = npc.to_snake();
             let rename_attr = format!("#[serde(rename = \"{}\")]\n    ", filed_key.value());
             (
@@ -108,6 +136,35 @@ mod test_rust_filed_statement {
     use super::RustFiledStatement;
     use std::cell::RefCell;
 
+    #[test]
+    fn pub_comment_and_attr_and_reserved_word_and_use_cannot_used() {
+        let type_key = TypeKey::new("Test");
+        let filed_key = FiledKey::new("cannot:Use");
+        let filed_type = FiledType::new("Option<String>");
+        let mut comment = BaseFiledComment::new("//");
+        comment.add_comment(filed_key.value(), "this is test");
+        comment.add_comment(filed_key.value(), "hello");
+        let mut visi = RustFiledVisibilityProvider::new();
+        visi.add_visibility(filed_key.value(), RustVisibility::Public);
+        let attr = RefCell::new(RustFiledAttributeStore::new());
+        attr.borrow_mut().add_attr(
+            &type_key,
+            &filed_key,
+            RustFiledAttribute::Original(String::from("cfg(not(test))")),
+        );
+        let reserved_words = RustReservedWords::new();
+        let statement = RustFiledStatement::new(comment, attr, visi, reserved_words);
+        let tobe = r#"    // this is test
+    // hello
+    #[cfg(not(test))]
+    #[serde(rename = "cannot:Use")]
+    pub cannot_use: Option<String>,
+"#;
+        assert_eq!(
+            statement.create_statement(&type_key, &filed_key, &filed_type,),
+            tobe.to_string()
+        );
+    }
     #[test]
     fn pub_comment_and_attr_and_reserved_word() {
         let type_key = TypeKey::new("Test");
