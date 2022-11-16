@@ -25,7 +25,7 @@ fn main () {
     }"#;
     let rust_type_define = RustTypeGeneratorBuilder::new()
         .set_visibility_to_all_struct(RustVisibility::Public)
-        .set_visibility_to_all_filed(RustVisibility::PublicSuper)
+        .set_visibility_to_all_field(RustVisibility::PublicSuper)
         .set_attr_to_all_struct(vec![RustTypeAttribute::Derive(vec![
             "Clone".to_string(),
             "Debug".to_string(),
@@ -33,7 +33,7 @@ fn main () {
             "Deserialize".to_string(),
         ])])
         .add_require("UKai", "id")
-        .add_comment_to_filed("id", "id is must set")
+        .add_comment_to_field("id", "id is must set")
         .add_comment_to_struct("UKai", "This is Demo")
         .add_comment_to_struct("UKaiProfile", "My Follower is Only One...")
         .build("UKai")
