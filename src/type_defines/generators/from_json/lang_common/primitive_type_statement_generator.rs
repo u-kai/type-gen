@@ -2,7 +2,7 @@ use crate::json::Json;
 
 use super::{json_lang_mapper::JsonLangMapper, optional_checker::OptionalChecker};
 
-pub struct PrimitiveTypeStatementGenerator<'a, M, O>
+pub(crate) struct PrimitiveTypeStatementGenerator<'a, M, O>
 where
     M: JsonLangMapper,
     O: OptionalChecker,

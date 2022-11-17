@@ -47,7 +47,7 @@ where
     O: OffSideRule,
 {
     const TYPE_DEFINE_DERIMITA: &'static str = "\n\n";
-    pub fn new(
+    pub(super) fn new(
         root_type: impl Into<String>,
         mapper: M,
         type_statement: T,

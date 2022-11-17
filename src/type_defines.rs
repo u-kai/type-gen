@@ -1,3 +1,3 @@
 pub mod generators;
-pub mod parsers;
-pub mod statement_parts;
+pub(super) mod parsers;
+pub(crate) mod statement_parts;
