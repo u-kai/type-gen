@@ -139,10 +139,10 @@ impl<'a> RustTypeGeneratorBuilder<'a> {
             .add_comment(struct_name, comment);
         self
     }
-    pub fn add_comment_to_field(mut self, field_key: &str, comment: &str) -> Self {
+    pub fn add_comment_to_field(mut self, type_key: &str, field_key: &str, comment: &str) -> Self {
         self.field_statements
             .comment
-            .add_comment(field_key, comment);
+            .add_comment(type_key, field_key, comment);
         self
     }
     // optional

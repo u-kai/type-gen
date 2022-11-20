@@ -40,7 +40,7 @@ fn main() {
             "Deserialize".to_string(),
         ])])
         .add_require("UKai", "id")
-        .add_comment_to_field("id", "id is must set")
+        .add_comment_to_field("UKai", "id", "id is must set")
         .add_comment_to_struct("UKai", "This is Demo")
         .add_comment_to_struct("UKaiProfile", "My Follower is Only One...")
         .build("UKai")

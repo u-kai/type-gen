@@ -1,5 +1,5 @@
 pub trait FieldComment {
-    fn get_comments(&self, field_key: &str) -> Option<&Vec<String>>;
+    fn get_comments(&self, type_key: &str, field_key: &str) -> Option<&Vec<String>>;
 }
 
 use std::collections::HashMap;
@@ -7,10 +7,11 @@ use std::collections::HashMap;
 use crate::utils::store_fn::push_to_kv_vec;
 
 type FiledKey = String;
+type TypeKey = String;
 type Comment = Vec<String>;
 pub struct BaseFieldComment {
     comment_mark: &'static str,
-    comment_map: HashMap<FiledKey, Comment>,
+    comment_map: HashMap<(TypeKey, FiledKey), Comment>,
 }
 
 impl BaseFieldComment {
@@ -20,9 +21,13 @@ impl BaseFieldComment {
             comment_map: HashMap::new(),
         }
     }
-    pub fn add_comment(&mut self, key: &str, comment: &str) {
+    pub fn add_comment(&mut self, type_key: &str, field_key: &str, comment: &str) {
         let comment = self.create_comment(comment);
-        push_to_kv_vec(&mut self.comment_map, key.to_string(), comment)
+        push_to_kv_vec(
+            &mut self.comment_map,
+            (type_key.to_string(), field_key.to_string()),
+            comment,
+        )
     }
     fn create_comment(&self, comment: &str) -> String {
         format!("{} {}", self.comment_mark, comment)
@@ -30,8 +35,10 @@ impl BaseFieldComment {
 }
 
 impl FieldComment for BaseFieldComment {
-    fn get_comments(&self, filed_key: &str) -> Option<&Vec<String>> {
-        self.comment_map.get(filed_key).map(|s| s)
+    fn get_comments(&self, type_key: &str, filed_key: &str) -> Option<&Vec<String>> {
+        self.comment_map
+            .get(&(type_key.to_string(), filed_key.to_string()))
+            .map(|s| s)
     }
 }
 
@@ -41,15 +48,15 @@ mod test_base_filed_comment {
     #[test]
     fn add_comment() {
         let mut filed_comment = BaseFieldComment::new("//");
-        filed_comment.add_comment("test", "Hello world");
-        filed_comment.add_comment("test", "this is test");
-        filed_comment.add_comment("name", "this is name");
+        filed_comment.add_comment("Test", "test", "Hello world");
+        filed_comment.add_comment("Test", "test", "this is test");
+        filed_comment.add_comment("Name", "name", "this is name");
         assert_eq!(
-            filed_comment.get_comments("test").unwrap(),
+            filed_comment.get_comments("Test", "test").unwrap(),
             &vec!["// Hello world".to_string(), "// this is test".to_string()]
         );
         assert_eq!(
-            filed_comment.get_comments("name").unwrap(),
+            filed_comment.get_comments("Name", "name").unwrap(),
             &vec!["// this is name".to_string()]
         );
     }

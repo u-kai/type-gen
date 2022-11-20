@@ -74,7 +74,10 @@ impl<'a> FieldStatement for RustfieldStatement<'a> {
         if let Some(attr) = self.attr.get_attr(type_key, field_key) {
             result = self.add_head_space(format!("{}\n{}", attr, result));
         };
-        if let Some(comments) = self.comment.get_comments(field_key.original()) {
+        if let Some(comments) = self
+            .comment
+            .get_comments(type_key.value(), field_key.original())
+        {
             for comment in comments.iter().rev() {
                 result = format!("{}{}\n{}", Self::HEAD_SPACE, comment, result);
             }
@@ -110,8 +113,8 @@ mod test_rust_field_statement {
         let field_key = FieldKey::new("cannot:Use");
         let field_type = FieldType::new("Option<String>");
         let mut comment = BaseFieldComment::new("//");
-        comment.add_comment(field_key.original(), "this is test");
-        comment.add_comment(field_key.original(), "hello");
+        comment.add_comment(type_key.value(), field_key.original(), "this is test");
+        comment.add_comment(type_key.value(), field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
         visi.add_visibility(field_key.original(), RustVisibility::Public);
         let mut attr = RustFieldAttributeStore::new();
@@ -139,8 +142,8 @@ mod test_rust_field_statement {
         let field_key = FieldKey::new("type");
         let field_type = FieldType::new("Option<String>");
         let mut comment = BaseFieldComment::new("//");
-        comment.add_comment(field_key.original(), "this is test");
-        comment.add_comment(field_key.original(), "hello");
+        comment.add_comment(type_key.value(), field_key.original(), "this is test");
+        comment.add_comment(type_key.value(), field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
         visi.add_visibility(field_key.original(), RustVisibility::Public);
         let mut attr = RustFieldAttributeStore::new();
@@ -167,8 +170,8 @@ mod test_rust_field_statement {
         let field_key = FieldKey::new("test");
         let field_type = FieldType::new("Option<String>");
         let mut comment = BaseFieldComment::new("//");
-        comment.add_comment(field_key.original(), "this is test");
-        comment.add_comment(field_key.original(), "hello");
+        comment.add_comment(type_key.value(), field_key.original(), "this is test");
+        comment.add_comment(type_key.value(), field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
         visi.add_visibility(field_key.original(), RustVisibility::Public);
         let mut attr = RustFieldAttributeStore::new();
