@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use crate::type_defines::{
     generators::from_json::{
         lang_common::{
@@ -80,7 +78,7 @@ impl<'a> RustTypeGeneratorBuilder<'a> {
         );
         let field_statement = RustfieldStatement::new(
             self.field_statements.comment,
-            RefCell::new(self.field_statements.attr),
+            self.field_statements.attr,
             self.field_statements.visi,
             RustReservedWords::new(),
         );

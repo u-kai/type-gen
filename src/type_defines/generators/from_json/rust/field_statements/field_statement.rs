@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use npc::naming_principal::NamingPrincipal;
 
 use crate::type_defines::{
@@ -22,14 +20,14 @@ use super::{
 
 pub struct RustfieldStatement<'a> {
     comment: BaseFieldComment,
-    attr: RefCell<RustFieldAttributeStore<'a>>,
+    attr: RustFieldAttributeStore<'a>,
     visi: RustFieldVisibilityProvider,
     reserved_words: RustReservedWords,
 }
 impl<'a> RustfieldStatement<'a> {
     pub fn new(
         comment: BaseFieldComment,
-        attr: RefCell<RustFieldAttributeStore<'a>>,
+        attr: RustFieldAttributeStore<'a>,
         visi: RustFieldVisibilityProvider,
         reserved_words: RustReservedWords,
     ) -> Self {
@@ -73,7 +71,7 @@ impl<'a> FieldStatement for RustfieldStatement<'a> {
             field_type.value(),
             Self::FIELD_DERIMITA
         ));
-        if let Some(attr) = self.attr.borrow().get_attr(type_key, field_key) {
+        if let Some(attr) = self.attr.get_attr(type_key, field_key) {
             result = self.add_head_space(format!("{}\n{}", attr, result));
         };
         if let Some(comments) = self.comment.get_comments(field_key.original()) {
@@ -105,7 +103,6 @@ mod test_rust_field_statement {
     };
 
     use super::RustfieldStatement;
-    use std::cell::RefCell;
 
     #[test]
     fn pub_comment_and_attr_and_reserved_word_and_use_cannot_used() {
@@ -117,8 +114,8 @@ mod test_rust_field_statement {
         comment.add_comment(field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
         visi.add_visibility(field_key.original(), RustVisibility::Public);
-        let attr = RefCell::new(RustFieldAttributeStore::new());
-        attr.borrow_mut().add_attr(
+        let mut attr = RustFieldAttributeStore::new();
+        attr.add_attr(
             &type_key,
             &field_key,
             RustFieldAttribute::Original(String::from("cfg(not(test))")),
@@ -146,8 +143,8 @@ mod test_rust_field_statement {
         comment.add_comment(field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
         visi.add_visibility(field_key.original(), RustVisibility::Public);
-        let attr = RefCell::new(RustFieldAttributeStore::new());
-        attr.borrow_mut().add_attr(
+        let mut attr = RustFieldAttributeStore::new();
+        attr.add_attr(
             &type_key,
             &field_key,
             RustFieldAttribute::Original(String::from("cfg(not(test))")),
@@ -174,8 +171,8 @@ mod test_rust_field_statement {
         comment.add_comment(field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
         visi.add_visibility(field_key.original(), RustVisibility::Public);
-        let attr = RefCell::new(RustFieldAttributeStore::new());
-        attr.borrow_mut().add_attr(
+        let mut attr = RustFieldAttributeStore::new();
+        attr.add_attr(
             &type_key,
             &field_key,
             RustFieldAttribute::Original(String::from("cfg(not(test))")),
