@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use crate::{
     json::Json,
     type_defines::statement_parts::{
-        field_key::Fieldkey, field_type::FieldType, type_key::TypeKey,
+        field_key::FieldKey, field_type::FieldType, type_key::TypeKey,
     },
     utils::store_fn::push_to_btree_vec,
 };
@@ -91,7 +91,7 @@ where
         let (field_statements, childrens) = obj.into_iter().fold(
             (String::new(), None),
             |(mut field_statements, mut childrens), (field_key, json)| {
-                let parent_field_key = Fieldkey::new(field_key);
+                let parent_field_key = FieldKey::new(field_key);
                 let child_type_key = TypeKey::from_parent(&parent_type_key, &parent_field_key);
                 match json {
                     Json::Object(obj) => {
@@ -155,7 +155,7 @@ where
     fn make_child_type_defines_from_array_json(
         &self,
         parent_type_key: &TypeKey,
-        parent_field_key: &Fieldkey,
+        parent_field_key: &FieldKey,
         arr: Vec<Json>,
     ) -> Option<TypeDefine> {
         if Self::has_childres(&arr) {
@@ -167,7 +167,7 @@ where
             (String::new(), None),
             |(mut field_statements, mut childrens), (field_key, collected_json)| {
                 let nest_num = Self::calc_collected_json_nest_num(&collected_json);
-                let child_field_key = Fieldkey::new(field_key);
+                let child_field_key = FieldKey::new(field_key);
                 let field_statement = self.make_field_statement_case_array_json(
                     &obj_type_key,
                     &child_field_key,
@@ -228,13 +228,13 @@ where
     fn make_field_statement_case_array_json(
         &self,
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         arr: &Vec<Json>,
         nest_count: usize,
     ) -> String {
         fn nest_rec(
             type_key: &TypeKey,
-            field_key: &Fieldkey,
+            field_key: &FieldKey,
             arr: &Vec<Json>,
             nest_count: usize,
             mapper: &impl JsonLangMapper,
@@ -290,7 +290,7 @@ where
             ),
         )
     }
-    fn make_field_statement_case_obj(&self, field_key: &Fieldkey, type_key: &TypeKey) -> String {
+    fn make_field_statement_case_obj(&self, field_key: &FieldKey, type_key: &TypeKey) -> String {
         self.field_statement.create_statement(
             type_key,
             field_key,
@@ -317,7 +317,7 @@ where
     }
     fn make_field_statement_case_primitive(
         &self,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         type_key: &TypeKey,
         json: Json,
     ) -> String {
@@ -356,7 +356,7 @@ mod test_type_define_gen {
         fn create_statement(
             &self,
             _: &TypeKey,
-            field_key: &Fieldkey,
+            field_key: &FieldKey,
             field_type: &FieldType,
         ) -> String {
             self.add_head_space(format!(

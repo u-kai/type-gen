@@ -14,18 +14,18 @@ pub fn replace_cannot_use_char(str: &str) -> String {
         "",
     )
 }
-/// Fieldkey represent type field name
+/// FieldKey represent type field name
 /// ```
 /// struct Test {
-///     // id is Fieldkey
+///     // id is FieldKey
 ///     id: usize
 /// }
 /// ```
 #[derive(Debug, Clone)]
-pub struct Fieldkey {
+pub struct FieldKey {
     original: String,
 }
-impl Fieldkey {
+impl FieldKey {
     pub fn new(key: impl Into<String>) -> Self {
         Self {
             original: key.into(),
@@ -61,19 +61,19 @@ impl Fieldkey {
 mod test_field_key {
     use crate::type_defines::{
         generators::from_json::lang_common::naming_principal::NamingPrincipal,
-        statement_parts::{field_key::Fieldkey, type_key::TypeKey},
+        statement_parts::{field_key::FieldKey, type_key::TypeKey},
     };
 
     #[test]
     fn test_rename() {
-        let field_key = Fieldkey::new("user:id");
+        let field_key = FieldKey::new("user:id");
         assert_eq!(field_key.original(), "user:id");
         assert_eq!(field_key.rename(NamingPrincipal::Camel), "userid");
     }
 
     #[test]
     fn test_to_type_key() {
-        let field_key = Fieldkey::new("user_id");
+        let field_key = FieldKey::new("user_id");
         assert_eq!(
             field_key.to_type_key(&TypeKey::new("Test")).value(),
             "TestUserId"

@@ -3,15 +3,15 @@ use std::collections::HashMap;
 use crate::utils::store_fn::{containes_to_kv_vec, push_to_kv_vec};
 
 type TypeKey = &'static str;
-type OptionFieldkey = &'static str;
-type RequireFieldkey = &'static str;
+type OptionFieldKey = &'static str;
+type RequireFieldKey = &'static str;
 pub trait OptionalChecker {
     fn is_optional(&self, type_key: &str, field_key: &str) -> bool;
 }
 pub struct BaseOptionalChecker {
     default_option_flag: bool,
-    optionlas: HashMap<TypeKey, Vec<OptionFieldkey>>,
-    requires: HashMap<TypeKey, Vec<OptionFieldkey>>,
+    optionlas: HashMap<TypeKey, Vec<OptionFieldKey>>,
+    requires: HashMap<TypeKey, Vec<OptionFieldKey>>,
 }
 
 impl BaseOptionalChecker {
@@ -22,10 +22,10 @@ impl BaseOptionalChecker {
             requires: HashMap::new(),
         }
     }
-    pub fn add_optional(&mut self, type_key: TypeKey, field_key: OptionFieldkey) {
+    pub fn add_optional(&mut self, type_key: TypeKey, field_key: OptionFieldKey) {
         push_to_kv_vec(&mut self.optionlas, type_key, field_key)
     }
-    pub fn add_require(&mut self, type_key: TypeKey, field_key: RequireFieldkey) {
+    pub fn add_require(&mut self, type_key: TypeKey, field_key: RequireFieldKey) {
         push_to_kv_vec(&mut self.requires, type_key, field_key)
     }
 }

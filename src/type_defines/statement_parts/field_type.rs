@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::{field_key::Fieldkey, type_key::TypeKey};
+use super::{field_key::FieldKey, type_key::TypeKey};
 
 /// fieldType represent field type
 /// ```
@@ -30,7 +30,7 @@ impl FieldType {
     }
     pub fn case_obj(
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         mapper: &impl JsonLangMapper,
         optional_checker: &impl OptionalChecker,
     ) -> Self {
@@ -45,7 +45,7 @@ impl FieldType {
     }
     pub fn case_nest_array_obj(
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         nest_num: usize,
         mapper: &impl JsonLangMapper,
         optional_checker: &impl OptionalChecker,
@@ -61,7 +61,7 @@ impl FieldType {
     }
     pub fn case_array_obj(
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         mapper: &impl JsonLangMapper,
         optional_checker: &impl OptionalChecker,
     ) -> Self {
@@ -76,7 +76,7 @@ impl FieldType {
     }
     pub fn case_nest_array_primitive(
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         mapper: &impl JsonLangMapper,
         optional_checker: &impl OptionalChecker,
         json: &Json,
@@ -94,7 +94,7 @@ impl FieldType {
     }
     pub fn case_array_primitive(
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         mapper: &impl JsonLangMapper,
         optional_checker: &impl OptionalChecker,
         json: Json,
@@ -111,7 +111,7 @@ impl FieldType {
     }
     pub fn case_primitive(
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         mapper: &impl JsonLangMapper,
         optional_checker: &impl OptionalChecker,
         json: Json,
@@ -141,7 +141,7 @@ mod test_field_type {
                 optional_checker::BaseOptionalChecker,
                 primitive_type_statement_generator::FakeMapper,
             },
-            statement_parts::{field_key::Fieldkey, type_key::TypeKey},
+            statement_parts::{field_key::FieldKey, type_key::TypeKey},
         },
     };
 
@@ -154,7 +154,7 @@ mod test_field_type {
         let optional_checker = BaseOptionalChecker::default();
         let field_type = FieldType::case_nest_array_obj(
             &type_key,
-            &Fieldkey::new("name"),
+            &FieldKey::new("name"),
             3,
             &mapper,
             &optional_checker,
@@ -168,7 +168,7 @@ mod test_field_type {
         let optional_checker = BaseOptionalChecker::default();
         let field_type = FieldType::case_array_primitive(
             &type_key,
-            &Fieldkey::new("name"),
+            &FieldKey::new("name"),
             &mapper,
             &optional_checker,
             Json::String("".to_string()),
@@ -182,7 +182,7 @@ mod test_field_type {
         let optional_checker = BaseOptionalChecker::default();
         let field_type = FieldType::case_primitive(
             &type_key,
-            &Fieldkey::new("name"),
+            &FieldKey::new("name"),
             &mapper,
             &optional_checker,
             Json::String("".to_string()),
@@ -195,7 +195,7 @@ mod test_field_type {
         let mapper = FakeMapper;
         let optional_checker = BaseOptionalChecker::default();
         let field_type =
-            FieldType::case_array_obj(&type_key, &Fieldkey::new("obj"), &mapper, &optional_checker);
+            FieldType::case_array_obj(&type_key, &FieldKey::new("obj"), &mapper, &optional_checker);
         assert_eq!(field_type.value(), "Option<Vec<TestObj>>");
     }
     #[test]
@@ -204,7 +204,7 @@ mod test_field_type {
         let mapper = FakeMapper;
         let optional_checker = BaseOptionalChecker::default();
         let field_type =
-            FieldType::case_obj(&type_key, &Fieldkey::new("obj"), &mapper, &optional_checker);
+            FieldType::case_obj(&type_key, &FieldKey::new("obj"), &mapper, &optional_checker);
         assert_eq!(field_type.value(), "Option<TestObj>");
     }
 }

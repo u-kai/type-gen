@@ -6,7 +6,7 @@ use crate::type_defines::{
         },
         type_define_generator::TypeDefineGenerator,
     },
-    statement_parts::{field_key::Fieldkey, type_key::TypeKey},
+    statement_parts::{field_key::FieldKey, type_key::TypeKey},
 };
 
 use super::{
@@ -124,7 +124,7 @@ impl<'a> RustTypeGeneratorBuilder<'a> {
     pub fn add_attr_to_field(
         mut self,
         type_key: &'a TypeKey,
-        field_key: &'a Fieldkey,
+        field_key: &'a FieldKey,
         attr: RustFieldAttribute,
     ) -> Self {
         self.field_statements

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     type_defines::{
         generators::from_json::lang_common::field_statements::field_attr::FieldAttribute,
-        statement_parts::{field_key::Fieldkey, type_key::TypeKey},
+        statement_parts::{field_key::FieldKey, type_key::TypeKey},
     },
     utils::store_fn::push_to_kv_vec,
 };
@@ -59,7 +59,7 @@ impl<'a> RustFieldAttributeStore<'a> {
     pub fn add_attr(
         &mut self,
         type_key: &'a TypeKey,
-        field_key: &'a Fieldkey,
+        field_key: &'a FieldKey,
         attr: RustFieldAttribute,
     ) {
         push_to_kv_vec(
@@ -74,7 +74,7 @@ impl<'a> RustFieldAttributeStore<'a> {
 }
 
 impl<'a> FieldAttribute for RustFieldAttributeStore<'a> {
-    fn get_attr(&self, type_key: &TypeKey, field_key: &Fieldkey) -> Option<String> {
+    fn get_attr(&self, type_key: &TypeKey, field_key: &FieldKey) -> Option<String> {
         let mut v = Vec::new();
         if let Some(all) = &self.all {
             v.extend(all.clone());

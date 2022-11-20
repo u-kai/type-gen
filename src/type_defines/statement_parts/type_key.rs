@@ -1,4 +1,4 @@
-use super::field_key::Fieldkey;
+use super::field_key::FieldKey;
 
 /// TypeKey represent type name
 /// ```
@@ -18,7 +18,7 @@ impl TypeKey {
     pub fn drain(self) -> String {
         self.0
     }
-    pub fn from_parent(parent: &TypeKey, self_field: &Fieldkey) -> Self {
+    pub fn from_parent(parent: &TypeKey, self_field: &FieldKey) -> Self {
         Self::new(self_field.to_type_key(parent).drain())
     }
 }
@@ -26,13 +26,13 @@ impl TypeKey {
 #[cfg(test)]
 mod test_type_key {
 
-    use crate::type_defines::statement_parts::field_key::Fieldkey;
+    use crate::type_defines::statement_parts::field_key::FieldKey;
 
     use super::*;
     #[test]
     fn test_from_parent_and_field_key() {
         let parent = TypeKey::new("Parent");
-        let this_field_key = Fieldkey::new("child");
+        let this_field_key = FieldKey::new("child");
         assert_eq!(
             TypeKey::from_parent(&parent, &this_field_key).value(),
             "ParentChild"

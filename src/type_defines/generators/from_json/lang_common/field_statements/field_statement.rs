@@ -1,5 +1,5 @@
 use crate::type_defines::statement_parts::{
-    field_key::Fieldkey, field_type::FieldType, type_key::TypeKey,
+    field_key::FieldKey, field_type::FieldType, type_key::TypeKey,
 };
 
 pub trait FieldStatement {
@@ -8,7 +8,7 @@ pub trait FieldStatement {
     fn create_statement(
         &self,
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         field_type: &FieldType,
     ) -> String;
     fn add_head_space(&self, statement: impl Into<String>) -> String {

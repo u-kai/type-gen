@@ -3,12 +3,12 @@ use std::collections::BTreeMap;
 use crate::langs::rust::rust_visibility::RustVisibility;
 
 //fn parse_type_statement<'a>(source: &'a str, type_key: &str) -> Option<&str> {}
-type Fieldkey = String;
+type FieldKey = String;
 type fieldValue = String;
 pub struct ObjectStatement {
     name: String,
     visibility: RustVisibility,
-    field: BTreeMap<Fieldkey, fieldValue>,
+    field: BTreeMap<FieldKey, fieldValue>,
 }
 //impl From<&str> for ObjectStatement {
 //fn from(source: &str) -> Self {}

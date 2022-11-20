@@ -10,7 +10,7 @@ use crate::type_defines::{
         },
         reserved_words::ReservedWords,
     },
-    statement_parts::{field_key::Fieldkey, field_type::FieldType, type_key::TypeKey},
+    statement_parts::{field_key::FieldKey, field_type::FieldType, type_key::TypeKey},
 };
 
 use super::{
@@ -43,7 +43,7 @@ impl<'a> FieldStatement for RustfieldStatement<'a> {
     fn create_statement(
         &self,
         type_key: &TypeKey,
-        field_key: &Fieldkey,
+        field_key: &FieldKey,
         field_type: &FieldType,
     ) -> String {
         let visi = self.visi.get_visibility_str(field_key.original());
@@ -99,7 +99,7 @@ mod test_rust_field_statement {
                 rust_visibility::RustVisibility,
             },
         },
-        statement_parts::{field_key::Fieldkey, field_type::FieldType, type_key::TypeKey},
+        statement_parts::{field_key::FieldKey, field_type::FieldType, type_key::TypeKey},
     };
 
     use super::RustfieldStatement;
@@ -107,7 +107,7 @@ mod test_rust_field_statement {
     #[test]
     fn pub_comment_and_attr_and_reserved_word_and_use_cannot_used() {
         let type_key = TypeKey::new("Test");
-        let field_key = Fieldkey::new("cannot:Use");
+        let field_key = FieldKey::new("cannot:Use");
         let field_type = FieldType::new("Option<String>");
         let mut comment = BaseFieldComment::new("//");
         comment.add_comment(field_key.original(), "this is test");
@@ -136,7 +136,7 @@ mod test_rust_field_statement {
     #[test]
     fn pub_comment_and_attr_and_reserved_word() {
         let type_key = TypeKey::new("Test");
-        let field_key = Fieldkey::new("type");
+        let field_key = FieldKey::new("type");
         let field_type = FieldType::new("Option<String>");
         let mut comment = BaseFieldComment::new("//");
         comment.add_comment(field_key.original(), "this is test");
@@ -164,7 +164,7 @@ mod test_rust_field_statement {
     #[test]
     fn pub_comment_and_attr_and() {
         let type_key = TypeKey::new("Test");
-        let field_key = Fieldkey::new("test");
+        let field_key = FieldKey::new("test");
         let field_type = FieldType::new("Option<String>");
         let mut comment = BaseFieldComment::new("//");
         comment.add_comment(field_key.original(), "this is test");
