@@ -31,8 +31,10 @@ fn main() {
     }
     "#;
     let rust_type_define = RustTypeGeneratorBuilder::new()
-        .set_visibility_to_all_struct(RustVisibility::Public)
-        .set_visibility_to_all_field(RustVisibility::PublicSuper)
+        .set_visibility_to_field("UKai", "id", RustVisibility::Public)
+        .set_visibility_to_field("UKaiProfileFollower", "data", RustVisibility::PublicCrate)
+        //.set_visibility_to_all_struct(RustVisibility::Public)
+        //.set_visibility_to_all_field(RustVisibility::PublicSuper)
         .set_attr_to_all_struct(vec![RustTypeAttribute::Derive(vec![
             "Clone".to_string(),
             "Debug".to_string(),

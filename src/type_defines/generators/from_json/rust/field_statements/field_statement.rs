@@ -46,7 +46,9 @@ impl<'a> FieldStatement for RustfieldStatement<'a> {
         field_key: &FieldKey,
         field_type: &FieldType,
     ) -> String {
-        let visi = self.visi.get_visibility_str(field_key.original());
+        let visi = self
+            .visi
+            .get_visibility_str(type_key.value(), field_key.original());
         let (new_key, rename_attr) = if !NamingPrincipal::is_snake(field_key.original()) {
             let new_key =
                 field_key.rename(crate::type_defines::generators::from_json::lang_common::naming_principal::NamingPrincipal::Snake);
@@ -116,7 +118,11 @@ mod test_rust_field_statement {
         comment.add_comment(type_key.value(), field_key.original(), "this is test");
         comment.add_comment(type_key.value(), field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
-        visi.add_visibility(field_key.original(), RustVisibility::Public);
+        visi.add_visibility(
+            type_key.value(),
+            field_key.original(),
+            RustVisibility::Public,
+        );
         let mut attr = RustFieldAttributeStore::new();
         attr.add_attr(
             &type_key,
@@ -145,7 +151,11 @@ mod test_rust_field_statement {
         comment.add_comment(type_key.value(), field_key.original(), "this is test");
         comment.add_comment(type_key.value(), field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
-        visi.add_visibility(field_key.original(), RustVisibility::Public);
+        visi.add_visibility(
+            type_key.value(),
+            field_key.original(),
+            RustVisibility::Public,
+        );
         let mut attr = RustFieldAttributeStore::new();
         attr.add_attr(
             &type_key,
@@ -173,7 +183,11 @@ mod test_rust_field_statement {
         comment.add_comment(type_key.value(), field_key.original(), "this is test");
         comment.add_comment(type_key.value(), field_key.original(), "hello");
         let mut visi = RustFieldVisibilityProvider::new();
-        visi.add_visibility(field_key.original(), RustVisibility::Public);
+        visi.add_visibility(
+            type_key.value(),
+            field_key.original(),
+            RustVisibility::Public,
+        );
         let mut attr = RustFieldAttributeStore::new();
         attr.add_attr(
             &type_key,

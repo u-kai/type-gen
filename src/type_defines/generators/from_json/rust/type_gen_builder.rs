@@ -104,8 +104,15 @@ impl<'a> RustTypeGeneratorBuilder<'a> {
         self.type_statements.visi.add_visibility(struct_name, visi);
         self
     }
-    pub fn set_visibility_to_field(mut self, field_key: &str, visi: RustVisibility) -> Self {
-        self.field_statements.visi.add_visibility(field_key, visi);
+    pub fn set_visibility_to_field(
+        mut self,
+        type_key: &str,
+        field_key: &str,
+        visi: RustVisibility,
+    ) -> Self {
+        self.field_statements
+            .visi
+            .add_visibility(type_key, field_key, visi);
         self
     }
     // attr
