@@ -1,4 +1,4 @@
-use type_gen::type_defines::generators::from_json::rust::{
+use v1::type_defines::generators::from_json::rust::{
     rust_visibility::RustVisibility, type_gen_builder::RustTypeGeneratorBuilder,
     type_statements::type_attr::RustTypeAttribute,
 };

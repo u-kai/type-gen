@@ -11,9 +11,7 @@ impl CompositeType {
             properties: vec![],
         }
     }
-    pub fn add_property(&mut self, property: impl Into<Property>) {
-        self.properties.push(property.into())
-    }
+    pub fn add_property(&mut self) {}
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TypeName(String);
@@ -45,11 +43,49 @@ impl Property {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PropertyKey(String);
+impl<I> From<I> for PropertyKey
+where
+    I: Into<String>,
+{
+    fn from(source: I) -> Self {
+        Self(source.into())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PropertyType {
     Primitive(PrimitiveType),
     Composite(CompositeType),
 }
+impl From<CompositeType> for PropertyType {
+    fn from(c: CompositeType) -> Self {
+        Self::Composite(c)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrimitiveType(String);
+pub enum PrimitiveType {
+    String,
+    Boolean,
+    Number(Number),
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Number {
+    Usize,
+    Isize,
+    Float,
+}
+
+#[cfg(test)]
+mod test_composite_type_into_json {
+    use json::json::Json;
+
+    use super::CompositeType;
+
+    #[test]
+    fn test_simple_case() {
+        let tobe = Json::from(r#"{"key":"value"}"#);
+        let mut composition_type = CompositeType::new("Test");
+        composition_type.add_property()
+    }
+}
