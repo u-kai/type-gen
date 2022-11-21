@@ -1,4 +1,4 @@
-use serde_json::Number;
+use crate::json::Number;
 
 pub trait JsonLangMapper {
     fn case_string(&self) -> &'static str;

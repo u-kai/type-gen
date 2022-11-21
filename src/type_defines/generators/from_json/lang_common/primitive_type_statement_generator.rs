@@ -1,4 +1,4 @@
-use crate::json::Json;
+use crate::json::{Json, Number};
 
 use super::{json_lang_mapper::JsonLangMapper, optional_checker::OptionalChecker};
 
@@ -63,7 +63,7 @@ where
             self.mapper.make_array_type(&acc)
         }))
     }
-    pub fn case_num_array(&self, num: &serde_json::Number) -> String {
+    pub fn case_num_array(&self, num: &Number) -> String {
         let array_type = self
             .mapper
             .make_array_type(self.mapper.case_num(num).as_str());
@@ -85,7 +85,7 @@ where
     pub fn case_boolean(&self) -> String {
         self.gen_optional_or_require(self.mapper.case_bool())
     }
-    pub fn case_num(&self, num: &serde_json::Number) -> String {
+    pub fn case_num(&self, num: &Number) -> String {
         self.gen_optional_or_require(self.mapper.case_num(num))
     }
     pub fn case_null(&self) -> String {
@@ -114,7 +114,6 @@ mod test_primitive_type_statement_generator {
     use crate::type_defines::generators::from_json::lang_common::optional_checker::BaseOptionalChecker;
 
     use super::*;
-    use serde_json::Number;
     struct FakeOptionalChecker {
         type_keys: Vec<&'static str>,
         field_keys: Vec<&'static str>,
@@ -188,7 +187,7 @@ mod test_primitive_type_statement_generator {
             &optional_checker,
         );
         assert_eq!(
-            generator.case_num_array(&Number::from_f64(0_f64).unwrap()),
+            generator.case_num_array(&Number::from(0_f64)),
             "Option<Vec<usize>>".to_string()
         );
         let generator = PrimitiveTypeStatementGenerator::new(
@@ -198,7 +197,7 @@ mod test_primitive_type_statement_generator {
             &optional_checker,
         );
         assert_eq!(
-            generator.case_num_array(&Number::from_f64(0_f64).unwrap()),
+            generator.case_num_array(&Number::from(0_f64)),
             "Vec<usize>".to_string()
         );
     }
@@ -272,7 +271,7 @@ mod test_primitive_type_statement_generator {
             &optional_checker,
         );
         assert_eq!(
-            generator.case_num(&Number::from_f64(0_f64).unwrap()),
+            generator.case_num(&Number::from(0_f64)),
             "Option<usize>".to_string()
         );
         let generator = PrimitiveTypeStatementGenerator::new(
@@ -282,7 +281,7 @@ mod test_primitive_type_statement_generator {
             &optional_checker,
         );
         assert_eq!(
-            generator.case_num(&Number::from_f64(0_f64).unwrap()),
+            generator.case_num(&Number::from(0_f64)),
             "usize".to_string()
         );
     }
@@ -354,7 +353,7 @@ impl JsonLangMapper for FakeMapper {
     fn case_null(&self) -> &'static str {
         "null"
     }
-    fn case_num(&self, _: &serde_json::Number) -> String {
+    fn case_num(&self, _: &Number) -> String {
         self.case_without_num()
     }
     fn case_string(&self) -> &'static str {
