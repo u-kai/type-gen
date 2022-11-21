@@ -128,4 +128,15 @@ mod test_composite_type_into_json {
         let expect: Json = composition_type.into();
         assert_eq!(expect, tobe);
     }
+    #[test]
+    fn test_nest_case() {
+        let tobe = Json::from(r#"{"key":"","obj":{"name":""}}"#);
+        let mut child = CompositeType::new("TestoObj");
+        child.add_property("name", PropertyType::Primitive(PrimitiveType::String));
+        let mut parent = CompositeType::new("Test");
+        parent.add_property("key", PropertyType::Primitive(PrimitiveType::String));
+        parent.add_property("obj", PropertyType::Composite(child));
+        let expect: Json = parent.into();
+        assert_eq!(expect, tobe);
+    }
 }
