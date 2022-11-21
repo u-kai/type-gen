@@ -92,7 +92,8 @@ impl Into<Json> for PropertyType {
             }
             Self::Array(property) => {
                 let json = *property;
-                json.into()
+                let json: Json = json.into();
+                Json::Array(vec![json])
             }
         }
     }
@@ -133,7 +134,7 @@ impl Into<Json> for PrimitiveType {
 mod test_composite_type_into_json {
     use json::json::Json;
 
-    use super::{CompositeType, PrimitiveType, PropertyType};
+    use super::*;
 
     #[test]
     fn test_simple_case() {
@@ -151,6 +152,30 @@ mod test_composite_type_into_json {
         let mut parent = CompositeType::new("Test");
         parent.add_property("key", PropertyType::Primitive(PrimitiveType::String));
         parent.add_property("obj", PropertyType::Composite(child));
+        let expect: Json = parent.into();
+        assert_eq!(expect, tobe);
+    }
+    #[test]
+    fn test_nest_array_case() {
+        let tobe = Json::from(r#"{"key":"","obj":{"name":"","results":[{"name":"","id":0}]}}"#);
+        let mut grand_child = CompositeType::new("TestObjResults");
+        grand_child.add_property("name", PropertyType::Primitive(PrimitiveType::String));
+        grand_child.add_property(
+            "id",
+            PropertyType::Primitive(PrimitiveType::Number(Number::Usize)),
+        );
+
+        let mut child = CompositeType::new("TestObj");
+        child.add_property("name", PropertyType::Primitive(PrimitiveType::String));
+        child.add_property(
+            "results",
+            PropertyType::Array(Box::new(PropertyType::Composite(grand_child))),
+        );
+
+        let mut parent = CompositeType::new("Test");
+        parent.add_property("key", PropertyType::Primitive(PrimitiveType::String));
+        parent.add_property("obj", PropertyType::Composite(child));
+
         let expect: Json = parent.into();
         assert_eq!(expect, tobe);
     }

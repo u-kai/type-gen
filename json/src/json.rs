@@ -59,10 +59,10 @@ impl From<serde_json::Number> for Number {
         if num.is_f64() {
             return Number::from(num.as_f64().unwrap());
         }
-        if num.is_i64() {
-            return Number::from(num.as_i64().unwrap());
+        if num.is_u64() {
+            return Number::Usize64(num.as_u64().unwrap());
         }
-        Number::Usize64(num.as_u64().unwrap())
+        Number::from(num.as_i64().unwrap())
     }
 }
 impl From<Value> for Json {
