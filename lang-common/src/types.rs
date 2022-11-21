@@ -25,28 +25,7 @@ impl Into<Json> for CompositeType {
         Json::Object(
             self.properties
                 .into_iter()
-                .map(|property| {
-                    let value = match property.r#type {
-                        PropertyType::Composite(composition) => composition.into(),
-                        PropertyType::Primitive(primitive) => match primitive {
-                            PrimitiveType::String => Json::String(String::default()),
-                            PrimitiveType::Boolean => Json::Boolean(bool::default()),
-                            PrimitiveType::Number(num) => match num {
-                                Number::Float => {
-                                    Json::Number(json::json::Number::from(f64::default()))
-                                }
-                                Number::Usize => {
-                                    Json::Number(json::json::Number::from(u64::default()))
-                                }
-                                Number::Isize => {
-                                    Json::Number(json::json::Number::from(i64::default()))
-                                }
-                            },
-                        },
-                    };
-                    let key = property.key.0;
-                    (key, value)
-                })
+                .map(|property| property.into())
                 .collect::<BTreeMap<String, Json>>(),
         )
     }
@@ -73,6 +52,11 @@ pub struct Property {
     key: PropertyKey,
     r#type: PropertyType,
 }
+impl Into<(String, Json)> for Property {
+    fn into(self) -> (String, Json) {
+        (self.key.0, self.r#type.into())
+    }
+}
 
 impl Property {
     pub fn new(key: PropertyKey, r#type: PropertyType) -> Self {
@@ -94,6 +78,24 @@ where
 pub enum PropertyType {
     Primitive(PrimitiveType),
     Composite(CompositeType),
+    Optional(Box<PropertyType>),
+    Array(Box<PropertyType>),
+}
+impl Into<Json> for PropertyType {
+    fn into(self) -> Json {
+        match self {
+            Self::Composite(composite) => composite.into(),
+            Self::Primitive(primitive) => primitive.into(),
+            Self::Optional(property) => {
+                let json: PropertyType = *property;
+                json.into()
+            }
+            Self::Array(property) => {
+                let json = *property;
+                json.into()
+            }
+        }
+    }
 }
 impl From<CompositeType> for PropertyType {
     fn from(c: CompositeType) -> Self {
@@ -112,6 +114,19 @@ pub enum Number {
     Usize,
     Isize,
     Float,
+}
+impl Into<Json> for PrimitiveType {
+    fn into(self) -> Json {
+        match self {
+            Self::Boolean => Json::Boolean(bool::default()),
+            Self::String => Json::String(String::default()),
+            Self::Number(num) => match num {
+                Number::Float => Json::Number(json::json::Number::from(f64::default())),
+                Number::Usize => Json::Number(json::json::Number::from(u64::default())),
+                Number::Isize => Json::Number(json::json::Number::from(i64::default())),
+            },
+        }
+    }
 }
 
 #[cfg(test)]
