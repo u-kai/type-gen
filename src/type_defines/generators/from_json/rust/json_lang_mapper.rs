@@ -1,4 +1,7 @@
-use crate::type_defines::generators::from_json::lang_common::json_lang_mapper::JsonLangMapper;
+use crate::{
+    json::Number,
+    type_defines::generators::from_json::lang_common::json_lang_mapper::JsonLangMapper,
+};
 
 pub struct JsonRustMapper;
 impl JsonRustMapper {
@@ -14,7 +17,7 @@ impl JsonLangMapper for JsonRustMapper {
     fn case_null(&self) -> &'static str {
         self.case_any()
     }
-    fn case_num(&self, num: &serde_json::Number) -> String {
+    fn case_num(&self, num: &Number) -> String {
         if num.is_f64() {
             return "f64".to_string();
         }
