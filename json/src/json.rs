@@ -13,7 +13,43 @@ pub enum Json {
     String(String),
 }
 impl Json {
-    pub fn collect_obj_from_json_array(array: Vec<Json>) -> BTreeMap<String, Vec<Json>> {
+    pub fn put_together_array_json(array: Vec<Json>) -> Self {
+        if array.len() == 0 {
+            return Json::Null;
+        }
+        let rep = &array[0];
+        match rep {
+            Json::Object(obj) => {
+                let map = Self::collect_obj_from_array_json(array);
+                todo!()
+            }
+            Json::Array(_) => {
+                let array_flated = array
+                    .into_iter()
+                    .flat_map(|json| {
+                        let Json::Array(v) = json else {
+                        panic!("array index 0 is array. but array content is not array {:#?}",json);
+                    };
+                        v
+                    })
+                    .collect::<Vec<_>>();
+                Json::Array(array_flated)
+            }
+            Json::Null => Json::Null,
+            Json::Number(num) => {
+                if num.is_f64() {
+                    return Json::Number(Number::Float64(f64::default()));
+                }
+                if num.is_u64() {
+                    return Json::Number(Number::Usize64(u64::default()));
+                }
+                Json::Number(Number::Isize64(i64::default()))
+            }
+            Json::String(_) => Json::String(String::default()),
+            Json::Boolean(_) => Json::Boolean(bool::default()),
+        }
+    }
+    fn collect_obj_from_array_json(array: Vec<Json>) -> BTreeMap<String, Vec<Json>> {
         fn rec(map: &mut BTreeMap<String, Vec<Json>>, array: Vec<Json>) {
             for json in array {
                 match json {
@@ -30,6 +66,19 @@ impl Json {
         let mut map = BTreeMap::new();
         rec(&mut map, array);
         map
+    }
+}
+#[cfg(test)]
+mod test_from_array_json {
+    use super::*;
+    #[test]
+    fn test_case_primitive_array() {
+        let array_json = vec![
+            Json::String("value1".to_string()),
+            Json::String("value2".to_string()),
+        ];
+        let tobe = Json::String(String::default());
+        assert_eq!(Json::put_together_array_json(array_json), tobe)
     }
 }
 
