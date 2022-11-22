@@ -12,28 +12,55 @@ pub enum Json {
     Null,
     String(String),
 }
+enum JsonType {
+    Array,
+    Boolean,
+    Object,
+    Float64,
+    Isize64,
+    Usize64,
+    Null,
+    String,
+}
+impl JsonType {
+    fn check_array_content_type(array: &Vec<Json>) -> Self {
+        if array.len() == 0 {
+            return Self::Null;
+        }
+        match &array[0] {
+            Json::Object(_) => Self::Object,
+            Json::Array(_) => Self::Array,
+            Json::Null => Self::Null,
+            Json::String(_) => Self::String,
+            Json::Boolean(_) => Self::Boolean,
+            Json::Number(num) => {
+                if num.is_f64() {
+                    return Self::Float64;
+                }
+                if num.is_u64() {
+                    return Self::Usize64;
+                }
+                Self::Isize64
+            }
+        }
+    }
+}
 impl Json {
     pub fn put_together_array_json(array: Vec<Json>) -> Self {
-        if array.len() == 0 {
-            return Json::Null;
-        }
-        let rep = &array[0];
-        match rep {
-            Json::Object(_) => {
+        match JsonType::check_array_content_type(&array) {
+            JsonType::Object => {
                 let map = Self::collect_obj_from_array_json(array);
-                println!("{:#?}", map);
                 let json = Json::Object(map.into_iter().fold(
                     BTreeMap::new(),
                     |mut acc, (key, collected_json)| {
-                        println!("key = {} collected_json {:#?}", key, collected_json);
                         acc.insert(key, Self::put_together_array_json(collected_json));
                         acc
                     },
                 ));
                 json
             }
-            Json::Array(_) => {
-                let array_flated = array
+            JsonType::Array => {
+                let flated_array = array
                     .into_iter()
                     .map(|json| {
                         let Json::Array(v) = json else {
@@ -42,26 +69,19 @@ impl Json {
                         Self::put_together_array_json(v)
                     })
                     .collect::<Vec<_>>();
-                let rep = &array_flated[0];
-                match rep {
-                    Json::Object(_) => {
-                        Json::Array(vec![Self::put_together_array_json(array_flated)])
+                match JsonType::check_array_content_type(&flated_array) {
+                    JsonType::Object => {
+                        Json::Array(vec![Self::put_together_array_json(flated_array)])
                     }
-                    _ => Json::Array(array_flated),
+                    _ => Json::Array(flated_array),
                 }
             }
-            Json::Null => Json::Null,
-            Json::Number(num) => {
-                if num.is_f64() {
-                    return Json::Number(Number::Float64(f64::default()));
-                }
-                if num.is_u64() {
-                    return Json::Number(Number::Usize64(u64::default()));
-                }
-                Json::Number(Number::Isize64(i64::default()))
-            }
-            Json::String(_) => Json::String(String::default()),
-            Json::Boolean(_) => Json::Boolean(bool::default()),
+            JsonType::String => Json::String(String::default()),
+            JsonType::Boolean => Json::Boolean(bool::default()),
+            JsonType::Float64 => Json::Number(Number::Float64(f64::default())),
+            JsonType::Usize64 => Json::Number(Number::Usize64(u64::default())),
+            JsonType::Isize64 => Json::Number(Number::Isize64(i64::default())),
+            JsonType::Null => Json::Null,
         }
     }
     fn collect_obj_from_array_json(array: Vec<Json>) -> BTreeMap<String, Vec<Json>> {
