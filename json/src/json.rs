@@ -19,9 +19,17 @@ impl Json {
         }
         let rep = &array[0];
         match rep {
-            Json::Object(obj) => {
+            Json::Object(_) => {
                 let map = Self::collect_obj_from_array_json(array);
-                todo!()
+                println!("{:#?}", map);
+                let json = Json::Object(map.into_iter().fold(
+                    BTreeMap::new(),
+                    |mut acc, (key, collected_json)| {
+                        acc.insert(key, Self::put_together_array_json(collected_json));
+                        acc
+                    },
+                ));
+                json
             }
             Json::Array(_) => {
                 let array_flated = array
@@ -71,6 +79,30 @@ impl Json {
 #[cfg(test)]
 mod test_from_array_json {
     use super::*;
+    #[test]
+    fn test_case_obj_array() {
+        let obj1 = r#"
+        {
+            "id":0,
+            "name":"kai"
+        }
+        "#;
+        let obj1 = Json::from(obj1);
+        let obj2 = r#"
+        {
+            "id":0,
+            "age":25
+        }
+        "#;
+        let obj2 = Json::from(obj2);
+        let array_json = vec![Json::Array(vec![obj1, obj2])];
+        let mut tobe = BTreeMap::new();
+        tobe.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        tobe.insert("age".to_string(), Json::Number(Number::Usize64(0)));
+        tobe.insert("name".to_string(), Json::String(String::default()));
+        let tobe = Json::Array(vec![Json::Object(tobe)]);
+        assert_eq!(Json::put_together_array_json(array_json), tobe)
+    }
     #[test]
     fn test_case_nest_primitive_array() {
         let array_json = vec![Json::Array(vec![
