@@ -80,6 +80,48 @@ impl Json {
 mod test_from_array_json {
     use super::*;
     #[test]
+    fn test_case_nest_obj_array() {
+        let obj1 = r#"
+        {
+            "id":0,
+            "name":"kai",
+            "data": {
+                "age":26
+            }
+        }
+        "#;
+        let obj1 = Json::from(obj1);
+        let obj2 = r#"
+        {
+            "id":0,
+            "age":25
+        }
+        "#;
+        let obj2 = Json::from(obj2);
+        let obj3 = r#"
+        {
+            "id":0,
+            "age":35,
+            "data": {
+                "age":26,
+                "from":"kanagawa"
+            }
+        }
+        "#;
+        let obj3 = Json::from(obj3);
+        let array_json = vec![Json::Array(vec![obj1, obj2, obj3])];
+        let mut data = BTreeMap::new();
+        data.insert("from".to_string(), Json::String(String::default()));
+        data.insert("age".to_string(), Json::Number(Number::Usize64(0)));
+        let mut tobe = BTreeMap::new();
+        tobe.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        tobe.insert("age".to_string(), Json::Number(Number::Usize64(0)));
+        tobe.insert("name".to_string(), Json::String(String::default()));
+        tobe.insert("data".to_string(), Json::Object(data));
+        let tobe = Json::Array(vec![Json::Object(tobe)]);
+        assert_eq!(Json::put_together_array_json(array_json), tobe)
+    }
+    #[test]
     fn test_case_obj_array() {
         let obj1 = r#"
         {
