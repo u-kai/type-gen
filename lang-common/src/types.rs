@@ -176,6 +176,99 @@ mod test_type_from_json {
     };
 
     use super::*;
+    #[test]
+    fn test_complex_case() {
+        let json = r#"{
+            "root":[
+                    {
+                        "id":0,
+                        "name":"kai",
+                        "data": {
+                            "age":26,
+                            "details":[
+                                {
+                                    "likes":["hamabe","imada"],
+                                    "hobby":"rust"
+                                },
+                                {
+                                    "userId":10000
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id":0,
+                        "age":25
+                    },
+                    {
+                        "id":0,
+                        "age":35,
+                        "data": {
+                            "age":26,
+                            "from":"kanagawa",
+                            "details":[
+                                {
+                                    "frends":["hamabe","imada"]
+                                },
+                                {
+                                    "frendId":10000
+                                }
+                            ]
+                        },
+                        "details":[
+                            {
+                                "likes":["hamabe","imada"],
+                                "hobby":"rust"
+                            },
+                            {
+                                "userId":10000
+                            }
+                        ]
+                    }
+            ]
+        }
+        "#;
+        let name = "Test";
+        let kind = make_composite_type_easy(vec![(
+            "root",
+            make_array_type_easy(make_composite_type_easy(vec![
+                ("id", type_kind_usize()),
+                ("age", type_kind_usize()),
+                ("name", type_kind_string()),
+                (
+                    "data",
+                    make_composite_type_easy(vec![
+                        ("age", type_kind_usize()),
+                        ("from", type_kind_string()),
+                        (
+                            "details",
+                            make_array_type_easy(make_composite_type_easy(vec![
+                                ("likes", make_array_type_easy(type_kind_string())),
+                                ("hobby", type_kind_string()),
+                                ("userId", type_kind_usize()),
+                                ("frendId", type_kind_usize()),
+                                ("frends", make_array_type_easy(type_kind_string())),
+                            ])),
+                        ),
+                    ]),
+                ),
+                (
+                    "details",
+                    make_array_type_easy(make_composite_type_easy(vec![
+                        ("likes", make_array_type_easy(type_kind_string())),
+                        ("hobby", type_kind_string()),
+                        ("userId", type_kind_usize()),
+                    ])),
+                ),
+            ])),
+        )]);
+        let tobe = Type {
+            name: name.into(),
+            kind,
+        };
+        let expect = Type::from_json(name, Json::from(json));
+        assert_eq!(expect, tobe);
+    }
 
     #[test]
     fn test_simple_case() {
