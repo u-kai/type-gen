@@ -26,11 +26,11 @@ impl Json {
             Json::Array(_) => {
                 let array_flated = array
                     .into_iter()
-                    .flat_map(|json| {
+                    .map(|json| {
                         let Json::Array(v) = json else {
                         panic!("array index 0 is array. but array content is not array {:#?}",json);
                     };
-                        v
+                        Self::put_together_array_json(v)
                     })
                     .collect::<Vec<_>>();
                 Json::Array(array_flated)
@@ -71,6 +71,15 @@ impl Json {
 #[cfg(test)]
 mod test_from_array_json {
     use super::*;
+    #[test]
+    fn test_case_nest_primitive_array() {
+        let array_json = vec![Json::Array(vec![
+            Json::String("value1".to_string()),
+            Json::String("value2".to_string()),
+        ])];
+        let tobe = Json::Array(vec![Json::String(String::default())]);
+        assert_eq!(Json::put_together_array_json(array_json), tobe)
+    }
     #[test]
     fn test_case_primitive_array() {
         let array_json = vec![
