@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use serde_json::Value;
+use utils::store_fn::push_to_btree_vec;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Json {
@@ -10,6 +11,26 @@ pub enum Json {
     Number(Number),
     Null,
     String(String),
+}
+impl Json {
+    pub fn collect_obj_from_json_array(array: Vec<Json>) -> BTreeMap<String, Vec<Json>> {
+        fn rec(map: &mut BTreeMap<String, Vec<Json>>, array: Vec<Json>) {
+            for json in array {
+                match json {
+                    Json::Object(obj) => {
+                        for (k, v) in obj {
+                            push_to_btree_vec(map, k, v);
+                        }
+                    }
+                    Json::Array(array) => rec(map, array),
+                    _ => {}
+                }
+            }
+        }
+        let mut map = BTreeMap::new();
+        rec(&mut map, array);
+        map
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]

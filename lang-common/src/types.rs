@@ -51,9 +51,11 @@ impl TypeKind {
         Self::Composite(CompositeType { properties })
     }
     fn from_array_json(array: Vec<Json>) -> Self {
-        //if array.len() == 0 {
-        //return Type::Array(Box::new(Type::Any));
-        //}
+        if array.len() == 0 {
+            return TypeKind::Array(Box::new(TypeKind::Any));
+        }
+
+        //let collect_obj =
         TypeKind::Any
     }
 }
@@ -252,6 +254,21 @@ mod test_type_from_json {
             kind: TypeKind::Composite(CompositeType { properties }),
         };
 
+        assert_eq!(expect, tobe);
+    }
+    #[test]
+    fn test_primitive_array_case() {
+        let name = "Test";
+        let expect = Type::from_json(name, Json::from(r#"{"key":["value"]}"#));
+        let mut child = HashMap::new();
+        child.insert(
+            PropertyKey::from("key"),
+            TypeKind::Array(Box::new(TypeKind::Primitive(PrimitiveType::String))),
+        );
+        let tobe = Type {
+            name: name.into(),
+            kind: TypeKind::Composite(CompositeType { properties: child }),
+        };
         assert_eq!(expect, tobe);
     }
 }
