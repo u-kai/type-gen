@@ -25,6 +25,7 @@ impl Json {
                 let json = Json::Object(map.into_iter().fold(
                     BTreeMap::new(),
                     |mut acc, (key, collected_json)| {
+                        println!("key = {} collected_json {:#?}", key, collected_json);
                         acc.insert(key, Self::put_together_array_json(collected_json));
                         acc
                     },
@@ -41,7 +42,13 @@ impl Json {
                         Self::put_together_array_json(v)
                     })
                     .collect::<Vec<_>>();
-                Json::Array(array_flated)
+                let rep = &array_flated[0];
+                match rep {
+                    Json::Object(_) => {
+                        Json::Array(vec![Self::put_together_array_json(array_flated)])
+                    }
+                    _ => Json::Array(array_flated),
+                }
             }
             Json::Null => Json::Null,
             Json::Number(num) => {
@@ -78,7 +85,156 @@ impl Json {
 }
 #[cfg(test)]
 mod test_from_array_json {
+
     use super::*;
+    #[test]
+    fn test_case_nest_array_obj() {
+        let obj = r#"
+        {
+            "id":0,
+            "name":"kai",
+            "data": [
+                {
+                    "id":0,
+                    "results":[
+                        {
+                            "id":10000,
+                            "data":"data"
+                        }
+                    ]
+                },
+                {
+                    "age":26
+                },
+                {
+                    "name":"kai",
+                    "results":[
+                        {
+                            "score":1000
+                        }
+                    ]
+                }
+            ]
+        }
+        "#;
+        let mut results = BTreeMap::new();
+        results.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        results.insert("score".to_string(), Json::Number(Number::Usize64(0)));
+        results.insert("data".to_string(), Json::String(String::default()));
+        let mut data = BTreeMap::new();
+        data.insert("id".to_string(), Json::String(String::default()));
+        data.insert("age".to_string(), Json::Number(Number::Usize64(0)));
+        data.insert("name".to_string(), Json::String(String::default()));
+        data.insert(
+            "results".to_string(),
+            Json::Array(vec![Json::Object(results)]),
+        );
+        data.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        let mut tobe = BTreeMap::new();
+        tobe.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        tobe.insert("name".to_string(), Json::String(String::default()));
+        tobe.insert("data".to_string(), Json::Array(vec![Json::Object(data)]));
+        let expect = Json::put_together_array_json(vec![Json::from(obj)]);
+        assert_eq!(expect, Json::Object(tobe));
+    }
+    #[test]
+    fn test_case_nest_obj_and_nest_array_array() {
+        let obj1 = r#"
+        {
+            "id":0,
+            "name":"kai",
+            "data": {
+                "age":26,
+                "details":[
+                    {
+                        "likes":["hamabe","imada"],
+                        "hobby":"rust"
+                    },
+                    {
+                        "userId":10000
+                    }
+                ]
+            }
+        }
+        "#;
+        let obj1 = Json::from(obj1);
+        let obj2 = r#"
+        {
+            "id":0,
+            "age":25
+        }
+        "#;
+        let obj2 = Json::from(obj2);
+        let obj3 = r#"
+        {
+            "id":0,
+            "age":35,
+            "data": {
+                "age":26,
+                "from":"kanagawa",
+                "details":[
+                    {
+                        "frends":["hamabe","imada"]
+                    },
+                    {
+                        "frendId":10000
+                    }
+                ]
+            },
+            "details":[
+                {
+                    "likes":["hamabe","imada"],
+                    "hobby":"rust"
+                },
+                {
+                    "userId":10000
+                }
+            ]
+        }
+        "#;
+        let obj3 = Json::from(obj3);
+        let array_json = vec![Json::Array(vec![obj1, obj2, obj3])];
+        let mut data = BTreeMap::new();
+        data.insert("from".to_string(), Json::String(String::default()));
+        data.insert("age".to_string(), Json::Number(Number::Usize64(0)));
+        let mut data_detail = BTreeMap::new();
+        data_detail.insert(
+            "likes".to_string(),
+            Json::Array(vec![Json::String(String::default())]),
+        );
+        data_detail.insert("hobby".to_string(), Json::String(String::default()));
+        data_detail.insert("userId".to_string(), Json::Number(Number::Usize64(0)));
+        data_detail.insert(
+            "frends".to_string(),
+            Json::Array(vec![Json::String(String::default())]),
+        );
+        data_detail.insert("frendId".to_string(), Json::Number(Number::Usize64(0)));
+        data.insert(
+            "details".to_string(),
+            Json::Array(vec![Json::Object(data_detail)]),
+        );
+        let mut details = BTreeMap::new();
+        details.insert(
+            "likes".to_string(),
+            Json::Array(vec![Json::String(String::default())]),
+        );
+        details.insert("hobby".to_string(), Json::String(String::default()));
+        details.insert("userId".to_string(), Json::Number(Number::Usize64(0)));
+        let mut tobe = BTreeMap::new();
+        tobe.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        tobe.insert("age".to_string(), Json::Number(Number::Usize64(0)));
+        tobe.insert("name".to_string(), Json::String(String::default()));
+        tobe.insert("data".to_string(), Json::Object(data));
+        tobe.insert(
+            "details".to_string(),
+            Json::Array(vec![Json::Object(details)]),
+        );
+        let tobe = Json::Array(vec![Json::Object(tobe)]);
+        let expect = Json::put_together_array_json(array_json);
+        println!("expect {:#?}", expect);
+        println!("tobe {:#?}", tobe);
+        //   assert_eq!(expect, tobe)
+    }
     #[test]
     fn test_case_nest_obj_array() {
         let obj1 = r#"
