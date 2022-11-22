@@ -1,4 +1,4 @@
-use crate::type_define::{LangAttribute, LangComment, LangVisibility, TypeDefine};
+use crate::type_defines::type_define::{LangAttribute, LangComment, LangVisibility, TypeDefine};
 
 use super::mapper::LangTypeMapper;
 
@@ -15,9 +15,9 @@ where
 
 #[cfg(test)]
 pub mod fakes {
-    use crate::{
-        type_define::{LangAttribute, LangComment, LangVisibility},
-        type_generator::mapper::{LangTypeMapper, TypeStatement},
+    use crate::type_defines::generators::mapper::{LangTypeMapper, TypeStatement};
+    use crate::type_defines::type_define::{
+        LangAttribute, LangComment, LangVisibility, TypeDefine,
     };
 
     use super::{TypeDefineStatement, TypeDefineStatementGenerator};
@@ -111,7 +111,7 @@ pub mod fakes {
     {
         fn generate(
             &self,
-            type_define: crate::type_define::TypeDefine<V, C, A>,
+            type_define: TypeDefine<V, C, A>,
             mapper: M,
         ) -> Vec<TypeDefineStatement> {
             vec!["struct Test {id: usize,}".to_string()]
@@ -121,9 +121,49 @@ pub mod fakes {
 #[cfg(test)]
 
 mod test_type_define_statement_generator {
-    use super::*;
+
+    use super::{
+        fakes::{
+            FakeLangAttribute, FakeLangComment, FakeLangTypeMapper, FakeLangVisibility,
+            FakeTypeGenerator,
+        },
+        *,
+    };
+    use crate::types::r#type::{fakes::*, *};
+    impl TypeDefine<FakeLangVisibility, FakeLangComment, FakeLangAttribute> {
+        fn new_simple(type_: Type, visi: &str) -> Self {
+            TypeDefine::new(
+                type_,
+                FakeLangVisibility::new(visi),
+                Some(FakeLangComment::new(vec![""])),
+                Some(FakeLangAttribute::new("")),
+            )
+        }
+    }
     #[test]
     fn test_simple_case() {
+        let simple_define = TypeDefine::new_simple(
+            make_type_easy(
+                "Test",
+                make_composite_type_easy(vec![("id", type_kind_usize())]),
+            ),
+            "",
+        );
         let tobe = vec!["struct Test {id: usize,}".to_string()];
+        let generator = FakeTypeGenerator;
+        assert_eq!(generator.generate(simple_define, FakeLangTypeMapper), tobe);
+        let simple_define = TypeDefine::new_simple(
+            make_type_easy(
+                "Test",
+                make_composite_type_easy(vec![
+                    ("id", type_kind_usize()),
+                    ("name", type_kind_string()),
+                ]),
+            ),
+            "",
+        );
+        let tobe = vec!["struct Test {id: usize,name:String,}".to_string()];
+        let generator = FakeTypeGenerator;
+        assert_eq!(generator.generate(simple_define, FakeLangTypeMapper), tobe);
     }
 }

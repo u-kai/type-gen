@@ -1,4 +1,2 @@
-pub mod generator;
-pub mod type_define;
-pub mod type_generator;
+pub mod type_defines;
 pub mod types;

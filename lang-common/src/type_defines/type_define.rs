@@ -1,4 +1,5 @@
-use crate::types::Type;
+use crate::types::r#type::Type;
+
 /// ObjectTypeDefine example is below
 /// ```
 /// // this is test struct
@@ -33,6 +34,21 @@ where
     visibility: V,
     comment: Option<C>,
     attribute: Option<A>,
+}
+impl<V, C, A> TypeDefine<V, C, A>
+where
+    V: LangVisibility,
+    C: LangComment,
+    A: LangAttribute,
+{
+    pub fn new(r#type: Type, visibility: V, comment: Option<C>, attribute: Option<A>) -> Self {
+        Self {
+            r#type,
+            visibility,
+            comment,
+            attribute,
+        }
+    }
 }
 pub trait LangVisibility {
     fn to_define(self) -> String;
