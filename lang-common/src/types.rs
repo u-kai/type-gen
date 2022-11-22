@@ -52,7 +52,7 @@ impl TypeKind {
     }
     fn from_array_json(array: Vec<Json>) -> Self {
         if array.len() == 0 {
-            return TypeKind::Array(Box::new(TypeKind::Any));
+            return Self::Array(Box::new(Self::Any));
         }
         let put_together_json = Json::put_together_array_json(array);
         Self::Array(Box::new(Self::from_json(put_together_json)))
@@ -139,8 +139,42 @@ impl Into<Json> for PrimitiveType {
     }
 }
 
+pub(super) mod hellpers {
+    use super::*;
+    pub fn make_array_type_easy(content: TypeKind) -> TypeKind {
+        TypeKind::Array(Box::new(content))
+    }
+    pub fn make_composite_type_easy(source: Vec<(&str, TypeKind)>) -> TypeKind {
+        let properties = source
+            .into_iter()
+            .map(|(key, type_kind)| (PropertyKey::from(key), type_kind))
+            .collect::<HashMap<_, _>>();
+        TypeKind::Composite(CompositeType { properties })
+    }
+    pub fn type_kind_string() -> TypeKind {
+        TypeKind::Primitive(PrimitiveType::String)
+    }
+    pub fn type_kind_usize() -> TypeKind {
+        TypeKind::Primitive(PrimitiveType::Number(Number::Usize))
+    }
+    pub fn type_kind_isize() -> TypeKind {
+        TypeKind::Primitive(PrimitiveType::Number(Number::Isize))
+    }
+    pub fn type_kind_float() -> TypeKind {
+        TypeKind::Primitive(PrimitiveType::Number(Number::Float))
+    }
+}
+#[cfg(test)]
+mod test_split {
+    use super::*;
+    fn test_simple_case() {}
+}
 #[cfg(test)]
 mod test_type_from_json {
+    use crate::types::hellpers::{
+        make_array_type_easy, make_composite_type_easy, type_kind_string, type_kind_usize,
+    };
+
     use super::*;
 
     #[test]
@@ -163,31 +197,14 @@ mod test_type_from_json {
         let name = "Test";
         let json = Json::from(r#"{"name":"kai","obj":{"id":0,"name":"kai"}}"#);
         let expect = Type::from_json(name, json);
-        let mut properties = HashMap::new();
-        properties.insert(
-            PropertyKey::from("name"),
-            TypeKind::Primitive(PrimitiveType::String),
-        );
-        let mut obj_child = HashMap::new();
-        obj_child.insert(
-            PropertyKey::from("name"),
-            TypeKind::Primitive(PrimitiveType::String),
-        );
-        obj_child.insert(
-            PropertyKey::from("id"),
-            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
-        );
-        properties.insert(
-            PropertyKey::from("obj"),
-            TypeKind::Composite(CompositeType {
-                properties: obj_child,
-            }),
-        );
+        let obj_child = make_composite_type_easy(vec![
+            ("name", type_kind_string()),
+            ("id", type_kind_usize()),
+        ]);
         let tobe = Type {
             name: TypeName::from("Test"),
-            kind: TypeKind::Composite(CompositeType { properties }),
+            kind: make_composite_type_easy(vec![("name", type_kind_string()), ("obj", obj_child)]),
         };
-
         assert_eq!(expect, tobe);
     }
     #[test]
@@ -222,57 +239,29 @@ mod test_type_from_json {
         }
         "#;
         let expect = Type::from_json(name, Json::from(json));
-        let mut child = HashMap::new();
-        child.insert(
-            PropertyKey::from("id"),
-            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
-        );
-        child.insert(
-            PropertyKey::from("name"),
-            TypeKind::Primitive(PrimitiveType::String),
-        );
-        let mut data_child = HashMap::new();
-        data_child.insert(
-            PropertyKey::from("id"),
-            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
-        );
-        data_child.insert(
-            PropertyKey::from("age"),
-            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
-        );
-        data_child.insert(
-            PropertyKey::from("name"),
-            TypeKind::Primitive(PrimitiveType::String),
-        );
-        let mut data_results = HashMap::new();
-        data_results.insert(
-            PropertyKey::from("id"),
-            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
-        );
-        data_results.insert(
-            PropertyKey::from("score"),
-            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
-        );
-        data_results.insert(
-            PropertyKey::from("data"),
-            TypeKind::Primitive(PrimitiveType::String),
-        );
-        data_child.insert(
-            PropertyKey::from("results"),
-            TypeKind::Array(Box::new(TypeKind::Composite(CompositeType {
-                properties: data_results,
-            }))),
-        );
-        let data = CompositeType {
-            properties: data_child,
-        };
-        child.insert(
-            PropertyKey::from("data"),
-            TypeKind::Array(Box::new(TypeKind::Composite(data))),
-        );
+        let child = make_composite_type_easy(vec![
+            ("id", type_kind_usize()),
+            ("name", type_kind_string()),
+            (
+                "data",
+                make_array_type_easy(make_composite_type_easy(vec![
+                    ("id", type_kind_usize()),
+                    ("age", type_kind_usize()),
+                    ("name", type_kind_string()),
+                    (
+                        "results",
+                        make_array_type_easy(make_composite_type_easy(vec![
+                            ("data", type_kind_string()),
+                            ("id", type_kind_usize()),
+                            ("score", type_kind_usize()),
+                        ])),
+                    ),
+                ])),
+            ),
+        ]);
         let tobe = Type {
             name: name.into(),
-            kind: TypeKind::Composite(CompositeType { properties: child }),
+            kind: child,
         };
         assert_eq!(expect, tobe);
     }
