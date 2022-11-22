@@ -1,5 +1,4 @@
-use crate::types::{CompositeType, PrimitiveType};
-
+use crate::types::Type;
 /// ObjectTypeDefine example is below
 /// ```
 /// // this is test struct
@@ -11,41 +10,42 @@ use crate::types::{CompositeType, PrimitiveType};
 /// }
 /// ```
 ///
-/// - "Test" is name
-/// - "id: usize,name: Option<String>" is properties
-/// - "// this is test struct" is comment
-/// - "#\[derive(Debug,Clone)\]" is attributes
-///
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CompositeTypeDefine {
-    r#type: CompositeType,
-    visibility: Visibility,
-    comments: Option<Vec<Comment>>,
-    attributes: Option<Vec<Attribute>>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Visibility(String);
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Comment(String);
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Attribute(String);
-
 /// PrimitiveTypeAlias example is below
 /// ```
 /// // this is test data alias
 /// #[cfg(test)]
 /// type TestData = String;
 /// ```
+///
+/// - "Test" is name
+/// - "id: usize,name: Option<String>" is properties
+/// - "// this is test struct" is comment
+/// - "#\[derive(Debug,Clone)\]" is attributes
+///
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrimitiveTypeAlias {
-    alias: AliasName,
-    r#type: PrimitiveType,
-    comments: Option<Vec<Comment>>,
-    attributes: Option<Vec<Attribute>>,
+pub struct TypeDefine<V, C, A>
+where
+    V: LangVisibility,
+    C: LangComment,
+    A: LangAttribute,
+{
+    r#type: Type,
+    visibility: V,
+    comment: Option<C>,
+    attribute: Option<A>,
+}
+pub trait LangVisibility {
+    fn to_define(self) -> String;
+}
+pub trait LangComment {
+    fn to_define(self) -> String;
+}
+pub trait LangAttribute {
+    fn to_define(self) -> String;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AliasName(String);
+#[cfg(test)]
+mod test_composite_type_to_define {
+    #[test]
+    fn test_simple_case() {}
+}
