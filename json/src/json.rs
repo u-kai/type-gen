@@ -12,39 +12,6 @@ pub enum Json {
     Null,
     String(String),
 }
-enum JsonType {
-    Array,
-    Boolean,
-    Object,
-    Float64,
-    Isize64,
-    Usize64,
-    Null,
-    String,
-}
-impl JsonType {
-    fn check_array_content_type(array: &Vec<Json>) -> Self {
-        if array.len() == 0 {
-            return Self::Null;
-        }
-        match &array[0] {
-            Json::Object(_) => Self::Object,
-            Json::Array(_) => Self::Array,
-            Json::Null => Self::Null,
-            Json::String(_) => Self::String,
-            Json::Boolean(_) => Self::Boolean,
-            Json::Number(num) => {
-                if num.is_f64() {
-                    return Self::Float64;
-                }
-                if num.is_u64() {
-                    return Self::Usize64;
-                }
-                Self::Isize64
-            }
-        }
-    }
-}
 impl Json {
     pub fn put_together_array_json(array: Vec<Json>) -> Self {
         match JsonType::check_array_content_type(&array) {
@@ -101,6 +68,39 @@ impl Json {
         let mut map = BTreeMap::new();
         rec(&mut map, array);
         map
+    }
+}
+enum JsonType {
+    Array,
+    Boolean,
+    Object,
+    Float64,
+    Isize64,
+    Usize64,
+    Null,
+    String,
+}
+impl JsonType {
+    fn check_array_content_type(array: &Vec<Json>) -> Self {
+        if array.len() == 0 {
+            return Self::Null;
+        }
+        match &array[0] {
+            Json::Object(_) => Self::Object,
+            Json::Array(_) => Self::Array,
+            Json::Null => Self::Null,
+            Json::String(_) => Self::String,
+            Json::Boolean(_) => Self::Boolean,
+            Json::Number(num) => {
+                if num.is_f64() {
+                    return Self::Float64;
+                }
+                if num.is_u64() {
+                    return Self::Usize64;
+                }
+                Self::Isize64
+            }
+        }
     }
 }
 #[cfg(test)]

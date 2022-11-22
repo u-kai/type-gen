@@ -9,13 +9,13 @@ pub struct Type {
     kind: TypeKind,
 }
 impl Type {
-    fn new(name: impl Into<TypeName>, kind: TypeKind) -> Self {
+    pub fn new(name: impl Into<TypeName>, kind: TypeKind) -> Self {
         Self {
             name: name.into(),
             kind,
         }
     }
-    fn from_json(name: impl Into<TypeName>, json: Json) -> Self {
+    pub fn from_json(name: impl Into<TypeName>, json: Json) -> Self {
         let name = name.into();
         let kind = TypeKind::from_json(json);
         Self { name, kind }
@@ -54,10 +54,8 @@ impl TypeKind {
         if array.len() == 0 {
             return TypeKind::Array(Box::new(TypeKind::Any));
         }
-
-        //let collect_obj = Json::collect_obj_from_json_array(array);
-
-        TypeKind::Any
+        let put_together_json = Json::put_together_array_json(array);
+        Self::Array(Box::new(Self::from_json(put_together_json)))
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,34 +63,7 @@ pub struct CompositeType {
     properties: HashMap<PropertyKey, TypeKind>,
 }
 
-impl CompositeType {
-    pub fn from_json(name: impl Into<TypeName>, json: Json) -> Self {
-        let name = name.into();
-        //let properties = Property::from_json(&name, json);
-        //Self { name, properties }
-        Self {
-            properties: HashMap::new(),
-        }
-    }
-    fn from_obj_json(
-        parent_name: &TypeName,
-        this_property_key: PropertyKey,
-        obj: BTreeMap<String, Json>,
-    ) -> Self {
-        //let this_name = this_property_key.to_type_name(parent_name);
-        Self {
-            properties: HashMap::new(),
-        }
-        //Self {
-        //properties: Property::from_obj_json(&this_name, obj),
-        //name: this_name,
-        //}
-    }
-    fn add_property(&mut self, key: impl Into<PropertyKey>, r#type: impl Into<Type>) {
-        //self.properties
-        //.push(Property{key:key.into(),r#type :r#type.into()});
-    }
-}
+impl CompositeType {}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TypeName(String);
 impl TypeName {
@@ -113,44 +84,6 @@ where
         TypeName::new(str)
     }
 }
-//#[derive(Debug, Clone, PartialEq, Eq)]
-//pub struct Property {
-//key: PropertyKey,
-//r#type: TypeKind,
-//}
-//impl Property {
-//fn new(key: impl Into<PropertyKey>, r#type: TypeKind) -> Self {
-//Self {
-//key: key.into(),
-//r#type,
-//}
-//}
-//fn from_json(parent_name: &TypeName, json: Json) -> Vec<Self> {
-//match json {
-//Json::Array(array) => Self::from_array_json(array),
-//Json::Object(obj) => Self::from_obj_json(parent_name, obj),
-//_ => panic!("this case is not property {:#?}", json),
-//}
-//}
-//fn from_obj_json(parent_name: &TypeName, obj: BTreeMap<String, Json>) -> Vec<Self> {
-//let mut result = Vec::new();
-//obj.into_iter().for_each(|(key, json)| {
-//let child_property_key = PropertyKey(key);
-//let child_type_name = parent_name.spawn_child(&child_property_key);
-//result.push(Self::new(
-//child_property_key,
-//TypeKind::from_json(&child_type_name, json),
-//))
-//});
-//result
-//}
-//fn from_array_json(array: Vec<Json>) -> Vec<Self> {
-//if array.len() == 0 {
-////return Type::Array(Box::new(Type::Any));
-//}
-//vec![]
-//}
-//}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PropertyKey(String);
 impl PropertyKey {
@@ -258,6 +191,92 @@ mod test_type_from_json {
         assert_eq!(expect, tobe);
     }
     #[test]
+    fn test_obj_array_case() {
+        let name = "Test";
+        let json = r#"
+        {
+            "id":0,
+            "name":"kai",
+            "data": [
+                {
+                    "id":0,
+                    "results":[
+                        {
+                            "id":10000,
+                            "data":"data"
+                        }
+                    ]
+                },
+                {
+                    "age":26
+                },
+                {
+                    "name":"kai",
+                    "results":[
+                        {
+                            "score":1000
+                        }
+                    ]
+                }
+            ]
+        }
+        "#;
+        let expect = Type::from_json(name, Json::from(json));
+        let mut child = HashMap::new();
+        child.insert(
+            PropertyKey::from("id"),
+            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
+        );
+        child.insert(
+            PropertyKey::from("name"),
+            TypeKind::Primitive(PrimitiveType::String),
+        );
+        let mut data_child = HashMap::new();
+        data_child.insert(
+            PropertyKey::from("id"),
+            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
+        );
+        data_child.insert(
+            PropertyKey::from("age"),
+            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
+        );
+        data_child.insert(
+            PropertyKey::from("name"),
+            TypeKind::Primitive(PrimitiveType::String),
+        );
+        let mut data_results = HashMap::new();
+        data_results.insert(
+            PropertyKey::from("id"),
+            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
+        );
+        data_results.insert(
+            PropertyKey::from("score"),
+            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
+        );
+        data_results.insert(
+            PropertyKey::from("data"),
+            TypeKind::Primitive(PrimitiveType::String),
+        );
+        data_child.insert(
+            PropertyKey::from("results"),
+            TypeKind::Array(Box::new(TypeKind::Composite(CompositeType {
+                properties: data_results,
+            }))),
+        );
+        let data = CompositeType {
+            properties: data_child,
+        };
+        child.insert(
+            PropertyKey::from("data"),
+            TypeKind::Array(Box::new(TypeKind::Composite(data))),
+        );
+        let tobe = Type {
+            name: name.into(),
+            kind: TypeKind::Composite(CompositeType { properties: child }),
+        };
+        assert_eq!(expect, tobe);
+    }
+    #[test]
     fn test_primitive_array_case() {
         let name = "Test";
         let expect = Type::from_json(name, Json::from(r#"{"key":["value"]}"#));
@@ -270,105 +289,6 @@ mod test_type_from_json {
             name: name.into(),
             kind: TypeKind::Composite(CompositeType { properties: child }),
         };
-        //assert_eq!(expect, tobe);
+        assert_eq!(expect, tobe);
     }
-}
-#[cfg(test)]
-mod test_composite_type_into_json {
-    use json::json::Json;
-
-    use super::*;
-
-    #[test]
-    fn test_simple_case() {
-        let name = "Test";
-        //let expect = CompositeType::from_json(name, Json::from(r#"{"key":"value"}"#));
-        //let mut tobe = CompositeType::new(name);
-        //tobe.add_property("key", Type::Primitive(PrimitiveType::String));
-        //assert_eq!(expect, tobe);
-    }
-    //#[test]
-    //fn test_nest_case() {
-    //let tobe = Json::from(r#"{"key":"","obj":{"name":""}}"#);
-    //let mut child = CompositeType::new("TestoObj");
-    //child.add_property("name", Type::Primitive(PrimitiveType::String));
-    //let mut parent = CompositeType::new("Test");
-    //parent.add_property("key", Type::Primitive(PrimitiveType::String));
-    //parent.add_property("obj", Type::Composite(child));
-    ////let expect: Json = parent.into();
-    ////assert_eq!(expect, tobe);
-    //}
-    //#[test]
-    //fn test_array_case() {
-    //let tobe = Json::from(r#"{"key":"","obj":{"name":"","results":[{"name":"","id":0}]}}"#);
-    //let mut grand_child = CompositeType::new("TestObjResults");
-    //grand_child.add_property("name", Type::Primitive(PrimitiveType::String));
-    //grand_child.add_property(
-    //"id",
-    //Type::Primitive(PrimitiveType::Number(Number::Usize)),
-    //);
-
-    //let mut child = CompositeType::new("TestObj");
-    //child.add_property("name", Type::Primitive(PrimitiveType::String));
-    //child.add_property(
-    //"results",
-    //Type::Array(Box::new(Type::Composite(grand_child))),
-    //);
-
-    //let mut parent = CompositeType::new("Test");
-    //parent.add_property("key", Type::Primitive(PrimitiveType::String));
-    //parent.add_property("obj", Type::Composite(child));
-
-    ////let expect: Json = parent.into();
-    ////assert_eq!(expect, tobe);
-    //}
-    //#[test]
-    //fn test_nest_array_case() {
-    //let json = r#"{
-    //"key":"",
-    //"obj":{
-    //"name":"",
-    //"results":[
-    //{
-    //"name":"",
-    //"id":0,
-    //"datas":[
-    //{
-    //"id":0
-    //}
-    //]
-    //},{
-    //"name":"",
-    //"id":0,
-    //"datas":[
-    //{
-    //"id":0
-    //}
-    //]
-    //}
-    //]
-    //}
-    //}"#;
-    //let tobe = Json::from(json);
-    //let mut grand_child = CompositeType::new("TestObjResults");
-    //grand_child.add_property("name", Type::Primitive(PrimitiveType::String));
-    //grand_child.add_property(
-    //"id",
-    //Type::Primitive(PrimitiveType::Number(Number::Usize)),
-    //);
-
-    //let mut child = CompositeType::new("TestObj");
-    //child.add_property("name", Type::Primitive(PrimitiveType::String));
-    //child.add_property(
-    //"results",
-    //Type::Array(Box::new(Type::Composite(grand_child))),
-    //);
-
-    //let mut parent = CompositeType::new("Test");
-    //parent.add_property("key", Type::Primitive(PrimitiveType::String));
-    //parent.add_property("obj", Type::Composite(child));
-
-    ////let expect: Json = parent.into();
-    ////assert_eq!(expect, tobe);
-    //}
 }
