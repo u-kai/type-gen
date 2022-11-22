@@ -222,33 +222,38 @@ mod test_type_from_json {
         };
         assert_eq!(expect, tobe);
     }
-    //#[test]
-    //fn test_obj_case() {
-    //let name = "Test";
-    //let expect = Property::from_json(
-    //&TypeName::new(name.to_string()),
-    //Json::from(r#"{"key":"value","obj":{"name":"kai"}}"#),
-    //);
-    //let mut properties = HashMap::new();
-    //let mut obj_child = HashMap::new();
-    //obj_child.insert(
-    //PropertyKey::from("name"),
-    //TypeKind::Primitive(PrimitiveType::String),
-    //);
-    //properties.insert(
-    //PropertyKey::from("obj"),
-    //TypeKind::Composite(CompositeType {
-    //properties: obj_child,
-    //}),
-    //);
-    //let mut obj = CompositeType { properties };
-    //let tobe = vec![
-    //Property::new("key", TypeKind::Primitive(PrimitiveType::String)),
-    //Property::new("obj", TypeKind::Composite(obj)),
-    //];
+    #[test]
+    fn test_obj_case() {
+        let name = "Test";
+        let json = Json::from(r#"{"name":"kai","obj":{"id":0,"name":"kai"}}"#);
+        let expect = Type::from_json(name, json);
+        let mut properties = HashMap::new();
+        properties.insert(
+            PropertyKey::from("name"),
+            TypeKind::Primitive(PrimitiveType::String),
+        );
+        let mut obj_child = HashMap::new();
+        obj_child.insert(
+            PropertyKey::from("name"),
+            TypeKind::Primitive(PrimitiveType::String),
+        );
+        obj_child.insert(
+            PropertyKey::from("id"),
+            TypeKind::Primitive(PrimitiveType::Number(Number::Usize)),
+        );
+        properties.insert(
+            PropertyKey::from("obj"),
+            TypeKind::Composite(CompositeType {
+                properties: obj_child,
+            }),
+        );
+        let tobe = Type {
+            name: TypeName::from("Test"),
+            kind: TypeKind::Composite(CompositeType { properties }),
+        };
 
-    //assert_eq!(expect, tobe);
-    //}
+        assert_eq!(expect, tobe);
+    }
 }
 #[cfg(test)]
 mod test_composite_type_into_json {
