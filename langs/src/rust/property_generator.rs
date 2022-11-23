@@ -14,7 +14,7 @@ struct RustPropertyStatementGenerator {
 pub const RUST_PROPERTY_HEAD_SPACE: &'static str = "    ";
 impl RustPropertyStatementGenerator {
     const NEXT_LINE: &'static str = ",\n";
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             reserved_words: RustReservedWords::new(),
         }
@@ -44,6 +44,7 @@ impl<'a>
             additional += &attribute;
         };
         additional += additional_statement.get_property_visibility(type_name, property_key);
+        let property_key_str = self.reserved_words.get_or_origin(property_key.as_str());
         let property_type = if additional_statement.is_property_optional(type_name, property_key) {
             mapper.case_optional_type(mapper.case_property_type(property_type))
         } else {
@@ -53,7 +54,7 @@ impl<'a>
             "{additional}{head}{property_key}: {property_type}{next_line}",
             additional = additional,
             head = RUST_PROPERTY_HEAD_SPACE,
-            property_key = property_key.as_str(),
+            property_key = property_key_str,
             property_type = property_type,
             next_line = Self::NEXT_LINE
         )
@@ -68,7 +69,7 @@ mod test_rust_property_geneartor {
             generators::generator::PropertyStatementGenerator,
         },
         types::{
-            primitive_type::primitive_type_factories::make_usize,
+            primitive_type::primitive_type_factories::{make_string, make_usize},
             property_key::PropertyKey,
             property_type::property_type_factories::{
                 make_array_type, make_custom_type, make_primitive_type,
@@ -84,6 +85,26 @@ mod test_rust_property_geneartor {
 
     use super::RustPropertyStatementGenerator;
 
+    #[test]
+    fn test_case_primitive_and_use_reserved_words() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "type".into();
+        let property_type = make_primitive_type(make_string());
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let tobe = format!("{head}r#type: String,\n", head = RUST_PROPERTY_HEAD_SPACE,);
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
     #[test]
     fn test_case_custom_array_option_with_comment() {
         let type_name: TypeName = "Test".into();
@@ -103,8 +124,7 @@ mod test_rust_property_geneartor {
             head = RUST_PROPERTY_HEAD_SPACE,
             comment1 = comment1,
             comment2 = comment2
-        )
-        .to_string();
+        );
         assert_eq!(
             generator.generate(
                 &type_name,
