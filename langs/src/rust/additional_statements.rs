@@ -2,11 +2,31 @@ use lang_common::type_defines::additional_defines::{
     comment_store::Comment, visibility_store::Visibility,
 };
 
-pub struct RustComment<'a>(&'a str);
+use super::property_generator::RUST_PROPERTY_HEAD_SPACE;
+
+pub struct RustComment<'a>(Vec<&'a str>);
+impl<'a> RustComment<'a> {
+    const COMMENT_PREFIX: &'static str = "// ";
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+    pub fn add_comment_line(&mut self, comment: &'a str) {
+        self.0.push(comment);
+    }
+}
 
 impl<'a> Comment for RustComment<'a> {
     fn to_define(&self) -> String {
-        format!("// {}", self.0)
+        self.0.iter().fold(String::new(), |acc, cur| {
+            format!(
+                "{acc}{head_space}{prefix}{comment}{next_line}",
+                acc = acc,
+                head_space = RUST_PROPERTY_HEAD_SPACE,
+                prefix = Self::COMMENT_PREFIX,
+                comment = cur,
+                next_line = "\n"
+            )
+        })
     }
 }
 

@@ -11,8 +11,8 @@ use super::{
 struct RustPropertyStatementGenerator {
     reserved_words: RustReservedWords,
 }
+pub const RUST_PROPERTY_HEAD_SPACE: &'static str = "    ";
 impl RustPropertyStatementGenerator {
-    const HEAD_SPACE: &'static str = "    ";
     const NEXT_LINE: &'static str = ",\n";
     fn new() -> Self {
         Self {
@@ -50,9 +50,9 @@ impl<'a>
             mapper.case_property_type(property_type)
         };
         format!(
-            "{head}{additional}{property_key}: {property_type}{next_line}",
-            head = Self::HEAD_SPACE,
+            "{additional}{head}{property_key}: {property_type}{next_line}",
             additional = additional,
+            head = RUST_PROPERTY_HEAD_SPACE,
             property_key = property_key.as_str(),
             property_type = property_type,
             next_line = Self::NEXT_LINE
@@ -70,15 +70,92 @@ mod test_rust_property_geneartor {
         types::{
             primitive_type::primitive_type_factories::make_usize,
             property_key::PropertyKey,
-            property_type::{property_type_factories::make_primitive_type, PropertyType},
+            property_type::property_type_factories::{
+                make_array_type, make_custom_type, make_primitive_type,
+            },
             type_name::TypeName,
         },
     };
 
-    use crate::rust::mapper::RustLangMapper;
+    use crate::rust::{
+        additional_statements::RustComment, mapper::RustLangMapper,
+        property_generator::RUST_PROPERTY_HEAD_SPACE,
+    };
 
     use super::RustPropertyStatementGenerator;
 
+    #[test]
+    fn test_case_custom_array_option_with_comment() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let mut comment = RustComment::new();
+        let comment1 = "this is comment1";
+        let comment2 = "this is comment2";
+        comment.add_comment_line(comment1);
+        comment.add_comment_line(comment2);
+        let property_type = make_array_type(make_custom_type("TestId"));
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let mut additional_provider = AdditionalStatementProvider::with_default_optional(true);
+        additional_provider.add_property_comment(&type_name, &property_key, comment);
+        let tobe = format!(
+            "{head}// {comment1}\n{head}// {comment2}\n{head}id: Option<Vec<TestId>>,\n",
+            head = RUST_PROPERTY_HEAD_SPACE,
+            comment1 = comment1,
+            comment2 = comment2
+        )
+        .to_string();
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_custom_array_option() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_array_type(make_custom_type("TestId"));
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let additional_provider = AdditionalStatementProvider::with_default_optional(true);
+        let tobe = "    id: Option<Vec<TestId>>,\n".to_string();
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_custom_all_none_additional() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_custom_type("TestId");
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let tobe = "    id: TestId,\n".to_string();
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
     #[test]
     fn test_case_primitive_all_none_additional() {
         let type_name: TypeName = "Test".into();
