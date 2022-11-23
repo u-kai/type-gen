@@ -3,8 +3,10 @@ use std::collections::HashMap;
 use crate::types::{property_key::PropertyKey, type_name::TypeName};
 
 pub trait Visibility {
-    fn to_define(&self) -> &'static str;
-    fn default_visibility() -> &'static str;
+    fn to_type_define(&self) -> &'static str;
+    fn to_property_define(&self) -> &'static str;
+    fn default_type_visibility() -> &'static str;
+    fn default_property_visibility() -> &'static str;
 }
 pub struct VisibilityStore<'a, V: Visibility> {
     type_store: HashMap<&'a TypeName, V>,
@@ -33,8 +35,8 @@ impl<'a, V: Visibility> VisibilityStore<'a, V> {
     pub fn get_type_visibility(&self, type_name: &TypeName) -> &'static str {
         self.type_store
             .get(type_name)
-            .map(|visi| visi.to_define())
-            .unwrap_or(V::default_visibility())
+            .map(|visi| visi.to_type_define())
+            .unwrap_or(V::default_type_visibility())
     }
     pub fn get_property_visibility(
         &self,
@@ -43,7 +45,7 @@ impl<'a, V: Visibility> VisibilityStore<'a, V> {
     ) -> &'static str {
         self.property_store
             .get(&(type_name, property_key))
-            .map(|visi| visi.to_define())
-            .unwrap_or(V::default_visibility())
+            .map(|visi| visi.to_property_define())
+            .unwrap_or(V::default_property_visibility())
     }
 }

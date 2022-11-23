@@ -63,7 +63,7 @@ impl Default for RustVisibility {
     }
 }
 impl Visibility for RustVisibility {
-    fn to_define(&self) -> &'static str {
+    fn to_type_define(&self) -> &'static str {
         match self {
             Self::Private => "",
             Self::Public => "pub ",
@@ -72,7 +72,19 @@ impl Visibility for RustVisibility {
             Self::PublicCrate => "pub(crate) ",
         }
     }
-    fn default_visibility() -> &'static str {
-        ""
+    fn to_property_define(&self) -> &'static str {
+        match self {
+            Self::Private => "",
+            Self::Public => "pub ",
+            Self::PublicSuper => "pub(super) ",
+            Self::PubilcSelf => "pub(self) ",
+            Self::PublicCrate => "pub(crate) ",
+        }
+    }
+    fn default_type_visibility() -> &'static str {
+        Self::to_type_define(&Self::Private)
+    }
+    fn default_property_visibility() -> &'static str {
+        Self::to_property_define(&Self::Private)
     }
 }
