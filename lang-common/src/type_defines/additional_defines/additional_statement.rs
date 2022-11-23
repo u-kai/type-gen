@@ -191,10 +191,10 @@ pub mod fake_additional_statement {
             _type_name: &TypeName,
             _property_key: &PropertyKey,
         ) -> Option<&'static str> {
-            Some("public")
+            Some("public ")
         }
         fn get_type_visibility(&self, _type_name: &TypeName) -> Option<&'static str> {
-            Some("public")
+            Some("public ")
         }
         fn get_property_attribute(
             &self,

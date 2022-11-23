@@ -137,7 +137,16 @@ pub mod fakes {
             } else {
                 mapper.case_property_type(property_type)
             };
-            format!("{}{}: {},", result, property_key.as_str(), property_type)
+            let visibility = a
+                .get_property_visibility(type_name, property_key)
+                .unwrap_or_default();
+            format!(
+                "{}{}{}: {},",
+                result,
+                visibility,
+                property_key.as_str(),
+                property_type
+            )
         }
     }
     pub struct FakeTypeStatementGenerator;
@@ -156,9 +165,11 @@ pub mod fakes {
             if let Some(attribute) = a.get_type_attribute(type_name) {
                 result += &attribute;
             };
+            let visibility = a.get_type_visibility(type_name).unwrap_or_default();
             format!(
-                "{}{} {} {{{}}}",
+                "{}{}{} {} {{{}}}",
                 result,
+                visibility,
                 Self::TYPE_PREFIX,
                 type_name.as_str(),
                 properties_statement
@@ -177,9 +188,13 @@ pub mod fakes {
             if let Some(attribute) = a.get_type_attribute(&primitive_type.name) {
                 result += &attribute;
             };
+            let visibility = a
+                .get_type_visibility(&primitive_type.name)
+                .unwrap_or_default();
             format!(
-                "{}type {} = {};",
+                "{}{}type {} = {};",
                 result,
+                visibility,
                 primitive_type.name.as_str(),
                 mapper.case_primitive(&primitive_type.primitive_type)
             )
@@ -244,7 +259,7 @@ mod test_type_define_statement_generator {
                 ("child", make_custom_type("Child")),
             ],
         );
-        let tobe = "// get_type_comment#[get_type_attribute]struct Test {// get_property_comment#[get_property_attribute]child: Option<Child>,// get_property_comment#[get_property_attribute]id: Option<usize>,}".to_string();
+        let tobe = "// get_type_comment#[get_type_attribute]public struct Test {// get_property_comment#[get_property_attribute]public child: Option<Child>,// get_property_comment#[get_property_attribute]public id: Option<usize>,}".to_string();
         let generator = TypeDefineGenerator::new_always_additional_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
@@ -253,7 +268,7 @@ mod test_type_define_statement_generator {
     fn test_simple_case_and_additional() {
         let simple_statement =
             TypeStructure::make_composite("Test", vec![("id", make_primitive_type(make_usize()))]);
-        let tobe = "// get_type_comment#[get_type_attribute]struct Test {// get_property_comment#[get_property_attribute]id: Option<usize>,}".to_string();
+        let tobe = "// get_type_comment#[get_type_attribute]public struct Test {// get_property_comment#[get_property_attribute]public id: Option<usize>,}".to_string();
         let generator = TypeDefineGenerator::new_always_additional_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
@@ -272,7 +287,7 @@ mod test_type_define_statement_generator {
     #[test]
     fn test_case_primitive_and_additional() {
         let simple_statement = TypeStructure::make_primitive("Test", make_string());
-        let tobe = "// get_type_comment#[get_type_attribute]type Test = String;".to_string();
+        let tobe = "// get_type_comment#[get_type_attribute]public type Test = String;".to_string();
         let generator = TypeDefineGenerator::new_always_additional_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
