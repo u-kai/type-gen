@@ -5,6 +5,7 @@ use super::type_name::TypeName;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct PropertyKey(String);
 impl PropertyKey {
+    #[allow(unused)]
     pub(crate) fn to_type_name(&self, parent_type_name: &TypeName) -> TypeName {
         TypeName::new(format!(
             "{}{}",
