@@ -14,7 +14,7 @@ use super::mapper::LangTypeMapper;
 
 pub struct TypeDefineGenerator<T, P, M, A>
 where
-    T: TypeStatementGenerator,
+    T: TypeStatementGenerator<M, A>,
     P: PropertyStatementGenerator<M, A>,
     M: LangTypeMapper,
     A: AdditionalStatement,
@@ -26,7 +26,7 @@ where
 }
 impl<T, P, M, A> TypeDefineGenerator<T, P, M, A>
 where
-    T: TypeStatementGenerator,
+    T: TypeStatementGenerator<M, A>,
     P: PropertyStatementGenerator<M, A>,
     M: LangTypeMapper,
     A: AdditionalStatement,
@@ -77,15 +77,19 @@ where
     }
 }
 
-pub trait TypeStatementGenerator {
+pub trait TypeStatementGenerator<M, A>
+where
+    M: LangTypeMapper,
+    A: AdditionalStatement,
+{
     const TYPE_PREFIX: &'static str = "class";
-    fn generate_case_composite<A: AdditionalStatement>(
+    fn generate_case_composite(
         &self,
         type_name: &TypeName,
         properties_statement: String,
         additional_statement: &A,
     ) -> String;
-    fn generate_case_primitive<M: LangTypeMapper, A: AdditionalStatement>(
+    fn generate_case_primitive(
         &self,
         primitive_type: &PrimitiveTypeStructure,
         mapper: &M,
@@ -156,9 +160,12 @@ pub mod fakes {
         }
     }
     pub struct FakeTypeStatementGenerator;
-    impl TypeStatementGenerator for FakeTypeStatementGenerator {
+    impl<A> TypeStatementGenerator<FakeLangTypeMapper, A> for FakeTypeStatementGenerator
+    where
+        A: AdditionalStatement,
+    {
         const TYPE_PREFIX: &'static str = "struct";
-        fn generate_case_composite<A: AdditionalStatement>(
+        fn generate_case_composite(
             &self,
             type_name: &TypeName,
             properties_statement: String,
@@ -173,18 +180,17 @@ pub mod fakes {
             };
             let visibility = a.get_type_visibility(type_name);
             format!(
-                "{}{}{} {} {{{}}}",
+                "{}{}struct {} {{{}}}",
                 result,
                 visibility,
-                Self::TYPE_PREFIX,
                 type_name.as_str(),
                 properties_statement
             )
         }
-        fn generate_case_primitive<M: LangTypeMapper, A: AdditionalStatement>(
+        fn generate_case_primitive(
             &self,
             primitive_type: &crate::types::structures::PrimitiveTypeStructure,
-            mapper: &M,
+            mapper: &FakeLangTypeMapper,
             a: &A,
         ) -> String {
             let mut result = String::new();
