@@ -9,6 +9,11 @@ pub enum PropertyType {
     CustomType(TypeName),
     Any,
 }
+impl PropertyType {
+    pub fn to_optional(self) -> Self {
+        Self::Optional(Box::new(self))
+    }
+}
 pub mod property_type_factories {
     use super::*;
     pub fn make_array_type(property_type: PropertyType) -> PropertyType {
@@ -40,6 +45,9 @@ impl TypeStatement {
         properties: Vec<(&str, PropertyType)>,
     ) -> Self {
         Self::Composite(CompositeTypeStatement::new_easy(name, properties))
+    }
+    pub fn make_primitive(name: impl Into<TypeName>, primitive_type: PrimitiveType) -> Self {
+        Self::Primitive(PrimitiveTypeStatement::new(name.into(), primitive_type))
     }
 }
 

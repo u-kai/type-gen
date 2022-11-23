@@ -167,7 +167,13 @@ pub mod fakes {
                         properties_statement
                     )
                 }
-                _ => todo!(),
+                TypeStatement::Primitive(primitive) => {
+                    format!(
+                        "type {} = {};",
+                        primitive.name.as_str(),
+                        self.mapper.case_primitive(&primitive.primitive_type)
+                    )
+                }
             }
         }
     }
@@ -186,6 +192,14 @@ mod test_type_define_statement_generator {
         },
         structures::primitive_type_factories::*,
     };
+    #[test]
+    fn test_case_primitive() {
+        let simple_statement = TypeStatement::make_primitive("Test", make_string());
+        let tobe = "type Test = String;".to_string();
+        let generator = FakeTypeGenerator::new_easy();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+    }
     #[test]
     fn test_optional_case() {
         let simple_statement = TypeStatement::make_composite(

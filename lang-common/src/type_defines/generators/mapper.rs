@@ -14,18 +14,21 @@ pub trait LangTypeMapper {
     fn case_any(&self) -> TypeString;
     fn case_array_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString;
     fn case_optional_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString;
+    fn case_primitive(&self, primitive_type: &PrimitiveType) -> TypeString {
+        match primitive_type {
+            PrimitiveType::Boolean => self.case_boolean(),
+            PrimitiveType::String => self.case_string(),
+            PrimitiveType::Number(num) => match num {
+                Number::Float => self.case_float(),
+                Number::Usize => self.case_usize(),
+                Number::Isize => self.case_isize(),
+            },
+        }
+    }
     fn case_property_type(&self, property_type: &PropertyType) -> TypeString {
         match property_type {
             PropertyType::Any => self.case_any(),
-            PropertyType::Primitive(primitive) => match primitive {
-                PrimitiveType::Boolean => self.case_boolean(),
-                PrimitiveType::String => self.case_string(),
-                PrimitiveType::Number(num) => match num {
-                    Number::Float => self.case_float(),
-                    Number::Usize => self.case_usize(),
-                    Number::Isize => self.case_isize(),
-                },
-            },
+            PropertyType::Primitive(primitive) => self.case_primitive(primitive),
             PropertyType::Optional(optional_type) => {
                 self.case_optional_type(self.case_property_type(optional_type))
             }
