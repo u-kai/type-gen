@@ -52,7 +52,7 @@ impl<'a>
             result += &attribute;
         };
         format!(
-            "{}{} {} {{{}}}",
+            "{}{} {} {{\n{}\n}}",
             result,
             Self::TYPE_PREFIX,
             type_name.as_str(),
@@ -78,6 +78,23 @@ mod test_rust_type_statement_generator {
 
     use super::RustTypeStatementGenerator;
 
+    #[test]
+    fn test_case_cusutom_all_none_additional() {
+        let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let type_name: TypeName = "Test".into();
+        let generator = RustTypeStatementGenerator::new();
+        let tobe = r#"struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(
+                &type_name,
+                format!("    id: usize,"),
+                &additional_provider
+            ),
+            tobe
+        );
+    }
     #[test]
     fn test_case_array_option_primitive_all_none_additional() {
         let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);
