@@ -79,7 +79,32 @@ mod test_rust_type_statement_generator {
     use super::RustTypeStatementGenerator;
 
     #[test]
-    fn test_case_cusutom_all_none_additional() {
+    fn test_case_custum_with_comment() {
+        let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let mut comment = RustComment::new();
+        let comment1 = "this is comment1";
+        let comment2 = "this is comment2";
+        let type_name: TypeName = "Test".into();
+        comment.add_comment_line(comment1);
+        comment.add_comment_line(comment2);
+        additional_provider.add_type_comment(&type_name, comment);
+        let generator = RustTypeStatementGenerator::new();
+        let tobe = r#"// this is comment1
+// this is comment2
+struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(
+                &type_name,
+                format!("    id: usize,"),
+                &additional_provider
+            ),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_custum_all_none_additional() {
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let type_name: TypeName = "Test".into();
         let generator = RustTypeStatementGenerator::new();
