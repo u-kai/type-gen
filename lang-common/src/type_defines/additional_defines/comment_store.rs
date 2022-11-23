@@ -24,13 +24,9 @@ impl<'a> CommentStore<'a> {
         &mut self,
         type_name: &'a TypeName,
         property_key: &'a PropertyKey,
-        attribute: Comment,
+        comment: Comment,
     ) {
-        push_to_kv_vec(
-            &mut self.property_store,
-            (type_name, property_key),
-            attribute,
-        );
+        push_to_kv_vec(&mut self.property_store, (type_name, property_key), comment);
     }
     pub fn get_type_comment(&self, type_name: &TypeName) -> Option<&Vec<Comment>> {
         self.type_store.get(type_name)
