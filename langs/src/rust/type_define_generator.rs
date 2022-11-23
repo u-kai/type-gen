@@ -68,6 +68,14 @@ impl<'a> RustTypeDefainGeneratorBuilder {
         let type_generator = RustTypeStatementGenerator::new();
         RustTypeDefainGenerator::new(mapper, property_generator, type_generator, self.inner)
     }
+    pub fn set_all_type_attribute(mut self, attribute: RustAttribute) -> Self {
+        self.inner.set_all_type_attribute(attribute);
+        self
+    }
+    pub fn set_all_property_attribute(mut self, attribute: RustAttribute) -> Self {
+        self.inner.set_all_property_attribute(attribute);
+        self
+    }
     pub fn add_type_attribute(
         mut self,
         type_name: impl Into<TypeName>,
@@ -150,6 +158,11 @@ mod test_type_define_generator {
         structures::TypeStructure,
     };
 
+    use crate::rust::{
+        additional_statements::{RustComment, RustVisibility},
+        attribute::RustAttribute,
+    };
+
     use super::RustTypeDefainGeneratorBuilder;
 
     #[test]
@@ -168,7 +181,7 @@ mod test_type_define_generator {
                 make_array_type(make_custom_type("RootDataResults")),
             )],
         );
-        let root_results = TypeStructure::make_composite(
+        let root_data_results = TypeStructure::make_composite(
             "RootDataResults",
             vec![
                 ("name", make_primitive_type(make_string())),
@@ -176,7 +189,42 @@ mod test_type_define_generator {
                 ("accountId", make_primitive_type(make_string())),
             ],
         );
-        let builder = RustTypeDefainGeneratorBuilder::new();
-        //    .add_require(root, )
+        let id_comment = "id is must set";
+        let root_data_results_comment = "data results";
+        let generator = RustTypeDefainGeneratorBuilder::new()
+            .add_require("Root", "id")
+            .add_property_comment("Root", "id", RustComment::from(id_comment))
+            .add_type_comment(
+                "RootDataResults",
+                RustComment::from(root_data_results_comment),
+            )
+            .add_type_visibility("Root", RustVisibility::Public)
+            .add_property_visibility("Root", "id", RustVisibility::Public)
+            .set_all_type_attribute(RustAttribute::from_derives(vec!["Clone", "Debug"]))
+            .build();
+        let tobe = vec![
+            r#"#[derive(Clone,Debug)]
+pub struct Root {
+    data: Option<Vec<RootData>>,
+    // id is must set
+    pub id: usize,
+}"#,
+            r#"#[derive(Clone,Debug)]
+struct RootData {
+    results: Option<Vec<RootDataResults>>,
+}"#,
+            r#"// data results
+#[derive(Clone,Debug)]
+struct RootDataResults {
+    #[serde(rename = "accountId")]
+    account_id: Option<String>,
+    age: Option<usize>,
+    name: Option<String>,
+}"#,
+        ];
+        assert_eq!(
+            generator.generate(vec![root, root_data, root_data_results]),
+            tobe
+        )
     }
 }

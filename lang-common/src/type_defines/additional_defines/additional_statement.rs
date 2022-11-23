@@ -63,6 +63,12 @@ where
             visibility_store: VisibilityStore::new(),
         }
     }
+    pub fn set_all_type_attribute(&mut self, attribute: A) {
+        self.attribute_store.set_all_type_attribute(attribute)
+    }
+    pub fn set_all_property_attribute(&mut self, attribute: A) {
+        self.attribute_store.set_all_property_attribute(attribute)
+    }
     pub fn add_type_attribute(&mut self, type_name: impl Into<TypeName>, attribute: A) {
         self.attribute_store
             .add_type_attribute(type_name, attribute);

@@ -76,7 +76,7 @@ impl<'a>
     ) -> String {
         let additional = self.make_additional(type_name, additional_statement);
         format!(
-            "{}{} {} {{\n{}\n}}",
+            "{}{} {} {{\n{}}}",
             additional,
             Self::TYPE_PREFIX,
             type_name.as_str(),
@@ -130,7 +130,7 @@ pub struct Test {
         assert_eq!(
             generator.generate_case_composite(
                 &type_name.into(),
-                format!("    id: usize,"),
+                format!("    id: usize,\n"),
                 &additional_provider
             ),
             tobe
@@ -155,7 +155,7 @@ struct Test {
         assert_eq!(
             generator.generate_case_composite(
                 &type_name,
-                format!("    id: usize,"),
+                format!("    id: usize,\n"),
                 &additional_provider
             ),
             tobe
@@ -172,7 +172,7 @@ struct Test {
         assert_eq!(
             generator.generate_case_composite(
                 &type_name,
-                format!("    id: usize,"),
+                format!("    id: usize,\n"),
                 &additional_provider
             ),
             tobe

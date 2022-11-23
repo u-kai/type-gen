@@ -1,6 +1,11 @@
-use lang_common::type_defines::{
-    additional_defines::additional_statement::{AdditionalStatement, AdditionalStatementProvider},
-    generators::{generator::PropertyStatementGenerator, mapper::LangTypeMapper},
+use lang_common::{
+    type_defines::{
+        additional_defines::additional_statement::{
+            AdditionalStatement, AdditionalStatementProvider,
+        },
+        generators::{generator::PropertyStatementGenerator, mapper::LangTypeMapper},
+    },
+    types::{property_key::PropertyKey, type_name::TypeName},
 };
 use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
 
@@ -21,6 +26,33 @@ impl RustPropertyStatementGenerator {
             reserved_words: RustReservedWords::new(),
         }
     }
+    fn make_additional(
+        &self,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+        additional_provider: &AdditionalStatementProvider<
+            RustVisibility,
+            RustComment,
+            RustAttribute,
+        >,
+    ) -> String {
+        let mut additional = String::new();
+        if let Some(comment) = additional_provider.get_property_comment(type_name, property_key) {
+            additional += &comment;
+        };
+        if let Some(attribute) = additional_provider.get_property_attribute(type_name, property_key)
+        {
+            additional += &attribute;
+        };
+        if !NamingPrincipal::is_snake(property_key.as_str()) {
+            additional += &format!(
+                "{head}#[serde(rename = \"{original}\")]\n",
+                head = RUST_PROPERTY_HEAD_SPACE,
+                original = property_key.as_str()
+            )
+        }
+        additional
+    }
 }
 impl<'a>
     PropertyStatementGenerator<
@@ -34,40 +66,25 @@ impl<'a>
         property_key: &lang_common::types::property_key::PropertyKey,
         property_type: &lang_common::types::property_type::PropertyType,
         mapper: &RustLangMapper,
-        additional_statement: &AdditionalStatementProvider<
+        additional_provider: &AdditionalStatementProvider<
             RustVisibility,
             RustComment,
             RustAttribute,
         >,
     ) -> String {
-        let mut additional = String::new();
-        if let Some(comment) = additional_statement.get_property_comment(type_name, property_key) {
-            additional += &comment;
-        };
-        if let Some(attribute) =
-            additional_statement.get_property_attribute(type_name, property_key)
-        {
-            additional += &attribute;
-        };
-        additional += additional_statement.get_property_visibility(type_name, property_key);
-        if !NamingPrincipal::is_snake(property_key.as_str()) {
-            additional += &format!(
-                "{head}#[serde(rename = \"{original}\")]\n",
-                head = RUST_PROPERTY_HEAD_SPACE,
-                original = property_key.as_str()
-            )
-        }
+        let additional = self.make_additional(type_name, property_key, additional_provider);
         let property_key_str = NamingPrincipalConvertor::new(property_key.as_str()).to_snake();
         let property_key_str = self.reserved_words.get_or_origin(&property_key_str);
-        let property_type = if additional_statement.is_property_optional(type_name, property_key) {
+        let property_type = if additional_provider.is_property_optional(type_name, property_key) {
             mapper.case_optional_type(mapper.case_property_type(property_type))
         } else {
             mapper.case_property_type(property_type)
         };
         format!(
-            "{additional}{head}{property_key}: {property_type}{next_line}",
+            "{additional}{head}{visibility}{property_key}: {property_type}{next_line}",
             additional = additional,
             head = RUST_PROPERTY_HEAD_SPACE,
+            visibility = additional_provider.get_property_visibility(type_name, property_key),
             property_key = property_key_str,
             property_type = property_type,
             next_line = Self::NEXT_LINE

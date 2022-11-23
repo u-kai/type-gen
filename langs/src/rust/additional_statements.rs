@@ -14,6 +14,15 @@ impl RustComment {
         self.0.push(comment.into());
     }
 }
+impl<I> From<I> for RustComment
+where
+    I: Into<String>,
+{
+    fn from(source: I) -> Self {
+        let str: String = source.into();
+        Self(str.split("\n").map(|s| s.to_string()).collect())
+    }
+}
 
 impl<'a> Comment for RustComment {
     fn to_property_define(&self) -> String {

@@ -12,6 +12,23 @@ impl RustAttribute {
     pub fn add_attribute(&mut self, attr: RustAttributeKind) {
         self.all.push(attr);
     }
+    pub fn from_derives(derives: Vec<&'static str>) -> Self {
+        let attr = RustAttributeKind::Derives(derives);
+        let mut result = Self::new();
+        result.add_attribute(attr);
+        result
+    }
+}
+
+impl<I> From<I> for RustAttribute
+where
+    I: Into<String>,
+{
+    fn from(str: I) -> Self {
+        let mut result = Self::new();
+        result.add_attribute(RustAttributeKind::Original(str.into()));
+        result
+    }
 }
 impl Attribute for RustAttribute {
     fn to_property_define(&self) -> String {
