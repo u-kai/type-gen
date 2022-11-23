@@ -37,12 +37,11 @@ impl RustAttributeKind {
             Self::CfgTest => "#[cfg(test)]".to_string(),
             Self::Test => "#[test]".to_string(),
             Self::Derives(derives) => {
-                format!(
-                    "#[derive({})]",
-                    derives
-                        .iter()
-                        .fold(String::new(), |acc, cur| format!("{}{},", acc, cur))
-                )
+                let mut derives = derives
+                    .iter()
+                    .fold(String::new(), |acc, cur| format!("{}{},", acc, cur));
+                derives.remove(derives.len() - 1);
+                format!("#[derive({})]", derives)
             }
             Self::Original(str) => {
                 format!("#[{}]", str)
