@@ -15,7 +15,7 @@ use super::mapper::LangTypeMapper;
 pub struct TypeDefineGenerator<T, P, M, A>
 where
     T: TypeStatementGenerator,
-    P: PropertyStatementGenerator,
+    P: PropertyStatementGenerator<M, A>,
     M: LangTypeMapper,
     A: AdditionalStatement,
 {
@@ -27,7 +27,7 @@ where
 impl<T, P, M, A> TypeDefineGenerator<T, P, M, A>
 where
     T: TypeStatementGenerator,
-    P: PropertyStatementGenerator,
+    P: PropertyStatementGenerator<M, A>,
     M: LangTypeMapper,
     A: AdditionalStatement,
 {
@@ -92,8 +92,12 @@ pub trait TypeStatementGenerator {
         additional_statement: &A,
     ) -> String;
 }
-pub trait PropertyStatementGenerator {
-    fn generate<M: LangTypeMapper, A: AdditionalStatement>(
+pub trait PropertyStatementGenerator<M, A>
+where
+    M: LangTypeMapper,
+    A: AdditionalStatement,
+{
+    fn generate(
         &self,
         type_name: &TypeName,
         property_key: &PropertyKey,
@@ -116,8 +120,12 @@ pub mod fakes {
 
     use super::{PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator};
     pub struct FakePropertyStatementGenerator;
-    impl PropertyStatementGenerator for FakePropertyStatementGenerator {
-        fn generate<M: LangTypeMapper, A: AdditionalStatement>(
+    impl<M, A> PropertyStatementGenerator<M, A> for FakePropertyStatementGenerator
+    where
+        M: LangTypeMapper,
+        A: AdditionalStatement,
+    {
+        fn generate(
             &self,
             type_name: &TypeName,
             property_key: &PropertyKey,

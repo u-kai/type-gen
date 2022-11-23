@@ -10,8 +10,8 @@ pub enum Number {
     Isize,
     Float,
 }
-#[cfg(test)]
-pub(crate) mod primitive_type_factories {
+//#[cfg(test)]
+pub mod primitive_type_factories {
     use super::{Number, PrimitiveType};
     pub fn make_string() -> PrimitiveType {
         PrimitiveType::String

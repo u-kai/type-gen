@@ -53,6 +53,14 @@ where
             visibility_store: VisibilityStore::new(),
         }
     }
+    pub fn with_default_optional(is_optional_default: bool) -> Self {
+        Self {
+            attribute_store: AttributeStore::new(),
+            comment_store: CommentStore::new(),
+            optional_type_store: OptionalTypeStore::new(is_optional_default),
+            visibility_store: VisibilityStore::new(),
+        }
+    }
     pub fn add_type_attribute(&mut self, type_name: &'a TypeName, attribute: Attribute) {
         self.attribute_store
             .add_type_attribute(type_name, attribute);
@@ -129,18 +137,11 @@ where
         type_name: &TypeName,
         property_key: &PropertyKey,
     ) -> Option<String> {
-        let comments = self
-            .comment_store
-            .get_property_comment(type_name, property_key)?;
-        Some(comments.iter().fold(String::new(), |acc, cur| {
-            format!("{}{}\n", acc, cur.to_define())
-        }))
+        self.comment_store
+            .get_property_comment(type_name, property_key)
     }
     fn get_type_comment(&self, type_name: &TypeName) -> Option<String> {
-        let comments = self.comment_store.get_type_comment(type_name)?;
-        Some(comments.iter().fold(String::new(), |acc, cur| {
-            format!("{}{}\n", acc, cur.to_define())
-        }))
+        self.comment_store.get_type_comment(type_name)
     }
     fn is_property_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool {
         self.optional_type_store

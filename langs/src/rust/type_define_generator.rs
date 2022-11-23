@@ -1,17 +1,3 @@
-use lang_common::type_defines::generators::generator::TypeStatementGenerator;
-
-use super::reserved_words::RustReservedWords;
-struct RustPropertyStatementGenerator {
-    reserved_words: RustReservedWords,
-}
-impl RustPropertyStatementGenerator {
-    fn new() -> Self {
-        Self {
-            reserved_words: RustReservedWords::new(),
-        }
-    }
-}
-
 pub struct RustTypeStatementGenerator {}
 //impl TypeStatementGenerator for RustTypeStatementGenerator {
 //fn generate_case_composite<A: lang_common::type_defines::additional_defines::additional_statement::AdditionalStatement>(
