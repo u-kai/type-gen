@@ -179,11 +179,61 @@ mod test_type_define_statement_generator {
     use super::{fakes::FakeTypeGenerator, *};
     use crate::types::{
         statement::{
-            property_type_factories::{make_custom_type, make_primitive_type},
+            property_type_factories::{
+                make_array_type, make_custom_type, make_optional_type, make_primitive_type,
+            },
             TypeStatement,
         },
         structures::primitive_type_factories::*,
     };
+    #[test]
+    fn test_optional_case() {
+        let simple_statement = TypeStatement::make_composite(
+            "Test",
+            vec![
+                ("id", make_optional_type(make_primitive_type(make_usize()))),
+                (
+                    "child",
+                    make_array_type(make_optional_type(make_custom_type("Child"))),
+                ),
+            ],
+        );
+        let tobe = "struct Test {child: Vec<Option<Child>>,id: Option<usize>,}".to_string();
+        let generator = FakeTypeGenerator::new_easy();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+    }
+    #[test]
+    fn test_nest_array_case() {
+        let simple_statement = TypeStatement::make_composite(
+            "Test",
+            vec![
+                ("id", make_primitive_type(make_usize())),
+                (
+                    "child",
+                    make_array_type(make_array_type(make_custom_type("Child"))),
+                ),
+            ],
+        );
+        let tobe = "struct Test {child: Vec<Vec<Child>>,id: usize,}".to_string();
+        let generator = FakeTypeGenerator::new_easy();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+    }
+    #[test]
+    fn test_array_case() {
+        let simple_statement = TypeStatement::make_composite(
+            "Test",
+            vec![
+                ("id", make_primitive_type(make_usize())),
+                ("child", make_array_type(make_custom_type("Child"))),
+            ],
+        );
+        let tobe = "struct Test {child: Vec<Child>,id: usize,}".to_string();
+        let generator = FakeTypeGenerator::new_easy();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+    }
     #[test]
     fn test_has_child_case() {
         let simple_statement = TypeStatement::make_composite(
