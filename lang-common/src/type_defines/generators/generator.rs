@@ -297,7 +297,7 @@ mod test_type_define_statement_generator {
     #[test]
     fn test_case_primitive_and_additional() {
         let simple_statement =
-            TypeStructure::make_primitive("Test", make_primitive_type(make_string()));
+            TypeStructure::make_alias("Test", make_primitive_type(make_string()));
         let tobe = "// get_type_comment#[get_type_attribute]public type Test = String;".to_string();
         let generator = TypeDefineGenerator::new_always_additional_fake();
         let statements = generator.generate(simple_statement);
@@ -306,7 +306,7 @@ mod test_type_define_statement_generator {
     #[test]
     fn test_case_primitive() {
         let simple_statement =
-            TypeStructure::make_primitive("Test", make_primitive_type(make_string()));
+            TypeStructure::make_alias("Test", make_primitive_type(make_string()));
         let tobe = "type Test = String;".to_string();
         let generator = TypeDefineGenerator::new_none_additional_fake();
         let statements = generator.generate(simple_statement);

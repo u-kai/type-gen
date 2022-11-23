@@ -14,7 +14,7 @@ impl TypeStructure {
     ) -> Self {
         Self::Composite(CompositeTypeStructure::new_easy(name, properties))
     }
-    pub fn make_primitive(name: impl Into<TypeName>, property_type: PropertyType) -> Self {
+    pub fn make_alias(name: impl Into<TypeName>, property_type: PropertyType) -> Self {
         Self::Alias(AliasTypeStructure::new(name.into(), property_type))
     }
 }
