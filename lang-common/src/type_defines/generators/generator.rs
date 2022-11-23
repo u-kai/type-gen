@@ -5,6 +5,29 @@ use crate::types::{
 
 use super::mapper::LangTypeMapper;
 
+/// ObjectTypeDefineStatement example is below
+/// ```
+/// // this is test struct
+/// #[derive(Debug,Clone)]
+/// struct Test {
+///     // id is must set
+///     id: usize,
+///     name: Option<String>
+/// }
+/// ```
+///
+/// PrimitiveTypeAlias example is below
+/// ```
+/// // this is test data alias
+/// #[cfg(test)]
+/// type TestData = String;
+/// ```
+///
+/// - "Test" is name
+/// - "id: usize,name: Option<String>" is properties
+/// - "// this is test struct" is comment
+/// - "#\[derive(Debug,Clone)\]" is attributes
+///
 type TypeDefineStatement = String;
 pub struct TypeDefineStatementGenerator<T, P, M>
 where
@@ -75,7 +98,6 @@ pub trait PropertyStatementGenerator {
 #[cfg(test)]
 pub mod fakes {
     use crate::type_defines::generators::mapper::{LangTypeMapper, TypeString};
-    use crate::type_defines::type_define::{LangAttribute, LangComment, LangVisibility};
     use crate::types::statement::PropertyType;
     use crate::types::structures::{PropertyKey, TypeName};
 
@@ -123,54 +145,6 @@ pub mod fakes {
         }
     }
 
-    pub struct FakeLangVisibility {
-        all_visibility: String,
-    }
-    impl FakeLangVisibility {
-        pub fn new(all_visibility: impl Into<String>) -> Self {
-            Self {
-                all_visibility: all_visibility.into(),
-            }
-        }
-    }
-    impl LangVisibility for FakeLangVisibility {
-        fn to_define(self) -> String {
-            self.all_visibility
-        }
-    }
-    pub struct FakeLangComment {
-        comments: Vec<String>,
-    }
-    impl FakeLangComment {
-        pub fn new(comments: Vec<impl Into<String>>) -> Self {
-            Self {
-                comments: comments.into_iter().map(|s| s.into()).collect(),
-            }
-        }
-    }
-    impl LangComment for FakeLangComment {
-        fn to_define(self) -> String {
-            self.comments
-                .into_iter()
-                .fold(String::new(), |mut acc, cur| {
-                    acc = format!("{}//{}\n", acc, cur);
-                    acc
-                })
-        }
-    }
-    pub struct FakeLangAttribute {
-        attr: String,
-    }
-    impl FakeLangAttribute {
-        pub fn new(attr: impl Into<String>) -> Self {
-            Self { attr: attr.into() }
-        }
-    }
-    impl LangAttribute for FakeLangAttribute {
-        fn to_define(self) -> String {
-            self.attr
-        }
-    }
     pub struct FakeLangTypeMapper;
     impl LangTypeMapper for FakeLangTypeMapper {
         fn case_any(&self) -> TypeString {
