@@ -1,39 +1,91 @@
-use crate::{
-    type_defines::type_define::{LangAttribute, LangComment, LangVisibility},
-    types::{
-        statement::{PropertyType, TypeStatement},
-        structures::PropertyKey,
-    },
+use crate::types::{
+    statement::{PrimitiveTypeStatement, PropertyType, TypeStatement},
+    structures::{PropertyKey, TypeName},
 };
 
 use super::mapper::LangTypeMapper;
 
 type TypeDefineStatement = String;
-pub trait TypeDefineStatementGenerator<V, C, A, M>
+pub trait TypeDefineStatementGenerator<T, P>
 where
-    V: LangVisibility,
-    C: LangComment,
-    A: LangAttribute,
-    M: LangTypeMapper,
+    T: TypeStatementGenerator,
+    P: PropertyStatementGenerator,
 {
-    fn new(visibility: V, comment: C, attribute: A, mapper: M) -> Self;
+    fn new(type_statement_generator: T, property_statement_generator: P) -> Self;
     fn generate(&self, statement: TypeStatement) -> TypeDefineStatement;
 }
 
-pub trait PropertyStatementGenerator<M>
-where
-    M: LangTypeMapper,
-{
-    fn new(mapper: M) -> Self;
-    fn generate(&self, property_key: &PropertyKey, property_type: &PropertyType) -> String;
+pub trait TypeStatementGenerator {
+    const TYPE_PREFIX: &'static str = "class";
+    fn generate_case_composite(&self, type_name: &TypeName, properties_statement: String)
+        -> String;
+    fn generate_case_primitive<M: LangTypeMapper>(
+        &self,
+        primitive_type: &PrimitiveTypeStatement,
+        mapper: &M,
+    ) -> String;
+}
+pub trait PropertyStatementGenerator {
+    fn generate<M: LangTypeMapper>(
+        &self,
+        property_key: &PropertyKey,
+        property_type: &PropertyType,
+        mapper: &M,
+    ) -> String;
 }
 #[cfg(test)]
 pub mod fakes {
     use crate::type_defines::generators::mapper::{LangTypeMapper, TypeString};
     use crate::type_defines::type_define::{LangAttribute, LangComment, LangVisibility};
-    use crate::types::statement::TypeStatement;
+    use crate::types::statement::{PropertyType, TypeStatement};
+    use crate::types::structures::{PropertyKey, TypeName};
 
-    use super::{TypeDefineStatement, TypeDefineStatementGenerator};
+    use super::{
+        PropertyStatementGenerator, TypeDefineStatement, TypeDefineStatementGenerator,
+        TypeStatementGenerator,
+    };
+    pub struct FakePropertyStatementGenerator;
+    impl PropertyStatementGenerator for FakePropertyStatementGenerator {
+        fn generate<M: LangTypeMapper>(
+            &self,
+            property_key: &PropertyKey,
+            property_type: &PropertyType,
+            mapper: &M,
+        ) -> String {
+            format!(
+                "{}: {},",
+                property_key.as_str(),
+                mapper.case_property_type(property_type)
+            )
+        }
+    }
+    pub struct FakeTypeStatementGenerator;
+    impl TypeStatementGenerator for FakeTypeStatementGenerator {
+        const TYPE_PREFIX: &'static str = "struct";
+        fn generate_case_composite(
+            &self,
+            type_name: &TypeName,
+            properties_statement: String,
+        ) -> String {
+            format!(
+                "{} {} {{{}}}",
+                Self::TYPE_PREFIX,
+                type_name.as_str(),
+                properties_statement
+            )
+        }
+        fn generate_case_primitive<M: LangTypeMapper>(
+            &self,
+            primitive_type: &crate::types::statement::PrimitiveTypeStatement,
+            mapper: &M,
+        ) -> String {
+            format!(
+                "type {} = {};",
+                primitive_type.name.as_str(),
+                mapper.case_primitive(&primitive_type.primitive_type)
+            )
+        }
+    }
 
     pub struct FakeLangVisibility {
         all_visibility: String,
@@ -114,59 +166,44 @@ pub mod fakes {
         }
     }
     pub struct FakeTypeGenerator {
+        t: FakeTypeStatementGenerator,
+        p: FakePropertyStatementGenerator,
         mapper: FakeLangTypeMapper,
     }
     impl FakeTypeGenerator {
         pub const PREFIX: &'static str = "struct";
         pub fn new_easy() -> Self {
             let mapper = FakeLangTypeMapper;
-            Self { mapper }
+            Self {
+                mapper,
+                t: FakeTypeStatementGenerator,
+                p: FakePropertyStatementGenerator,
+            }
         }
     }
-    impl
-        TypeDefineStatementGenerator<
-            FakeLangVisibility,
-            FakeLangComment,
-            FakeLangAttribute,
-            FakeLangTypeMapper,
-        > for FakeTypeGenerator
+    impl TypeDefineStatementGenerator<FakeTypeStatementGenerator, FakePropertyStatementGenerator>
+        for FakeTypeGenerator
     {
         fn new(
-            _visi: FakeLangVisibility,
-            _comment: FakeLangComment,
-            _attr: FakeLangAttribute,
-            mapper: FakeLangTypeMapper,
+            _type_statement: FakeTypeStatementGenerator,
+            _property_statement: FakePropertyStatementGenerator,
         ) -> Self {
-            Self { mapper }
+            Self::new_easy()
         }
         fn generate(&self, statement: TypeStatement) -> TypeDefineStatement {
             match statement {
                 TypeStatement::Composite(composite) => {
-                    let properties_statement =
-                        composite
-                            .properties
-                            .iter()
-                            .fold(String::new(), |acc, (k, v)| {
-                                format!(
-                                    "{}{}: {},",
-                                    acc,
-                                    k.as_str(),
-                                    self.mapper.case_property_type(v)
-                                )
-                            });
-                    format!(
-                        "{} {} {{{}}}",
-                        Self::PREFIX,
-                        composite.name.as_str(),
-                        properties_statement
-                    )
+                    let properties_statement = composite
+                        .properties
+                        .iter()
+                        .fold(String::new(), |acc, (k, v)| {
+                            format!("{}{}", acc, self.p.generate(k, v, &self.mapper))
+                        });
+                    self.t
+                        .generate_case_composite(&composite.name, properties_statement)
                 }
                 TypeStatement::Primitive(primitive) => {
-                    format!(
-                        "type {} = {};",
-                        primitive.name.as_str(),
-                        self.mapper.case_primitive(&primitive.primitive_type)
-                    )
+                    self.t.generate_case_primitive(&primitive, &self.mapper)
                 }
             }
         }
