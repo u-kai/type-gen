@@ -1,13 +1,10 @@
 use std::collections::BTreeMap;
 
-use super::{
-    primitive_type::PrimitiveType, property_key::PropertyKey, property_type::PropertyType,
-    type_name::TypeName,
-};
+use super::{property_key::PropertyKey, property_type::PropertyType, type_name::TypeName};
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeStructure {
     Composite(CompositeTypeStructure),
-    Primitive(PrimitiveTypeStructure),
+    Alias(AliasTypeStructure),
 }
 
 impl TypeStructure {
@@ -17,8 +14,8 @@ impl TypeStructure {
     ) -> Self {
         Self::Composite(CompositeTypeStructure::new_easy(name, properties))
     }
-    pub fn make_primitive(name: impl Into<TypeName>, primitive_type: PrimitiveType) -> Self {
-        Self::Primitive(PrimitiveTypeStructure::new(name.into(), primitive_type))
+    pub fn make_primitive(name: impl Into<TypeName>, property_type: PropertyType) -> Self {
+        Self::Alias(AliasTypeStructure::new(name.into(), property_type))
     }
 }
 
@@ -42,16 +39,16 @@ impl CompositeTypeStructure {
     }
 }
 #[derive(Debug, Clone, PartialEq)]
-pub struct PrimitiveTypeStructure {
+pub struct AliasTypeStructure {
     pub name: TypeName,
-    pub primitive_type: PrimitiveType,
+    pub property_type: PropertyType,
 }
 
-impl PrimitiveTypeStructure {
-    pub fn new(name: TypeName, primitive_type: PrimitiveType) -> Self {
+impl AliasTypeStructure {
+    pub fn new(name: TypeName, property_type: PropertyType) -> Self {
         Self {
             name,
-            primitive_type,
+            property_type,
         }
     }
 }

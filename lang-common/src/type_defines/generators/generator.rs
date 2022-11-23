@@ -5,7 +5,7 @@ use crate::{
     types::{
         property_key::PropertyKey,
         property_type::PropertyType,
-        structures::{PrimitiveTypeStructure, TypeStructure},
+        structures::{AliasTypeStructure, TypeStructure},
         type_name::TypeName,
     },
 };
@@ -70,7 +70,7 @@ where
                     &self.additional_statement,
                 )
             }
-            TypeStructure::Primitive(primitive) => self
+            TypeStructure::Alias(primitive) => self
                 .type_statement_generator
                 .generate_case_primitive(&primitive, &self.mapper, &self.additional_statement),
         }
@@ -91,7 +91,7 @@ where
     ) -> String;
     fn generate_case_primitive(
         &self,
-        primitive_type: &PrimitiveTypeStructure,
+        primitive_type: &AliasTypeStructure,
         mapper: &M,
         additional_statement: &A,
     ) -> String;
@@ -189,7 +189,7 @@ pub mod fakes {
         }
         fn generate_case_primitive(
             &self,
-            primitive_type: &crate::types::structures::PrimitiveTypeStructure,
+            primitive_type: &crate::types::structures::AliasTypeStructure,
             mapper: &FakeLangTypeMapper,
             a: &A,
         ) -> String {
@@ -206,7 +206,7 @@ pub mod fakes {
                 result,
                 visibility,
                 primitive_type.name.as_str(),
-                mapper.case_primitive(&primitive_type.primitive_type)
+                mapper.case_property_type(&primitive_type.property_type)
             )
         }
     }
@@ -296,7 +296,8 @@ mod test_type_define_statement_generator {
     }
     #[test]
     fn test_case_primitive_and_additional() {
-        let simple_statement = TypeStructure::make_primitive("Test", make_string());
+        let simple_statement =
+            TypeStructure::make_primitive("Test", make_primitive_type(make_string()));
         let tobe = "// get_type_comment#[get_type_attribute]public type Test = String;".to_string();
         let generator = TypeDefineGenerator::new_always_additional_fake();
         let statements = generator.generate(simple_statement);
@@ -304,7 +305,8 @@ mod test_type_define_statement_generator {
     }
     #[test]
     fn test_case_primitive() {
-        let simple_statement = TypeStructure::make_primitive("Test", make_string());
+        let simple_statement =
+            TypeStructure::make_primitive("Test", make_primitive_type(make_string()));
         let tobe = "type Test = String;".to_string();
         let generator = TypeDefineGenerator::new_none_additional_fake();
         let statements = generator.generate(simple_statement);

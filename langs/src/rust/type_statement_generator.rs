@@ -48,7 +48,7 @@ impl<'a>
     const TYPE_PREFIX: &'static str = "struct";
     fn generate_case_primitive(
         &self,
-        primitive_type: &lang_common::types::structures::PrimitiveTypeStructure,
+        primitive_type: &lang_common::types::structures::AliasTypeStructure,
         mapper: &RustLangMapper,
         additional_statement: &AdditionalStatementProvider<
             RustVisibility,
@@ -61,7 +61,7 @@ impl<'a>
             "{additional}type {name} = {type_str};",
             additional = additional,
             name = primitive_type.name.as_str(),
-            type_str = mapper.case_primitive(&primitive_type.primitive_type)
+            type_str = mapper.case_property_type(&primitive_type.property_type)
         )
     }
     fn generate_case_composite(
@@ -94,7 +94,8 @@ mod test_rust_type_statement_generator {
         },
         types::{
             primitive_type::primitive_type_factories::make_string,
-            structures::PrimitiveTypeStructure, type_name::TypeName,
+            property_type::property_type_factories::make_primitive_type,
+            structures::AliasTypeStructure, type_name::TypeName,
         },
     };
 
@@ -189,7 +190,8 @@ struct Test {
         let type_name: TypeName = "Test".into();
         additional_provider.add_type_comment(type_name.clone(), comment);
         let mapper = RustLangMapper;
-        let primitive_type = PrimitiveTypeStructure::new(type_name.clone(), make_string());
+        let primitive_type =
+            AliasTypeStructure::new(type_name.clone(), make_primitive_type(make_string()));
         let generator = RustTypeStatementGenerator::new();
         let tobe = format!("// {comment1}\n// {comment2}\ntype Test = String;");
         assert_eq!(
@@ -202,7 +204,7 @@ struct Test {
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let type_name: TypeName = "Test".into();
         let mapper = RustLangMapper;
-        let primitive_type = PrimitiveTypeStructure::new(type_name, make_string());
+        let primitive_type = AliasTypeStructure::new(type_name, make_primitive_type(make_string()));
         let generator = RustTypeStatementGenerator::new();
         let tobe = format!("type Test = String;");
         assert_eq!(
