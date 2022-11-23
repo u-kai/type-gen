@@ -1,6 +1,6 @@
 use crate::{
-    type_defines::type_define::{LangAttribute, LangComment, LangVisibility, TypeDefine},
-    types::statement::{PropertyType, TypeStatement},
+    type_defines::type_define::{LangAttribute, LangComment, LangVisibility},
+    types::statement::TypeStatement,
 };
 
 use super::mapper::LangTypeMapper;
@@ -20,11 +20,8 @@ where
 #[cfg(test)]
 pub mod fakes {
     use crate::type_defines::generators::mapper::{LangTypeMapper, TypeString};
-    use crate::type_defines::type_define::{
-        LangAttribute, LangComment, LangVisibility, TypeDefine,
-    };
-    use crate::types::statement::{PrimitiveTypeStatement, PropertyType, TypeStatement};
-    use crate::types::structures::PrimitiveType;
+    use crate::type_defines::type_define::{LangAttribute, LangComment, LangVisibility};
+    use crate::types::statement::TypeStatement;
 
     use super::{TypeDefineStatement, TypeDefineStatementGenerator};
 
@@ -189,6 +186,17 @@ mod test_type_define_statement_generator {
         let simple_statement =
             TypeStatement::make_composite("Test", vec![("id", make_primitive_type(make_usize()))]);
         let tobe = "struct Test {id: usize,}".to_string();
+        let generator = FakeTypeGenerator::new_easy();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+        let simple_statement = TypeStatement::make_composite(
+            "Test",
+            vec![
+                ("id", make_primitive_type(make_usize())),
+                ("name", make_primitive_type(make_string())),
+            ],
+        );
+        let tobe = "struct Test {id: usize,name: String,}".to_string();
         let generator = FakeTypeGenerator::new_easy();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use super::structures::{PrimitiveType, PropertyKey, TypeName};
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,11 +46,11 @@ impl TypeStatement {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompositeTypeStatement {
     pub name: TypeName,
-    pub properties: HashMap<PropertyKey, PropertyType>,
+    pub properties: BTreeMap<PropertyKey, PropertyType>,
 }
 
 impl CompositeTypeStatement {
-    pub fn new(name: impl Into<TypeName>, properties: HashMap<PropertyKey, PropertyType>) -> Self {
+    pub fn new(name: impl Into<TypeName>, properties: BTreeMap<PropertyKey, PropertyType>) -> Self {
         Self {
             name: name.into(),
             properties,

@@ -214,7 +214,7 @@ where
         TypeName::new(str)
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct PropertyKey(String);
 impl PropertyKey {
     pub(crate) fn to_type_name(&self, parent_type_name: &TypeName) -> TypeName {
