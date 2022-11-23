@@ -76,13 +76,10 @@ pub trait PropertyStatementGenerator {
 pub mod fakes {
     use crate::type_defines::generators::mapper::{LangTypeMapper, TypeString};
     use crate::type_defines::type_define::{LangAttribute, LangComment, LangVisibility};
-    use crate::types::statement::{PropertyType, TypeStatement};
+    use crate::types::statement::PropertyType;
     use crate::types::structures::{PropertyKey, TypeName};
 
-    use super::{
-        PropertyStatementGenerator, TypeDefineStatement, TypeDefineStatementGenerator,
-        TypeStatementGenerator,
-    };
+    use super::{PropertyStatementGenerator, TypeDefineStatementGenerator, TypeStatementGenerator};
     pub struct FakePropertyStatementGenerator;
     impl PropertyStatementGenerator for FakePropertyStatementGenerator {
         fn generate<M: LangTypeMapper>(

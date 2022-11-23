@@ -4,16 +4,13 @@ use utils::store_fn::{containes_to_kv_vec, push_to_kv_vec};
 
 use crate::types::structures::{PropertyKey, TypeName};
 
-pub trait OptionalChecker {
-    fn is_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool;
-}
-pub struct BaseOptionalChecker {
+pub struct OptionalTypeStore {
     default_option_flag: bool,
     optionlas: HashMap<TypeName, Vec<PropertyKey>>,
     requires: HashMap<TypeName, Vec<PropertyKey>>,
 }
 
-impl BaseOptionalChecker {
+impl OptionalTypeStore {
     pub fn new(default_option_flag: bool) -> Self {
         Self {
             default_option_flag,
@@ -35,9 +32,7 @@ impl BaseOptionalChecker {
     ) {
         push_to_kv_vec(&mut self.requires, type_name.into(), property_key.into())
     }
-}
-impl OptionalChecker for BaseOptionalChecker {
-    fn is_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool {
+    pub fn is_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool {
         if containes_to_kv_vec(&self.requires, type_name, property_key) {
             return false;
         }
@@ -47,7 +42,7 @@ impl OptionalChecker for BaseOptionalChecker {
         self.default_option_flag
     }
 }
-impl Default for BaseOptionalChecker {
+impl Default for OptionalTypeStore {
     fn default() -> Self {
         Self {
             default_option_flag: true,
@@ -62,7 +57,7 @@ mod test_optional_checker {
     use super::*;
     #[test]
     fn test_optional_checker() {
-        let mut oc = BaseOptionalChecker::default();
+        let mut oc = OptionalTypeStore::default();
         oc.add_optional("Test", "op");
         oc.add_require("Test", "req");
         assert!(oc.is_optional(&"Test".into(), &"op".into()));
