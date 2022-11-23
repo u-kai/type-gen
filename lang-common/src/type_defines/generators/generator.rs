@@ -1,6 +1,9 @@
 use crate::{
     type_defines::type_define::{LangAttribute, LangComment, LangVisibility},
-    types::statement::TypeStatement,
+    types::{
+        statement::{PropertyType, TypeStatement},
+        structures::PropertyKey,
+    },
 };
 
 use super::mapper::LangTypeMapper;
@@ -17,6 +20,13 @@ where
     fn generate(&self, statement: TypeStatement) -> TypeDefineStatement;
 }
 
+pub trait PropertyStatementGenerator<M>
+where
+    M: LangTypeMapper,
+{
+    fn new(mapper: M) -> Self;
+    fn generate(&self, property_key: &PropertyKey, property_type: &PropertyType) -> String;
+}
 #[cfg(test)]
 pub mod fakes {
     use crate::type_defines::generators::mapper::{LangTypeMapper, TypeString};
@@ -104,24 +114,13 @@ pub mod fakes {
         }
     }
     pub struct FakeTypeGenerator {
-        visi: FakeLangVisibility,
-        comment: FakeLangComment,
-        attr: FakeLangAttribute,
         mapper: FakeLangTypeMapper,
     }
     impl FakeTypeGenerator {
         pub const PREFIX: &'static str = "struct";
         pub fn new_easy() -> Self {
-            let visi = FakeLangVisibility::new("");
-            let comment = FakeLangComment::new(vec![""]);
-            let attr = FakeLangAttribute::new("");
             let mapper = FakeLangTypeMapper;
-            Self {
-                visi,
-                comment,
-                attr,
-                mapper,
-            }
+            Self { mapper }
         }
     }
     impl
@@ -133,17 +132,12 @@ pub mod fakes {
         > for FakeTypeGenerator
     {
         fn new(
-            visi: FakeLangVisibility,
-            comment: FakeLangComment,
-            attr: FakeLangAttribute,
+            _visi: FakeLangVisibility,
+            _comment: FakeLangComment,
+            _attr: FakeLangAttribute,
             mapper: FakeLangTypeMapper,
         ) -> Self {
-            Self {
-                visi,
-                comment,
-                attr,
-                mapper,
-            }
+            Self { mapper }
         }
         fn generate(&self, statement: TypeStatement) -> TypeDefineStatement {
             match statement {

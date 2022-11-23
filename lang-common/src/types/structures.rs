@@ -195,7 +195,7 @@ impl CompositeType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeName(String);
 impl TypeName {
     pub fn new(str: String) -> Self {

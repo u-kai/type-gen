@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 json = {version = "0.1.0",path = "../json"}
 npc ={ git = "https://github.com/u-kai/npc.git"}
+utils ={path="../utils"}
