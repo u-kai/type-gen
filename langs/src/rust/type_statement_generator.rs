@@ -1,6 +1,6 @@
 use lang_common::type_defines::{
     additional_defines::additional_statement::{AdditionalStatement, AdditionalStatementProvider},
-    generators::generator::TypeStatementGenerator,
+    generators::{generator::TypeStatementGenerator, mapper::LangTypeMapper},
 };
 
 use super::{
@@ -9,6 +9,11 @@ use super::{
 };
 
 pub struct RustTypeStatementGenerator {}
+impl RustTypeStatementGenerator {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 impl<'a>
     TypeStatementGenerator<
         RustLangMapper,
@@ -22,7 +27,11 @@ impl<'a>
         mapper: &RustLangMapper,
         additional_statement: &AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>>,
     ) -> String {
-        String::new()
+        format!(
+            "type {name} = {type_str};",
+            name = primitive_type.name.as_str(),
+            type_str = mapper.case_primitive(&primitive_type.primitive_type)
+        )
     }
     fn generate_case_composite(
         &self,
@@ -44,5 +53,37 @@ impl<'a>
             type_name.as_str(),
             properties_statement
         )
+    }
+}
+
+#[cfg(test)]
+mod test_rust_type_statement_generator {
+    use lang_common::{
+        type_defines::{
+            additional_defines::additional_statement::AdditionalStatementProvider,
+            generators::generator::TypeStatementGenerator,
+        },
+        types::{
+            primitive_type::primitive_type_factories::make_string,
+            structures::PrimitiveTypeStructure, type_name::TypeName,
+        },
+    };
+
+    use crate::rust::mapper::RustLangMapper;
+
+    use super::RustTypeStatementGenerator;
+
+    #[test]
+    fn test_case_primitive_all_none_additional() {
+        let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let type_name: TypeName = "Test".into();
+        let mapper = RustLangMapper;
+        let primitive_type = PrimitiveTypeStructure::new(type_name, make_string());
+        let generator = RustTypeStatementGenerator::new();
+        let tobe = format!("type Test = String;");
+        assert_eq!(
+            generator.generate_case_primitive(&primitive_type, &mapper, &additional_provider),
+            tobe
+        );
     }
 }
