@@ -31,6 +31,7 @@ name = "langs"
 version = "0.1.0"
 dependencies = [
  "lang-common",
+ "npc",
 ]
 
 [[package]]

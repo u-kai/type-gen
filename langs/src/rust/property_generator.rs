@@ -2,6 +2,7 @@ use lang_common::type_defines::{
     additional_defines::additional_statement::{AdditionalStatement, AdditionalStatementProvider},
     generators::{generator::PropertyStatementGenerator, mapper::LangTypeMapper},
 };
+use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
 
 use super::{
     additional_statements::{RustComment, RustVisibility},
@@ -44,7 +45,15 @@ impl<'a>
             additional += &attribute;
         };
         additional += additional_statement.get_property_visibility(type_name, property_key);
-        let property_key_str = self.reserved_words.get_or_origin(property_key.as_str());
+        if !NamingPrincipal::is_snake(property_key.as_str()) {
+            additional += &format!(
+                "{head}#[serde(rename = \"{original}\")]\n",
+                head = RUST_PROPERTY_HEAD_SPACE,
+                original = property_key.as_str()
+            )
+        }
+        let property_key_str = NamingPrincipalConvertor::new(property_key.as_str()).to_snake();
+        let property_key_str = self.reserved_words.get_or_origin(&property_key_str);
         let property_type = if additional_statement.is_property_optional(type_name, property_key) {
             mapper.case_optional_type(mapper.case_property_type(property_type))
         } else {
@@ -85,6 +94,29 @@ mod test_rust_property_geneartor {
 
     use super::RustPropertyStatementGenerator;
 
+    #[test]
+    fn test_case_primitive_and_use_camel_case_property_key() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "accountId".into();
+        let property_type = make_primitive_type(make_string());
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let tobe = format!(
+            "{head}#[serde(rename = \"accountId\")]\n{head}account_id: String,\n",
+            head = RUST_PROPERTY_HEAD_SPACE,
+        );
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
     #[test]
     fn test_case_primitive_and_use_reserved_words() {
         let type_name: TypeName = "Test".into();
