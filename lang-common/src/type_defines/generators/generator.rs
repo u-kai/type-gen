@@ -104,7 +104,7 @@ pub trait PropertyStatementGenerator {
 }
 #[cfg(test)]
 pub mod fakes {
-    use crate::type_defines::additional_defines::additional_statement::fake_additional_statement::FakeAllNoneAdditionalStatement;
+    use crate::type_defines::additional_defines::additional_statement::fake_additional_statement::{FakeAllNoneAdditionalStatement, FakeAlwaysSomeAdditionalStatement};
     use crate::type_defines::additional_defines::additional_statement::AdditionalStatement;
     use crate::type_defines::generators::mapper::LangTypeMapper;
     use crate::types::property_type::PropertyType;
@@ -204,6 +204,25 @@ pub mod fakes {
             }
         }
     }
+    #[cfg(test)]
+    impl
+        TypeDefineGenerator<
+            FakeTypeStructureGenerator,
+            FakePropertyStatementGenerator,
+            FakeLangTypeMapper,
+            FakeAlwaysSomeAdditionalStatement,
+        >
+    {
+        pub fn new_always_additional_fake() -> Self {
+            let mapper = FakeLangTypeMapper;
+            Self {
+                mapper,
+                type_statement_generator: FakeTypeStructureGenerator,
+                property_statement_generator: FakePropertyStatementGenerator,
+                additional_statement: FakeAlwaysSomeAdditionalStatement,
+            }
+        }
+    }
 }
 #[cfg(test)]
 
@@ -216,6 +235,48 @@ mod test_type_define_statement_generator {
             structures::TypeStructure,
         },
     };
+    #[test]
+    fn test_has_child_case_and_additional() {
+        let simple_statement = TypeStructure::make_composite(
+            "Test",
+            vec![
+                ("id", make_primitive_type(make_usize())),
+                ("child", make_custom_type("Child")),
+            ],
+        );
+        let tobe = "// get_type_comment#[get_type_attribute]struct Test {// get_property_comment#[get_property_attribute]child: Option<Child>,// get_property_comment#[get_property_attribute]id: Option<usize>,}".to_string();
+        let generator = TypeDefineGenerator::new_always_additional_fake();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+    }
+    #[test]
+    fn test_simple_case_and_additional() {
+        let simple_statement =
+            TypeStructure::make_composite("Test", vec![("id", make_primitive_type(make_usize()))]);
+        let tobe = "// get_type_comment#[get_type_attribute]struct Test {// get_property_comment#[get_property_attribute]id: Option<usize>,}".to_string();
+        let generator = TypeDefineGenerator::new_always_additional_fake();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+        let simple_statement = TypeStructure::make_composite(
+            "Test",
+            vec![
+                ("id", make_primitive_type(make_usize())),
+                ("name", make_primitive_type(make_string())),
+            ],
+        );
+        let tobe = "struct Test {id: usize,name: String,}".to_string();
+        let generator = TypeDefineGenerator::new_none_additional_fake();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+    }
+    #[test]
+    fn test_case_primitive_and_additional() {
+        let simple_statement = TypeStructure::make_primitive("Test", make_string());
+        let tobe = "// get_type_comment#[get_type_attribute]type Test = String;".to_string();
+        let generator = TypeDefineGenerator::new_always_additional_fake();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
+    }
     #[test]
     fn test_case_primitive() {
         let simple_statement = TypeStructure::make_primitive("Test", make_string());
