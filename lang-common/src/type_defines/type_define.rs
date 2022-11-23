@@ -1,4 +1,4 @@
-use crate::types::r#type::Type;
+use crate::types::structure::TypeStructure;
 
 /// ObjectTypeDefine example is below
 /// ```
@@ -30,7 +30,7 @@ where
     C: LangComment,
     A: LangAttribute,
 {
-    r#type: Type,
+    r#type: TypeStructure,
     visibility: V,
     comment: Option<C>,
     attribute: Option<A>,
@@ -41,7 +41,12 @@ where
     C: LangComment,
     A: LangAttribute,
 {
-    pub fn new(r#type: Type, visibility: V, comment: Option<C>, attribute: Option<A>) -> Self {
+    pub fn new(
+        r#type: TypeStructure,
+        visibility: V,
+        comment: Option<C>,
+        attribute: Option<A>,
+    ) -> Self {
         Self {
             r#type,
             visibility,

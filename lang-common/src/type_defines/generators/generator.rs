@@ -129,9 +129,9 @@ mod test_type_define_statement_generator {
         },
         *,
     };
-    use crate::types::r#type::{fakes::*, *};
+    use crate::types::structure::{fakes::*, *};
     impl TypeDefine<FakeLangVisibility, FakeLangComment, FakeLangAttribute> {
-        fn new_simple(type_: Type, visi: &str) -> Self {
+        fn new_simple(type_: TypeStructure, visi: &str) -> Self {
             TypeDefine::new(
                 type_,
                 FakeLangVisibility::new(visi),

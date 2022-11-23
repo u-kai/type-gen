@@ -2,11 +2,11 @@ use std::collections::{BTreeMap, HashMap};
 
 use json::json::Json;
 
-use crate::types::r#type::{
-    CompositeType, Number, PrimitiveType, PropertyKey, Type, TypeKind, TypeName,
+use crate::types::structure::{
+    CompositeType, Number, PrimitiveType, PropertyKey, TypeKind, TypeName, TypeStructure,
 };
 
-impl Type {
+impl TypeStructure {
     pub fn from_json(root: impl Into<TypeName>, json: Json) -> Self {
         let name = root.into();
         let kind = TypeKind::from_json(&name, json);
@@ -35,7 +35,7 @@ impl TypeKind {
                     let type_kind = match json {
                         Json::Object(obj) => {
                             let kind = Self::from_obj_json(&child_type_name, &property_key, obj);
-                            let child_type = Type::new(child_type_name, kind);
+                            let child_type = TypeStructure::new(child_type_name, kind);
                             Self::ChildType(Box::new(child_type))
                         }
                         Json::Array(array) => {
@@ -62,7 +62,7 @@ impl TypeKind {
             let type_kind = match json {
                 Json::Object(obj) => {
                     let kind = Self::from_obj_json(&child_type_name, &property_key, obj);
-                    let child_type = Type::new(child_type_name, kind);
+                    let child_type = TypeStructure::new(child_type_name, kind);
                     Self::ChildType(Box::new(child_type))
                 }
                 Json::Array(array) => Self::from_array_json(parent_name, &property_key, array),
@@ -94,7 +94,7 @@ impl TypeKind {
                     println!("property_key {:?}", property_key);
                     println!("kind {:#?}", kind);
                     println!();
-                    let child_type = Type::new(child_type_name, kind);
+                    let child_type = TypeStructure::new(child_type_name, kind);
                     Self::ChildType(Box::new(child_type))
                 }
                 Json::Array(array) => Self::from_array_json(&child_type_name, &property_key, array),
@@ -106,7 +106,7 @@ impl TypeKind {
             properties.insert(property_key, type_kind);
         }
         let child_type_kind = Self::Composite(CompositeType::new(properties));
-        Self::ChildType(Box::new(Type::new(obj_name, child_type_kind)))
+        Self::ChildType(Box::new(TypeStructure::new(obj_name, child_type_kind)))
     }
     fn from_array_json(
         parent_name: &TypeName,
@@ -128,10 +128,9 @@ impl TypeKind {
             return Self::Array(Box::new(Self::Any));
         }
         let put_together_json = Json::put_together_array_json(array);
-        Self::Array(Box::new(Self::ChildType(Box::new(Type::from_json(
-            parent_name,
-            put_together_json,
-        )))))
+        Self::Array(Box::new(Self::ChildType(Box::new(
+            TypeStructure::from_json(parent_name, put_together_json),
+        ))))
     }
     fn from_json_to_nest_type_kind(json: Json) -> Self {
         match json {
@@ -189,7 +188,7 @@ impl Into<Json> for PrimitiveType {
 #[cfg(test)]
 mod test_type_from_json {
     use super::*;
-    use crate::types::r#type::fakes::*;
+    use crate::types::structure::fakes::*;
     #[test]
     fn test_complex_case() {
         let json = r#"{
@@ -284,8 +283,8 @@ mod test_type_from_json {
                 ])),
             ))),
         )]);
-        let tobe = Type::new(name, kind);
-        let expect = Type::from_json(name, Json::from(json));
+        let tobe = TypeStructure::new(name, kind);
+        let expect = TypeStructure::from_json(name, Json::from(json));
         //println!("tobe {:#?}", tobe);
         //println!("expect {:#?}", expect);
         //assert_eq!(expect, tobe);
@@ -294,7 +293,7 @@ mod test_type_from_json {
 #[cfg(test)]
 mod test_type_from_json_to_nest_type {
 
-    use crate::types::r#type::fakes::*;
+    use crate::types::structure::fakes::*;
 
     use super::*;
     #[test]
@@ -383,16 +382,16 @@ mod test_type_from_json_to_nest_type {
                 ),
             ])),
         )]);
-        let tobe = Type::new(name, kind);
-        let expect = Type::from_json_to_nest_type(name, Json::from(json));
+        let tobe = TypeStructure::new(name, kind);
+        let expect = TypeStructure::from_json_to_nest_type(name, Json::from(json));
         assert_eq!(expect, tobe);
     }
 
     #[test]
     fn test_simple_case() {
         let name = "Test";
-        let expect = Type::from_json_to_nest_type(name, Json::from(r#"{"key":"value"}"#));
-        let tobe = Type::new(
+        let expect = TypeStructure::from_json_to_nest_type(name, Json::from(r#"{"key":"value"}"#));
+        let tobe = TypeStructure::new(
             name,
             make_composite_type_easy(vec![("key", type_kind_string())]),
         );
@@ -402,12 +401,12 @@ mod test_type_from_json_to_nest_type {
     fn test_obj_case() {
         let name = "Test";
         let json = Json::from(r#"{"name":"kai","obj":{"id":0,"name":"kai"}}"#);
-        let expect = Type::from_json_to_nest_type(name, json);
+        let expect = TypeStructure::from_json_to_nest_type(name, json);
         let obj_child = make_composite_type_easy(vec![
             ("name", type_kind_string()),
             ("id", type_kind_usize()),
         ]);
-        let tobe = Type::new(
+        let tobe = TypeStructure::new(
             name,
             make_composite_type_easy(vec![("name", type_kind_string()), ("obj", obj_child)]),
         );
@@ -444,7 +443,7 @@ mod test_type_from_json_to_nest_type {
             ]
         }
         "#;
-        let expect = Type::from_json_to_nest_type(name, Json::from(json));
+        let expect = TypeStructure::from_json_to_nest_type(name, Json::from(json));
         let child = make_composite_type_easy(vec![
             ("id", type_kind_usize()),
             ("name", type_kind_string()),
@@ -465,19 +464,20 @@ mod test_type_from_json_to_nest_type {
                 ])),
             ),
         ]);
-        let tobe = Type::new(name, child);
+        let tobe = TypeStructure::new(name, child);
         assert_eq!(expect, tobe);
     }
     #[test]
     fn test_primitive_array_case() {
         let name = "Test";
-        let expect = Type::from_json_to_nest_type(name, Json::from(r#"{"key":["value"]}"#));
+        let expect =
+            TypeStructure::from_json_to_nest_type(name, Json::from(r#"{"key":["value"]}"#));
         let mut child = HashMap::new();
         child.insert(
             PropertyKey::from("key"),
             TypeKind::Array(Box::new(TypeKind::Primitive(PrimitiveType::String))),
         );
-        let tobe = Type::new(name, TypeKind::Composite(CompositeType::new(child)));
+        let tobe = TypeStructure::new(name, TypeKind::Composite(CompositeType::new(child)));
         assert_eq!(expect, tobe);
     }
 }
