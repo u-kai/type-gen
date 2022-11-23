@@ -29,19 +29,19 @@ pub trait AdditionalStatement {
     fn is_property_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool;
 }
 
-pub struct AdditionalStatementProvider<'a, V, C, A>
+pub struct AdditionalStatementProvider<V, C, A>
 where
     V: Visibility,
     C: Comment,
     A: Attribute,
 {
-    attribute_store: AttributeStore<'a, A>,
-    comment_store: CommentStore<'a, C>,
-    optional_type_store: OptionalTypeStore<'a>,
-    visibility_store: VisibilityStore<'a, V>,
+    attribute_store: AttributeStore<A>,
+    comment_store: CommentStore<C>,
+    optional_type_store: OptionalTypeStore,
+    visibility_store: VisibilityStore<V>,
 }
 
-impl<'a, V, C, A> AdditionalStatementProvider<'a, V, C, A>
+impl<V, C, A> AdditionalStatementProvider<V, C, A>
 where
     V: Visibility,
     C: Comment,
@@ -63,54 +63,62 @@ where
             visibility_store: VisibilityStore::new(),
         }
     }
-    pub fn add_type_attribute(&mut self, type_name: &'a TypeName, attribute: A) {
+    pub fn add_type_attribute(&mut self, type_name: impl Into<TypeName>, attribute: A) {
         self.attribute_store
             .add_type_attribute(type_name, attribute);
     }
     pub fn add_property_attribute(
         &mut self,
-        type_name: &'a TypeName,
-        property_key: &'a PropertyKey,
+        type_name: impl Into<TypeName>,
+        property_key: impl Into<PropertyKey>,
         attribute: A,
     ) {
         self.attribute_store
             .add_property_attribute(type_name, property_key, attribute)
     }
-    pub fn add_type_comment(&mut self, type_name: &'a TypeName, comment: C) {
+    pub fn add_type_comment(&mut self, type_name: impl Into<TypeName>, comment: C) {
         self.comment_store.add_type_comment(type_name, comment)
     }
     pub fn add_property_comment(
         &mut self,
-        type_name: &'a TypeName,
-        property_key: &'a PropertyKey,
+        type_name: impl Into<TypeName>,
+        property_key: impl Into<PropertyKey>,
         comment: C,
     ) {
         self.comment_store
             .add_property_comment(type_name, property_key, comment)
     }
-    pub fn add_optional(&mut self, type_name: &'a TypeName, property_key: &'a PropertyKey) {
+    pub fn add_optional(
+        &mut self,
+        type_name: impl Into<TypeName>,
+        property_key: impl Into<PropertyKey>,
+    ) {
         self.optional_type_store
             .add_optional(type_name, property_key);
     }
-    pub fn add_require(&mut self, type_name: &'a TypeName, property_key: &'a PropertyKey) {
+    pub fn add_require(
+        &mut self,
+        type_name: impl Into<TypeName>,
+        property_key: impl Into<PropertyKey>,
+    ) {
         self.optional_type_store
             .add_require(type_name, property_key);
     }
-    pub fn add_type_visibility(&mut self, type_name: &'a TypeName, visibility: V) {
+    pub fn add_type_visibility(&mut self, type_name: impl Into<TypeName>, visibility: V) {
         self.visibility_store
             .add_type_visibility(type_name, visibility);
     }
     pub fn add_property_visibility(
         &mut self,
-        type_name: &'a TypeName,
-        property_key: &'a PropertyKey,
+        type_name: impl Into<TypeName>,
+        property_key: impl Into<PropertyKey>,
         visibility: V,
     ) {
         self.visibility_store
             .add_property_visibility(type_name, property_key, visibility);
     }
 }
-impl<'a, V, C, A> AdditionalStatement for AdditionalStatementProvider<'a, V, C, A>
+impl<V, C, A> AdditionalStatement for AdditionalStatementProvider<V, C, A>
 where
     V: Visibility,
     C: Comment,

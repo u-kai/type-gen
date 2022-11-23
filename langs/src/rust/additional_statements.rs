@@ -4,18 +4,18 @@ use lang_common::type_defines::additional_defines::{
 
 use super::property_generator::RUST_PROPERTY_HEAD_SPACE;
 
-pub struct RustComment<'a>(Vec<&'a str>);
-impl<'a> RustComment<'a> {
+pub struct RustComment(Vec<String>);
+impl RustComment {
     const COMMENT_PREFIX: &'static str = "// ";
     pub fn new() -> Self {
         Self(Vec::new())
     }
-    pub fn add_comment_line(&mut self, comment: &'a str) {
-        self.0.push(comment);
+    pub fn add_comment_line(&mut self, comment: impl Into<String>) {
+        self.0.push(comment.into());
     }
 }
 
-impl<'a> Comment for RustComment<'a> {
+impl<'a> Comment for RustComment {
     fn to_property_define(&self) -> String {
         self.0.iter().fold(String::new(), |acc, cur| {
             format!(

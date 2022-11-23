@@ -10,7 +10,7 @@ use super::{
     mapper::RustLangMapper,
     reserved_words::RustReservedWords,
 };
-struct RustPropertyStatementGenerator {
+pub struct RustPropertyStatementGenerator {
     reserved_words: RustReservedWords,
 }
 pub const RUST_PROPERTY_HEAD_SPACE: &'static str = "    ";
@@ -25,7 +25,7 @@ impl RustPropertyStatementGenerator {
 impl<'a>
     PropertyStatementGenerator<
         RustLangMapper,
-        AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>, RustAttribute>,
+        AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
     > for RustPropertyStatementGenerator
 {
     fn generate(
@@ -35,9 +35,8 @@ impl<'a>
         property_type: &lang_common::types::property_type::PropertyType,
         mapper: &RustLangMapper,
         additional_statement: &AdditionalStatementProvider<
-            'a,
             RustVisibility,
-            RustComment<'a>,
+            RustComment,
             RustAttribute,
         >,
     ) -> String {
@@ -114,9 +113,9 @@ mod test_rust_property_geneartor {
         attr.add_attribute(RustAttributeKind::Test);
         let mut comment = RustComment::new();
         comment.add_comment_line("this is test");
-        additional_provider.add_property_attribute(&type_name, &property_key, attr);
-        additional_provider.add_property_comment(&type_name, &property_key, comment);
-        additional_provider.add_optional(&type_name, &property_key);
+        additional_provider.add_property_attribute(type_name.clone(), property_key.clone(), attr);
+        additional_provider.add_property_comment(type_name.clone(), property_key.clone(), comment);
+        additional_provider.add_optional(type_name.clone(), property_key.clone());
         let tobe = format!(
             "{head}// this is test\n{head}#[test]\n{head}#[serde(rename = \"accountId\")]\n{head}account_id: Option<String>,\n",
             head = RUST_PROPERTY_HEAD_SPACE,
@@ -188,7 +187,7 @@ mod test_rust_property_geneartor {
         let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let mut additional_provider = AdditionalStatementProvider::with_default_optional(true);
-        additional_provider.add_property_comment(&type_name, &property_key, comment);
+        additional_provider.add_property_comment(type_name.clone(), property_key.clone(), comment);
         let tobe = format!(
             "{head}// {comment1}\n{head}// {comment2}\n{head}id: Option<Vec<TestId>>,\n",
             head = RUST_PROPERTY_HEAD_SPACE,

@@ -23,9 +23,8 @@ impl<'a> RustTypeStatementGenerator {
         &self,
         type_name: &TypeName,
         additional_provider: &AdditionalStatementProvider<
-            'a,
             RustVisibility,
-            RustComment<'a>,
+            RustComment,
             RustAttribute,
         >,
     ) -> String {
@@ -43,7 +42,7 @@ impl<'a> RustTypeStatementGenerator {
 impl<'a>
     TypeStatementGenerator<
         RustLangMapper,
-        AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>, RustAttribute>,
+        AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
     > for RustTypeStatementGenerator
 {
     const TYPE_PREFIX: &'static str = "struct";
@@ -52,9 +51,8 @@ impl<'a>
         primitive_type: &lang_common::types::structures::PrimitiveTypeStructure,
         mapper: &RustLangMapper,
         additional_statement: &AdditionalStatementProvider<
-            'a,
             RustVisibility,
-            RustComment<'a>,
+            RustComment,
             RustAttribute,
         >,
     ) -> String {
@@ -71,9 +69,8 @@ impl<'a>
         type_name: &lang_common::types::type_name::TypeName,
         properties_statement: String,
         additional_statement: &AdditionalStatementProvider<
-            'a,
             RustVisibility,
-            RustComment<'a>,
+            RustComment,
             RustAttribute,
         >,
     ) -> String {
@@ -111,7 +108,7 @@ mod test_rust_type_statement_generator {
 
     #[test]
     fn test_case_custum_with_all() {
-        let type_name: TypeName = "Test".into();
+        let type_name = "Test";
         let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let mut comment = RustComment::new();
         let comment1 = "this is comment1";
@@ -120,9 +117,9 @@ mod test_rust_type_statement_generator {
         comment.add_comment_line(comment2);
         let mut attr = RustAttribute::new();
         attr.add_attribute(RustAttributeKind::Derives(vec!["Clone", "Debug"]));
-        additional_provider.add_type_comment(&type_name, comment);
-        additional_provider.add_type_attribute(&type_name, attr);
-        additional_provider.add_type_visibility(&type_name, RustVisibility::Public);
+        additional_provider.add_type_comment(type_name, comment);
+        additional_provider.add_type_attribute(type_name, attr);
+        additional_provider.add_type_visibility(type_name, RustVisibility::Public);
         let generator = RustTypeStatementGenerator::new();
         let tobe = r#"// this is comment1
 // this is comment2
@@ -132,7 +129,7 @@ pub struct Test {
 }"#;
         assert_eq!(
             generator.generate_case_composite(
-                &type_name,
+                &type_name.into(),
                 format!("    id: usize,"),
                 &additional_provider
             ),
@@ -148,7 +145,7 @@ pub struct Test {
         let type_name: TypeName = "Test".into();
         comment.add_comment_line(comment1);
         comment.add_comment_line(comment2);
-        additional_provider.add_type_comment(&type_name, comment);
+        additional_provider.add_type_comment(type_name.clone(), comment);
         let generator = RustTypeStatementGenerator::new();
         let tobe = r#"// this is comment1
 // this is comment2
@@ -190,7 +187,7 @@ struct Test {
         comment.add_comment_line(comment1);
         comment.add_comment_line(comment2);
         let type_name: TypeName = "Test".into();
-        additional_provider.add_type_comment(&type_name, comment);
+        additional_provider.add_type_comment(type_name.clone(), comment);
         let mapper = RustLangMapper;
         let primitive_type = PrimitiveTypeStructure::new(type_name.clone(), make_string());
         let generator = RustTypeStatementGenerator::new();
