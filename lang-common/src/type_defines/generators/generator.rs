@@ -137,9 +137,7 @@ pub mod fakes {
             } else {
                 mapper.case_property_type(property_type)
             };
-            let visibility = a
-                .get_property_visibility(type_name, property_key)
-                .unwrap_or_default();
+            let visibility = a.get_property_visibility(type_name, property_key);
             format!(
                 "{}{}{}: {},",
                 result,
@@ -165,7 +163,7 @@ pub mod fakes {
             if let Some(attribute) = a.get_type_attribute(type_name) {
                 result += &attribute;
             };
-            let visibility = a.get_type_visibility(type_name).unwrap_or_default();
+            let visibility = a.get_type_visibility(type_name);
             format!(
                 "{}{}{} {} {{{}}}",
                 result,
@@ -188,9 +186,7 @@ pub mod fakes {
             if let Some(attribute) = a.get_type_attribute(&primitive_type.name) {
                 result += &attribute;
             };
-            let visibility = a
-                .get_type_visibility(&primitive_type.name)
-                .unwrap_or_default();
+            let visibility = a.get_type_visibility(&primitive_type.name);
             format!(
                 "{}{}type {} = {};",
                 result,

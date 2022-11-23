@@ -14,12 +14,12 @@ pub trait AdditionalStatement {
         type_name: &TypeName,
         property_key: &PropertyKey,
     ) -> Option<String>;
-    fn get_type_visibility(&self, type_name: &TypeName) -> Option<&'static str>;
+    fn get_type_visibility(&self, type_name: &TypeName) -> &'static str;
     fn get_property_visibility(
         &self,
         type_name: &TypeName,
         property_key: &PropertyKey,
-    ) -> Option<&'static str>;
+    ) -> &'static str;
     fn get_type_attribute(&self, type_name: &TypeName) -> Option<String>;
     fn get_property_attribute(
         &self,
@@ -117,11 +117,11 @@ where
         &self,
         type_name: &TypeName,
         property_key: &PropertyKey,
-    ) -> Option<&'static str> {
+    ) -> &'static str {
         self.visibility_store
             .get_property_visibility(type_name, property_key)
     }
-    fn get_type_visibility(&self, type_name: &TypeName) -> Option<&'static str> {
+    fn get_type_visibility(&self, type_name: &TypeName) -> &'static str {
         self.visibility_store.get_type_visibility(type_name)
     }
     fn get_property_comment(
@@ -182,11 +182,11 @@ pub mod fake_additional_statement {
             &self,
             _type_name: &TypeName,
             _property_key: &PropertyKey,
-        ) -> Option<&'static str> {
-            Some("public ")
+        ) -> &'static str {
+            "public "
         }
-        fn get_type_visibility(&self, _type_name: &TypeName) -> Option<&'static str> {
-            Some("public ")
+        fn get_type_visibility(&self, _type_name: &TypeName) -> &'static str {
+            "public "
         }
         fn get_property_attribute(
             &self,
@@ -228,11 +228,11 @@ pub mod fake_additional_statement {
             &self,
             _type_name: &TypeName,
             _property_key: &PropertyKey,
-        ) -> Option<&'static str> {
-            None
+        ) -> &'static str {
+            ""
         }
-        fn get_type_visibility(&self, _type_name: &TypeName) -> Option<&'static str> {
-            None
+        fn get_type_visibility(&self, _type_name: &TypeName) -> &'static str {
+            ""
         }
         fn get_property_attribute(
             &self,
