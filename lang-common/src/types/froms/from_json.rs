@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap};
 
 use json::json::Json;
 
-use crate::types::structure::{
+use crate::types::structures::{
     CompositeType, Number, PrimitiveType, PropertyKey, TypeKind, TypeName, TypeStructure,
 };
 
@@ -188,7 +188,7 @@ impl Into<Json> for PrimitiveType {
 #[cfg(test)]
 mod test_type_from_json {
     use super::*;
-    use crate::types::structure::fakes::*;
+    use crate::types::structures::fakes::*;
     #[test]
     fn test_complex_case() {
         let json = r#"{
@@ -293,7 +293,7 @@ mod test_type_from_json {
 #[cfg(test)]
 mod test_type_from_json_to_nest_type {
 
-    use crate::types::structure::fakes::*;
+    use crate::types::structures::fakes::*;
 
     use super::*;
     #[test]

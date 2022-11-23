@@ -1,3 +1,3 @@
 pub mod froms;
 pub mod statement;
-pub mod structure;
+pub mod structures;

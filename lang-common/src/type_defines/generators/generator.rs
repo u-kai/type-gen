@@ -1,4 +1,7 @@
-use crate::type_defines::type_define::{LangAttribute, LangComment, LangVisibility, TypeDefine};
+use crate::{
+    type_defines::type_define::{LangAttribute, LangComment, LangVisibility, TypeDefine},
+    types::statement::{PropertyType, TypeStatement},
+};
 
 use super::mapper::LangTypeMapper;
 
@@ -10,15 +13,18 @@ where
     A: LangAttribute,
     M: LangTypeMapper,
 {
-    fn generate(&self, type_define: TypeDefine<V, C, A>, mapper: M) -> Vec<TypeDefineStatement>;
+    fn new(visibility: V, comment: C, attribute: A, mapper: M) -> Self;
+    fn generate(&self, statement: TypeStatement) -> TypeDefineStatement;
 }
 
 #[cfg(test)]
 pub mod fakes {
-    use crate::type_defines::generators::mapper::{LangTypeMapper, TypeStatement};
+    use crate::type_defines::generators::mapper::{LangTypeMapper, TypeString};
     use crate::type_defines::type_define::{
         LangAttribute, LangComment, LangVisibility, TypeDefine,
     };
+    use crate::types::statement::{PrimitiveTypeStatement, PropertyType, TypeStatement};
+    use crate::types::structures::PrimitiveType;
 
     use super::{TypeDefineStatement, TypeDefineStatementGenerator};
 
@@ -72,49 +78,100 @@ pub mod fakes {
     }
     pub struct FakeLangTypeMapper;
     impl LangTypeMapper for FakeLangTypeMapper {
-        fn case_any(&self) -> TypeStatement {
+        fn case_any(&self) -> TypeString {
             String::from("any")
         }
-        fn case_boolean(&self) -> TypeStatement {
+        fn case_boolean(&self) -> TypeString {
             String::from("bool")
         }
-        fn case_float(&self) -> TypeStatement {
+        fn case_float(&self) -> TypeString {
             String::from("f64")
         }
-        fn case_isize(&self) -> TypeStatement {
+        fn case_isize(&self) -> TypeString {
             String::from("isize")
         }
-        fn case_usize(&self) -> TypeStatement {
+        fn case_usize(&self) -> TypeString {
             String::from("usize")
         }
-        fn case_null(&self) -> TypeStatement {
+        fn case_null(&self) -> TypeString {
             String::from("null")
         }
-        fn case_optional_type<T: Into<TypeStatement>>(&self, type_statement: T) -> TypeStatement {
+        fn case_optional_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString {
             format!("Option<{}>", type_statement.into())
         }
-        fn case_string(&self) -> TypeStatement {
+        fn case_string(&self) -> TypeString {
             String::from("String")
         }
-        fn case_array_type<T: Into<TypeStatement>>(&self, type_statement: T) -> TypeStatement {
+        fn case_array_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString {
             format!("Vec<{}>", type_statement.into())
         }
     }
-    pub struct FakeTypeGenerator;
-
-    impl<V, C, A, M> TypeDefineStatementGenerator<V, C, A, M> for FakeTypeGenerator
-    where
-        V: LangVisibility,
-        C: LangComment,
-        A: LangAttribute,
-        M: LangTypeMapper,
+    pub struct FakeTypeGenerator {
+        visi: FakeLangVisibility,
+        comment: FakeLangComment,
+        attr: FakeLangAttribute,
+        mapper: FakeLangTypeMapper,
+    }
+    impl FakeTypeGenerator {
+        pub const PREFIX: &'static str = "struct";
+        pub fn new_easy() -> Self {
+            let visi = FakeLangVisibility::new("");
+            let comment = FakeLangComment::new(vec![""]);
+            let attr = FakeLangAttribute::new("");
+            let mapper = FakeLangTypeMapper;
+            Self {
+                visi,
+                comment,
+                attr,
+                mapper,
+            }
+        }
+    }
+    impl
+        TypeDefineStatementGenerator<
+            FakeLangVisibility,
+            FakeLangComment,
+            FakeLangAttribute,
+            FakeLangTypeMapper,
+        > for FakeTypeGenerator
     {
-        fn generate(
-            &self,
-            type_define: TypeDefine<V, C, A>,
-            mapper: M,
-        ) -> Vec<TypeDefineStatement> {
-            vec!["struct Test {id: usize,}".to_string()]
+        fn new(
+            visi: FakeLangVisibility,
+            comment: FakeLangComment,
+            attr: FakeLangAttribute,
+            mapper: FakeLangTypeMapper,
+        ) -> Self {
+            Self {
+                visi,
+                comment,
+                attr,
+                mapper,
+            }
+        }
+        fn generate(&self, statement: TypeStatement) -> TypeDefineStatement {
+            match statement {
+                TypeStatement::Composite(composite) => {
+                    let properties_statement =
+                        composite
+                            .properties
+                            .iter()
+                            .fold(String::new(), |acc, (k, v)| {
+                                format!(
+                                    "{}{}: {},",
+                                    acc,
+                                    k.as_str(),
+                                    self.mapper.case_property_type(v)
+                                )
+                            });
+                    format!(
+                        "{} {} {{{}}}",
+                        Self::PREFIX,
+                        composite.name.as_str(),
+                        properties_statement
+                    )
+                }
+                _ => todo!(),
+            }
         }
     }
 }
@@ -122,48 +179,18 @@ pub mod fakes {
 
 mod test_type_define_statement_generator {
 
-    use super::{
-        fakes::{
-            FakeLangAttribute, FakeLangComment, FakeLangTypeMapper, FakeLangVisibility,
-            FakeTypeGenerator,
-        },
-        *,
+    use super::{fakes::FakeTypeGenerator, *};
+    use crate::types::{
+        statement::{property_type_factories::make_primitive_type, TypeStatement},
+        structures::primitive_type_factories::*,
     };
-    use crate::types::structure::{fakes::*, *};
-    impl TypeDefine<FakeLangVisibility, FakeLangComment, FakeLangAttribute> {
-        fn new_simple(type_: TypeStructure, visi: &str) -> Self {
-            TypeDefine::new(
-                type_,
-                FakeLangVisibility::new(visi),
-                Some(FakeLangComment::new(vec![""])),
-                Some(FakeLangAttribute::new("")),
-            )
-        }
-    }
     #[test]
     fn test_simple_case() {
-        let simple_define = TypeDefine::new_simple(
-            make_type_easy(
-                "Test",
-                make_composite_type_easy(vec![("id", type_kind_usize())]),
-            ),
-            "",
-        );
-        let tobe = vec!["struct Test {id: usize,}".to_string()];
-        let generator = FakeTypeGenerator;
-        assert_eq!(generator.generate(simple_define, FakeLangTypeMapper), tobe);
-        let simple_define = TypeDefine::new_simple(
-            make_type_easy(
-                "Test",
-                make_composite_type_easy(vec![
-                    ("id", type_kind_usize()),
-                    ("name", type_kind_string()),
-                ]),
-            ),
-            "",
-        );
-        let tobe = vec!["struct Test {id: usize,name:String,}".to_string()];
-        let generator = FakeTypeGenerator;
-        assert_eq!(generator.generate(simple_define, FakeLangTypeMapper), tobe);
+        let simple_statement =
+            TypeStatement::make_composite("Test", vec![("id", make_primitive_type(make_usize()))]);
+        let tobe = "struct Test {id: usize,}".to_string();
+        let generator = FakeTypeGenerator::new_easy();
+        let statements = generator.generate(simple_statement);
+        assert_eq!(statements, tobe);
     }
 }

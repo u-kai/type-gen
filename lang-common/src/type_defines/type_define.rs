@@ -1,4 +1,4 @@
-use crate::types::structure::TypeStructure;
+use crate::types::statement::TypeStatement;
 
 /// ObjectTypeDefine example is below
 /// ```
@@ -23,14 +23,14 @@ use crate::types::structure::TypeStructure;
 /// - "// this is test struct" is comment
 /// - "#\[derive(Debug,Clone)\]" is attributes
 ///
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeDefine<V, C, A>
 where
     V: LangVisibility,
     C: LangComment,
     A: LangAttribute,
 {
-    r#type: TypeStructure,
+    statement: TypeStatement,
     visibility: V,
     comment: Option<C>,
     attribute: Option<A>,
@@ -42,13 +42,13 @@ where
     A: LangAttribute,
 {
     pub fn new(
-        r#type: TypeStructure,
+        statement: TypeStatement,
         visibility: V,
         comment: Option<C>,
         attribute: Option<A>,
     ) -> Self {
         Self {
-            r#type,
+            statement,
             visibility,
             comment,
             attribute,
