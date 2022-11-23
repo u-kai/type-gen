@@ -16,12 +16,23 @@ impl<'a> RustComment<'a> {
 }
 
 impl<'a> Comment for RustComment<'a> {
-    fn to_define(&self) -> String {
+    fn to_property_define(&self) -> String {
         self.0.iter().fold(String::new(), |acc, cur| {
             format!(
-                "{acc}{head_space}{prefix}{comment}{next_line}",
+                "{acc}{head}{prefix}{comment}{next_line}",
                 acc = acc,
-                head_space = RUST_PROPERTY_HEAD_SPACE,
+                head = RUST_PROPERTY_HEAD_SPACE,
+                prefix = Self::COMMENT_PREFIX,
+                comment = cur,
+                next_line = "\n"
+            )
+        })
+    }
+    fn to_type_define(&self) -> String {
+        self.0.iter().fold(String::new(), |acc, cur| {
+            format!(
+                "{acc}{prefix}{comment}{next_line}",
+                acc = acc,
                 prefix = Self::COMMENT_PREFIX,
                 comment = cur,
                 next_line = "\n"
@@ -30,13 +41,13 @@ impl<'a> Comment for RustComment<'a> {
     }
 }
 
-pub struct RustDocsComment<'a>(&'a str);
+//pub struct RustDocsComment<'a>(&'a str);
 
-impl<'a> Comment for RustDocsComment<'a> {
-    fn to_define(&self) -> String {
-        format!("/// {}", self.0)
-    }
-}
+//impl<'a> Comment for RustDocsComment<'a> {
+//fn to_define(&self) -> String {
+//format!("/// {}", self.0)
+//}
+//}
 
 #[derive(Debug, Clone, Copy)]
 pub enum RustVisibility {

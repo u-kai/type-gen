@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use crate::types::{property_key::PropertyKey, type_name::TypeName};
 
 pub trait Comment {
-    fn to_define(&self) -> String;
+    fn to_type_define(&self) -> String;
+    fn to_property_define(&self) -> String;
 }
 pub struct CommentStore<'a, C>
 where
@@ -38,7 +39,7 @@ where
     pub fn get_type_comment(&self, type_name: &TypeName) -> Option<String> {
         self.type_store
             .get(type_name)
-            .map(|comment| comment.to_define())
+            .map(|comment| comment.to_type_define())
     }
     pub fn get_property_comment(
         &self,
@@ -47,6 +48,6 @@ where
     ) -> Option<String> {
         self.property_store
             .get(&(type_name, property_key))
-            .map(|comment| comment.to_define())
+            .map(|comment| comment.to_property_define())
     }
 }
