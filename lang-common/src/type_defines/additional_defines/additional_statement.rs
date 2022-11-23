@@ -29,20 +29,21 @@ pub trait AdditionalStatement {
     fn is_property_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool;
 }
 
-pub struct AdditionalStatementProvider<'a, V>
+pub struct AdditionalStatementProvider<'a, V, C>
 where
     V: Visibility,
+    C: Comment,
 {
     attribute_store: AttributeStore<'a>,
-    comment_store: CommentStore<'a>,
+    comment_store: CommentStore<'a, C>,
     optional_type_store: OptionalTypeStore,
     visibility_store: VisibilityStore<'a, V>,
-    comment_prefix: &'static str,
 }
 
-impl<'a, V> AdditionalStatementProvider<'a, V>
+impl<'a, V, C> AdditionalStatementProvider<'a, V, C>
 where
     V: Visibility,
+    C: Comment,
 {
     pub fn new() -> Self {
         Self {
@@ -50,16 +51,6 @@ where
             comment_store: CommentStore::new(),
             optional_type_store: OptionalTypeStore::default(),
             visibility_store: VisibilityStore::new(),
-            comment_prefix: "// ",
-        }
-    }
-    pub fn with_comment_prefix(comment_prefix: &'static str) -> Self {
-        Self {
-            attribute_store: AttributeStore::new(),
-            comment_store: CommentStore::new(),
-            optional_type_store: OptionalTypeStore::default(),
-            visibility_store: VisibilityStore::new(),
-            comment_prefix,
         }
     }
     pub fn add_type_attribute(&mut self, type_name: &'a TypeName, attribute: Attribute) {
@@ -75,14 +66,14 @@ where
         self.attribute_store
             .add_property_attribute(type_name, property_key, attribute)
     }
-    pub fn add_type_comment(&mut self, type_name: &'a TypeName, comment: Comment) {
+    pub fn add_type_comment(&mut self, type_name: &'a TypeName, comment: C) {
         self.comment_store.add_type_comment(type_name, comment)
     }
     pub fn add_property_comment(
         &mut self,
         type_name: &'a TypeName,
         property_key: &'a PropertyKey,
-        comment: Comment,
+        comment: C,
     ) {
         self.comment_store
             .add_property_comment(type_name, property_key, comment)
@@ -117,9 +108,10 @@ where
             .add_property_visibility(type_name, property_key, visibility);
     }
 }
-impl<'a, V> AdditionalStatement for AdditionalStatementProvider<'a, V>
+impl<'a, V, C> AdditionalStatement for AdditionalStatementProvider<'a, V, C>
 where
     V: Visibility,
+    C: Comment,
 {
     fn get_property_visibility(
         &self,
@@ -141,13 +133,13 @@ where
             .comment_store
             .get_property_comment(type_name, property_key)?;
         Some(comments.iter().fold(String::new(), |acc, cur| {
-            format!("{}{}{}\n", acc, self.comment_prefix, cur)
+            format!("{}{}\n", acc, cur.to_define())
         }))
     }
     fn get_type_comment(&self, type_name: &TypeName) -> Option<String> {
         let comments = self.comment_store.get_type_comment(type_name)?;
         Some(comments.iter().fold(String::new(), |acc, cur| {
-            format!("{}{}{}\n", acc, self.comment_prefix, cur)
+            format!("{}{}\n", acc, cur.to_define())
         }))
     }
     fn is_property_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool {
