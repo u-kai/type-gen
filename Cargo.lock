@@ -29,6 +29,9 @@ dependencies = [
 [[package]]
 name = "langs"
 version = "0.1.0"
+dependencies = [
+ "lang-common",
+]
 
 [[package]]
 name = "npc"

@@ -4,6 +4,7 @@ use super::{
     attribute_store::{Attribute, AttributeStore},
     comment_store::{Comment, CommentStore},
     optional_type_store::OptionalTypeStore,
+    visibility_store::{Visibility, VisibilityStore},
 };
 
 pub trait AdditionalStatement {
@@ -13,6 +14,12 @@ pub trait AdditionalStatement {
         type_name: &TypeName,
         property_key: &PropertyKey,
     ) -> Option<String>;
+    fn get_type_visibility(&self, type_name: &TypeName) -> Option<&'static str>;
+    fn get_property_visibility(
+        &self,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+    ) -> Option<&'static str>;
     fn get_type_attribute(&self, type_name: &TypeName) -> Option<String>;
     fn get_property_attribute(
         &self,
@@ -22,19 +29,27 @@ pub trait AdditionalStatement {
     fn is_property_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool;
 }
 
-pub struct AdditionalStatementProvider<'a> {
+pub struct AdditionalStatementProvider<'a, V>
+where
+    V: Visibility,
+{
     attribute_store: AttributeStore<'a>,
     comment_store: CommentStore<'a>,
     optional_type_store: OptionalTypeStore,
+    visibility_store: VisibilityStore<'a, V>,
     comment_prefix: &'static str,
 }
 
-impl<'a> AdditionalStatementProvider<'a> {
+impl<'a, V> AdditionalStatementProvider<'a, V>
+where
+    V: Visibility,
+{
     pub fn new() -> Self {
         Self {
             attribute_store: AttributeStore::new(),
             comment_store: CommentStore::new(),
             optional_type_store: OptionalTypeStore::default(),
+            visibility_store: VisibilityStore::new(),
             comment_prefix: "// ",
         }
     }
@@ -43,6 +58,7 @@ impl<'a> AdditionalStatementProvider<'a> {
             attribute_store: AttributeStore::new(),
             comment_store: CommentStore::new(),
             optional_type_store: OptionalTypeStore::default(),
+            visibility_store: VisibilityStore::new(),
             comment_prefix,
         }
     }
@@ -87,8 +103,35 @@ impl<'a> AdditionalStatementProvider<'a> {
         self.optional_type_store
             .add_require(type_name, property_key);
     }
+    pub fn add_type_visibility(&mut self, type_name: &'a TypeName, visibility: V) {
+        self.visibility_store
+            .add_type_visibility(type_name, visibility);
+    }
+    pub fn add_property_visibility(
+        &mut self,
+        type_name: &'a TypeName,
+        property_key: &'a PropertyKey,
+        visibility: V,
+    ) {
+        self.visibility_store
+            .add_property_visibility(type_name, property_key, visibility);
+    }
 }
-impl<'a> AdditionalStatement for AdditionalStatementProvider<'a> {
+impl<'a, V> AdditionalStatement for AdditionalStatementProvider<'a, V>
+where
+    V: Visibility,
+{
+    fn get_property_visibility(
+        &self,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+    ) -> Option<&'static str> {
+        self.visibility_store
+            .get_property_visibility(type_name, property_key)
+    }
+    fn get_type_visibility(&self, type_name: &TypeName) -> Option<&'static str> {
+        self.visibility_store.get_type_visibility(type_name)
+    }
     fn get_property_comment(
         &self,
         type_name: &TypeName,
@@ -137,10 +180,22 @@ impl<'a> AdditionalStatement for AdditionalStatementProvider<'a> {
 
 #[cfg(test)]
 pub mod fake_additional_statement {
+    use crate::types::{property_key::PropertyKey, type_name::TypeName};
+
     use super::AdditionalStatement;
 
     pub struct FakeAlwaysSomeAdditionalStatement;
     impl AdditionalStatement for FakeAlwaysSomeAdditionalStatement {
+        fn get_property_visibility(
+            &self,
+            _type_name: &TypeName,
+            _property_key: &PropertyKey,
+        ) -> Option<&'static str> {
+            Some("public")
+        }
+        fn get_type_visibility(&self, _type_name: &TypeName) -> Option<&'static str> {
+            Some("public")
+        }
         fn get_property_attribute(
             &self,
             _type_name: &crate::types::type_name::TypeName,
@@ -177,6 +232,16 @@ pub mod fake_additional_statement {
     }
     pub struct FakeAllNoneAdditionalStatement;
     impl AdditionalStatement for FakeAllNoneAdditionalStatement {
+        fn get_property_visibility(
+            &self,
+            _type_name: &TypeName,
+            _property_key: &PropertyKey,
+        ) -> Option<&'static str> {
+            None
+        }
+        fn get_type_visibility(&self, _type_name: &TypeName) -> Option<&'static str> {
+            None
+        }
         fn get_property_attribute(
             &self,
             _type_name: &crate::types::type_name::TypeName,

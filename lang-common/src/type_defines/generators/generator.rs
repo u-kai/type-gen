@@ -14,7 +14,7 @@ use super::mapper::LangTypeMapper;
 
 pub struct TypeDefineGenerator<T, P, M, A>
 where
-    T: TypeStructureGenerator,
+    T: TypeStatementGenerator,
     P: PropertyStatementGenerator,
     M: LangTypeMapper,
     A: AdditionalStatement,
@@ -26,7 +26,7 @@ where
 }
 impl<T, P, M, A> TypeDefineGenerator<T, P, M, A>
 where
-    T: TypeStructureGenerator,
+    T: TypeStatementGenerator,
     P: PropertyStatementGenerator,
     M: LangTypeMapper,
     A: AdditionalStatement,
@@ -77,7 +77,7 @@ where
     }
 }
 
-pub trait TypeStructureGenerator {
+pub trait TypeStatementGenerator {
     const TYPE_PREFIX: &'static str = "class";
     fn generate_case_composite<A: AdditionalStatement>(
         &self,
@@ -114,7 +114,7 @@ pub mod fakes {
         types::property_key::PropertyKey,
     };
 
-    use super::{PropertyStatementGenerator, TypeDefineGenerator, TypeStructureGenerator};
+    use super::{PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator};
     pub struct FakePropertyStatementGenerator;
     impl PropertyStatementGenerator for FakePropertyStatementGenerator {
         fn generate<M: LangTypeMapper, A: AdditionalStatement>(
@@ -140,8 +140,8 @@ pub mod fakes {
             format!("{}{}: {},", result, property_key.as_str(), property_type)
         }
     }
-    pub struct FakeTypeStructureGenerator;
-    impl TypeStructureGenerator for FakeTypeStructureGenerator {
+    pub struct FakeTypeStatementGenerator;
+    impl TypeStatementGenerator for FakeTypeStatementGenerator {
         const TYPE_PREFIX: &'static str = "struct";
         fn generate_case_composite<A: AdditionalStatement>(
             &self,
@@ -188,7 +188,7 @@ pub mod fakes {
     #[cfg(test)]
     impl
         TypeDefineGenerator<
-            FakeTypeStructureGenerator,
+            FakeTypeStatementGenerator,
             FakePropertyStatementGenerator,
             FakeLangTypeMapper,
             FakeAllNoneAdditionalStatement,
@@ -198,7 +198,7 @@ pub mod fakes {
             let mapper = FakeLangTypeMapper;
             Self {
                 mapper,
-                type_statement_generator: FakeTypeStructureGenerator,
+                type_statement_generator: FakeTypeStatementGenerator,
                 property_statement_generator: FakePropertyStatementGenerator,
                 additional_statement: FakeAllNoneAdditionalStatement,
             }
@@ -207,7 +207,7 @@ pub mod fakes {
     #[cfg(test)]
     impl
         TypeDefineGenerator<
-            FakeTypeStructureGenerator,
+            FakeTypeStatementGenerator,
             FakePropertyStatementGenerator,
             FakeLangTypeMapper,
             FakeAlwaysSomeAdditionalStatement,
@@ -217,7 +217,7 @@ pub mod fakes {
             let mapper = FakeLangTypeMapper;
             Self {
                 mapper,
-                type_statement_generator: FakeTypeStructureGenerator,
+                type_statement_generator: FakeTypeStatementGenerator,
                 property_statement_generator: FakePropertyStatementGenerator,
                 additional_statement: FakeAlwaysSomeAdditionalStatement,
             }
