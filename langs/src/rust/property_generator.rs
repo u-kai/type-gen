@@ -6,6 +6,7 @@ use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal
 
 use super::{
     additional_statements::{RustComment, RustVisibility},
+    attribute::RustAttribute,
     mapper::RustLangMapper,
     reserved_words::RustReservedWords,
 };
@@ -24,7 +25,7 @@ impl RustPropertyStatementGenerator {
 impl<'a>
     PropertyStatementGenerator<
         RustLangMapper,
-        AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>>,
+        AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>, RustAttribute>,
     > for RustPropertyStatementGenerator
 {
     fn generate(
@@ -33,7 +34,12 @@ impl<'a>
         property_key: &lang_common::types::property_key::PropertyKey,
         property_type: &lang_common::types::property_type::PropertyType,
         mapper: &RustLangMapper,
-        additional_statement: &AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>>,
+        additional_statement: &AdditionalStatementProvider<
+            'a,
+            RustVisibility,
+            RustComment<'a>,
+            RustAttribute,
+        >,
     ) -> String {
         let mut additional = String::new();
         if let Some(comment) = additional_statement.get_property_comment(type_name, property_key) {
@@ -88,12 +94,44 @@ mod test_rust_property_geneartor {
     };
 
     use crate::rust::{
-        additional_statements::RustComment, mapper::RustLangMapper,
+        additional_statements::RustComment,
+        attribute::{RustAttribute, RustAttributeKind},
+        mapper::RustLangMapper,
         property_generator::RUST_PROPERTY_HEAD_SPACE,
     };
 
     use super::RustPropertyStatementGenerator;
 
+    #[test]
+    fn test_case_primitive_all() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "accountId".into();
+        let property_type = make_primitive_type(make_string());
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let mut attr = RustAttribute::new();
+        attr.add_attribute(RustAttributeKind::Test);
+        let mut comment = RustComment::new();
+        comment.add_comment_line("this is test");
+        additional_provider.add_property_attribute(&type_name, &property_key, attr);
+        additional_provider.add_property_comment(&type_name, &property_key, comment);
+        additional_provider.add_optional(&type_name, &property_key);
+        let tobe = format!(
+            "{head}// this is test\n{head}#[test]\n{head}#[serde(rename = \"accountId\")]\n{head}account_id: Option<String>,\n",
+            head = RUST_PROPERTY_HEAD_SPACE,
+        );
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
     #[test]
     fn test_case_primitive_and_use_camel_case_property_key() {
         let type_name: TypeName = "Test".into();

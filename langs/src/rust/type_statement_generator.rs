@@ -5,6 +5,7 @@ use lang_common::type_defines::{
 
 use super::{
     additional_statements::{RustComment, RustVisibility},
+    attribute::RustAttribute,
     mapper::RustLangMapper,
 };
 
@@ -17,7 +18,7 @@ impl RustTypeStatementGenerator {
 impl<'a>
     TypeStatementGenerator<
         RustLangMapper,
-        AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>>,
+        AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>, RustAttribute>,
     > for RustTypeStatementGenerator
 {
     const TYPE_PREFIX: &'static str = "struct";
@@ -25,7 +26,12 @@ impl<'a>
         &self,
         primitive_type: &lang_common::types::structures::PrimitiveTypeStructure,
         mapper: &RustLangMapper,
-        additional_statement: &AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>>,
+        additional_statement: &AdditionalStatementProvider<
+            'a,
+            RustVisibility,
+            RustComment<'a>,
+            RustAttribute,
+        >,
     ) -> String {
         let mut additional = String::new();
         if let Some(comment) = additional_statement.get_type_comment(&primitive_type.name) {
@@ -42,7 +48,12 @@ impl<'a>
         &self,
         type_name: &lang_common::types::type_name::TypeName,
         properties_statement: String,
-        additional_statement: &AdditionalStatementProvider<'a, RustVisibility, RustComment<'a>>,
+        additional_statement: &AdditionalStatementProvider<
+            'a,
+            RustVisibility,
+            RustComment<'a>,
+            RustAttribute,
+        >,
     ) -> String {
         let mut result = String::new();
         if let Some(comment) = additional_statement.get_type_comment(type_name) {

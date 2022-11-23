@@ -29,21 +29,23 @@ pub trait AdditionalStatement {
     fn is_property_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool;
 }
 
-pub struct AdditionalStatementProvider<'a, V, C>
+pub struct AdditionalStatementProvider<'a, V, C, A>
 where
     V: Visibility,
     C: Comment,
+    A: Attribute,
 {
-    attribute_store: AttributeStore<'a>,
+    attribute_store: AttributeStore<'a, A>,
     comment_store: CommentStore<'a, C>,
-    optional_type_store: OptionalTypeStore,
+    optional_type_store: OptionalTypeStore<'a>,
     visibility_store: VisibilityStore<'a, V>,
 }
 
-impl<'a, V, C> AdditionalStatementProvider<'a, V, C>
+impl<'a, V, C, A> AdditionalStatementProvider<'a, V, C, A>
 where
     V: Visibility,
     C: Comment,
+    A: Attribute,
 {
     pub fn new() -> Self {
         Self {
@@ -61,7 +63,7 @@ where
             visibility_store: VisibilityStore::new(),
         }
     }
-    pub fn add_type_attribute(&mut self, type_name: &'a TypeName, attribute: Attribute) {
+    pub fn add_type_attribute(&mut self, type_name: &'a TypeName, attribute: A) {
         self.attribute_store
             .add_type_attribute(type_name, attribute);
     }
@@ -69,7 +71,7 @@ where
         &mut self,
         type_name: &'a TypeName,
         property_key: &'a PropertyKey,
-        attribute: Attribute,
+        attribute: A,
     ) {
         self.attribute_store
             .add_property_attribute(type_name, property_key, attribute)
@@ -86,19 +88,11 @@ where
         self.comment_store
             .add_property_comment(type_name, property_key, comment)
     }
-    pub fn add_optional(
-        &mut self,
-        type_name: impl Into<TypeName>,
-        property_key: impl Into<PropertyKey>,
-    ) {
+    pub fn add_optional(&mut self, type_name: &'a TypeName, property_key: &'a PropertyKey) {
         self.optional_type_store
             .add_optional(type_name, property_key);
     }
-    pub fn add_require(
-        &mut self,
-        type_name: impl Into<TypeName>,
-        property_key: impl Into<PropertyKey>,
-    ) {
+    pub fn add_require(&mut self, type_name: &'a TypeName, property_key: &'a PropertyKey) {
         self.optional_type_store
             .add_require(type_name, property_key);
     }
@@ -116,10 +110,11 @@ where
             .add_property_visibility(type_name, property_key, visibility);
     }
 }
-impl<'a, V, C> AdditionalStatement for AdditionalStatementProvider<'a, V, C>
+impl<'a, V, C, A> AdditionalStatement for AdditionalStatementProvider<'a, V, C, A>
 where
     V: Visibility,
     C: Comment,
+    A: Attribute,
 {
     fn get_property_visibility(
         &self,
@@ -152,22 +147,11 @@ where
         type_name: &TypeName,
         property_key: &PropertyKey,
     ) -> Option<String> {
-        let attributes = self
-            .attribute_store
-            .get_property_attribute(type_name, property_key)?;
-        Some(
-            attributes
-                .iter()
-                .fold(String::new(), |acc, cur| format!("{}{}\n", acc, cur)),
-        )
+        self.attribute_store
+            .get_property_attribute(type_name, property_key)
     }
     fn get_type_attribute(&self, type_name: &TypeName) -> Option<String> {
-        let attributes = self.attribute_store.get_type_attribute(type_name)?;
-        Some(
-            attributes
-                .iter()
-                .fold(String::new(), |acc, cur| format!("{}{}\n", acc, cur)),
-        )
+        self.attribute_store.get_type_attribute(type_name)
     }
 }
 
