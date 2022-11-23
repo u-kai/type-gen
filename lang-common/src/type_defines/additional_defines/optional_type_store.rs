@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use utils::store_fn::{containes_to_kv_vec, push_to_kv_vec};
 
-use crate::types::structures::{PropertyKey, TypeName};
+use crate::types::{property_key::PropertyKey, type_name::TypeName};
 
 pub struct OptionalTypeStore {
     default_option_flag: bool,

@@ -1,37 +1,18 @@
-use crate::types::{
-    statement::{PrimitiveTypeStatement, PropertyType, TypeStatement},
-    structures::{PropertyKey, TypeName},
+use crate::{
+    type_defines::type_define::TypeDefine,
+    types::{
+        property_key::PropertyKey,
+        property_type::PropertyType,
+        structures::{PrimitiveTypeStructure, TypeStructure},
+        type_name::TypeName,
+    },
 };
 
 use super::mapper::LangTypeMapper;
 
-/// ObjectTypeDefineStatement example is below
-/// ```
-/// // this is test struct
-/// #[derive(Debug,Clone)]
-/// struct Test {
-///     // id is must set
-///     id: usize,
-///     name: Option<String>
-/// }
-/// ```
-///
-/// PrimitiveTypeAlias example is below
-/// ```
-/// // this is test data alias
-/// #[cfg(test)]
-/// type TestData = String;
-/// ```
-///
-/// - "Test" is name
-/// - "id: usize,name: Option<String>" is properties
-/// - "// this is test struct" is comment
-/// - "#\[derive(Debug,Clone)\]" is attributes
-///
-type TypeDefineStatement = String;
-pub struct TypeDefineStatementGenerator<T, P, M>
+pub struct TypeDefineGenerator<T, P, M>
 where
-    T: TypeStatementGenerator,
+    T: TypeStructureGenerator,
     P: PropertyStatementGenerator,
     M: LangTypeMapper,
 {
@@ -39,9 +20,9 @@ where
     property_statement_generator: P,
     mapper: M,
 }
-impl<T, P, M> TypeDefineStatementGenerator<T, P, M>
+impl<T, P, M> TypeDefineGenerator<T, P, M>
 where
-    T: TypeStatementGenerator,
+    T: TypeStructureGenerator,
     P: PropertyStatementGenerator,
     M: LangTypeMapper,
 {
@@ -52,9 +33,9 @@ where
             mapper,
         }
     }
-    pub fn generate(&self, statement: TypeStatement) -> TypeDefineStatement {
-        match statement {
-            TypeStatement::Composite(composite) => {
+    pub fn generate(&self, structure: TypeStructure) -> TypeDefine {
+        match structure {
+            TypeStructure::Composite(composite) => {
                 let properties_statement =
                     composite
                         .properties
@@ -70,20 +51,20 @@ where
                 self.type_statement_generator
                     .generate_case_composite(&composite.name, properties_statement)
             }
-            TypeStatement::Primitive(primitive) => self
+            TypeStructure::Primitive(primitive) => self
                 .type_statement_generator
                 .generate_case_primitive(&primitive, &self.mapper),
         }
     }
 }
 
-pub trait TypeStatementGenerator {
+pub trait TypeStructureGenerator {
     const TYPE_PREFIX: &'static str = "class";
     fn generate_case_composite(&self, type_name: &TypeName, properties_statement: String)
         -> String;
     fn generate_case_primitive<M: LangTypeMapper>(
         &self,
-        primitive_type: &PrimitiveTypeStatement,
+        primitive_type: &PrimitiveTypeStructure,
         mapper: &M,
     ) -> String;
 }
@@ -97,11 +78,15 @@ pub trait PropertyStatementGenerator {
 }
 #[cfg(test)]
 pub mod fakes {
-    use crate::type_defines::generators::mapper::{LangTypeMapper, TypeString};
-    use crate::types::statement::PropertyType;
-    use crate::types::structures::{PropertyKey, TypeName};
+    use crate::type_defines::generators::mapper::LangTypeMapper;
+    use crate::types::property_type::PropertyType;
+    use crate::types::type_name::TypeName;
+    use crate::{
+        type_defines::generators::mapper::fake_mapper::FakeLangTypeMapper,
+        types::property_key::PropertyKey,
+    };
 
-    use super::{PropertyStatementGenerator, TypeDefineStatementGenerator, TypeStatementGenerator};
+    use super::{PropertyStatementGenerator, TypeDefineGenerator, TypeStructureGenerator};
     pub struct FakePropertyStatementGenerator;
     impl PropertyStatementGenerator for FakePropertyStatementGenerator {
         fn generate<M: LangTypeMapper>(
@@ -117,8 +102,8 @@ pub mod fakes {
             )
         }
     }
-    pub struct FakeTypeStatementGenerator;
-    impl TypeStatementGenerator for FakeTypeStatementGenerator {
+    pub struct FakeTypeStructureGenerator;
+    impl TypeStructureGenerator for FakeTypeStructureGenerator {
         const TYPE_PREFIX: &'static str = "struct";
         fn generate_case_composite(
             &self,
@@ -134,7 +119,7 @@ pub mod fakes {
         }
         fn generate_case_primitive<M: LangTypeMapper>(
             &self,
-            primitive_type: &crate::types::statement::PrimitiveTypeStatement,
+            primitive_type: &crate::types::structures::PrimitiveTypeStructure,
             mapper: &M,
         ) -> String {
             format!(
@@ -144,41 +129,10 @@ pub mod fakes {
             )
         }
     }
-
-    pub struct FakeLangTypeMapper;
-    impl LangTypeMapper for FakeLangTypeMapper {
-        fn case_any(&self) -> TypeString {
-            String::from("any")
-        }
-        fn case_boolean(&self) -> TypeString {
-            String::from("bool")
-        }
-        fn case_float(&self) -> TypeString {
-            String::from("f64")
-        }
-        fn case_isize(&self) -> TypeString {
-            String::from("isize")
-        }
-        fn case_usize(&self) -> TypeString {
-            String::from("usize")
-        }
-        fn case_null(&self) -> TypeString {
-            String::from("null")
-        }
-        fn case_optional_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString {
-            format!("Option<{}>", type_statement.into())
-        }
-        fn case_string(&self) -> TypeString {
-            String::from("String")
-        }
-        fn case_array_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString {
-            format!("Vec<{}>", type_statement.into())
-        }
-    }
     #[cfg(test)]
     impl
-        TypeDefineStatementGenerator<
-            FakeTypeStatementGenerator,
+        TypeDefineGenerator<
+            FakeTypeStructureGenerator,
             FakePropertyStatementGenerator,
             FakeLangTypeMapper,
         >
@@ -187,7 +141,7 @@ pub mod fakes {
             let mapper = FakeLangTypeMapper;
             Self {
                 mapper,
-                type_statement_generator: FakeTypeStatementGenerator,
+                type_statement_generator: FakeTypeStructureGenerator,
                 property_statement_generator: FakePropertyStatementGenerator,
             }
         }
@@ -197,30 +151,24 @@ pub mod fakes {
 
 mod test_type_define_statement_generator {
 
-    use super::fakes::*;
     use crate::{
-        type_defines::generators::generator::TypeDefineStatementGenerator,
+        type_defines::generators::generator::TypeDefineGenerator,
         types::{
-            statement::{
-                property_type_factories::{
-                    make_array_type, make_custom_type, make_optional_type, make_primitive_type,
-                },
-                TypeStatement,
-            },
-            structures::primitive_type_factories::*,
+            primitive_type::primitive_type_factories::*, property_type::property_type_factories::*,
+            structures::TypeStructure,
         },
     };
     #[test]
     fn test_case_primitive() {
-        let simple_statement = TypeStatement::make_primitive("Test", make_string());
+        let simple_statement = TypeStructure::make_primitive("Test", make_string());
         let tobe = "type Test = String;".to_string();
-        let generator = TypeDefineStatementGenerator::new_fake();
+        let generator = TypeDefineGenerator::new_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
     }
     #[test]
     fn test_optional_case() {
-        let simple_statement = TypeStatement::make_composite(
+        let simple_statement = TypeStructure::make_composite(
             "Test",
             vec![
                 ("id", make_optional_type(make_primitive_type(make_usize()))),
@@ -231,13 +179,13 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {child: Vec<Option<Child>>,id: Option<usize>,}".to_string();
-        let generator = TypeDefineStatementGenerator::new_fake();
+        let generator = TypeDefineGenerator::new_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
     }
     #[test]
     fn test_nest_array_case() {
-        let simple_statement = TypeStatement::make_composite(
+        let simple_statement = TypeStructure::make_composite(
             "Test",
             vec![
                 ("id", make_primitive_type(make_usize())),
@@ -248,13 +196,13 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {child: Vec<Vec<Child>>,id: usize,}".to_string();
-        let generator = TypeDefineStatementGenerator::new_fake();
+        let generator = TypeDefineGenerator::new_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
     }
     #[test]
     fn test_array_case() {
-        let simple_statement = TypeStatement::make_composite(
+        let simple_statement = TypeStructure::make_composite(
             "Test",
             vec![
                 ("id", make_primitive_type(make_usize())),
@@ -262,13 +210,13 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {child: Vec<Child>,id: usize,}".to_string();
-        let generator = TypeDefineStatementGenerator::new_fake();
+        let generator = TypeDefineGenerator::new_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
     }
     #[test]
     fn test_has_child_case() {
-        let simple_statement = TypeStatement::make_composite(
+        let simple_statement = TypeStructure::make_composite(
             "Test",
             vec![
                 ("id", make_primitive_type(make_usize())),
@@ -276,19 +224,19 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {child: Child,id: usize,}".to_string();
-        let generator = TypeDefineStatementGenerator::new_fake();
+        let generator = TypeDefineGenerator::new_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
     }
     #[test]
     fn test_simple_case() {
         let simple_statement =
-            TypeStatement::make_composite("Test", vec![("id", make_primitive_type(make_usize()))]);
+            TypeStructure::make_composite("Test", vec![("id", make_primitive_type(make_usize()))]);
         let tobe = "struct Test {id: usize,}".to_string();
-        let generator = TypeDefineStatementGenerator::new_fake();
+        let generator = TypeDefineGenerator::new_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
-        let simple_statement = TypeStatement::make_composite(
+        let simple_statement = TypeStructure::make_composite(
             "Test",
             vec![
                 ("id", make_primitive_type(make_usize())),
@@ -296,7 +244,7 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {id: usize,name: String,}".to_string();
-        let generator = TypeDefineStatementGenerator::new_fake();
+        let generator = TypeDefineGenerator::new_fake();
         let statements = generator.generate(simple_statement);
         assert_eq!(statements, tobe);
     }

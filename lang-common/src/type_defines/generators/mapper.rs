@@ -1,6 +1,6 @@
 use crate::types::{
-    statement::PropertyType,
-    structures::{Number, PrimitiveType},
+    primitive_type::{Number, PrimitiveType},
+    property_type::PropertyType,
 };
 
 pub type TypeString = String;
@@ -36,6 +36,42 @@ pub trait LangTypeMapper {
                 self.case_array_type(self.case_property_type(array_type))
             }
             PropertyType::CustomType(custom_type) => custom_type.as_str().to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
+pub mod fake_mapper {
+    use super::{LangTypeMapper, TypeString};
+
+    pub struct FakeLangTypeMapper;
+    impl LangTypeMapper for FakeLangTypeMapper {
+        fn case_any(&self) -> TypeString {
+            String::from("any")
+        }
+        fn case_boolean(&self) -> TypeString {
+            String::from("bool")
+        }
+        fn case_float(&self) -> TypeString {
+            String::from("f64")
+        }
+        fn case_isize(&self) -> TypeString {
+            String::from("isize")
+        }
+        fn case_usize(&self) -> TypeString {
+            String::from("usize")
+        }
+        fn case_null(&self) -> TypeString {
+            String::from("null")
+        }
+        fn case_optional_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString {
+            format!("Option<{}>", type_statement.into())
+        }
+        fn case_string(&self) -> TypeString {
+            String::from("String")
+        }
+        fn case_array_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString {
+            format!("Vec<{}>", type_statement.into())
         }
     }
 }
