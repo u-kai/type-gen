@@ -19,8 +19,9 @@ use crate::json::{Json, Number};
 
 impl Json {
     pub fn into_type_structures(self, root_name: impl Into<TypeName>) -> Vec<TypeStructure> {
+        let root_name = root_name.into();
         match self {
-            Json::Object(obj) => Self::case_root_obj(root_name, obj),
+            Json::Object(obj) => Self::case_obj(&root_name, obj).into(),
             Json::Array(arr) => Self::case_arr(arr),
             Json::String(_) => Self::case_alias_string(root_name),
             Json::Null => Self::case_alias_null(root_name),
@@ -28,51 +29,17 @@ impl Json {
             Json::Boolean(_) => Self::case_alias_boolean(root_name),
         }
     }
-    fn case_root_obj(
-        root_name: impl Into<TypeName>,
-        obj: BTreeMap<String, Self>,
-    ) -> Vec<TypeStructure> {
+    fn case_obj(
         // Test
-        let root_name = root_name.into();
-        let mut result = VecDeque::new();
-        // id:usize , obj: TestObj , name: String ,
-        let mut root_properties = BTreeMap::new();
-        for (key, json) in obj {
-            // obj
-            let property_key = PropertyKey::from(key);
-            let (property_type, children) = match json {
-                Json::String(_) => (make_primitive_type(make_string()), None),
-                Json::Number(num) => (Self::json_num_to_property_type(num), None),
-                Json::Boolean(_) => (make_primitive_type(make_bool()), None),
-                Json::Null => (make_any(), None),
-                Json::Object(obj) => {
-                    // TestObj
-                    let type_name = property_key.to_type_name(&root_name);
-                    // TestObj childrens
-                    let childrens = Self::obj_to_childrens(&type_name, obj);
-                    // Custom TestObj
-                    let property_type = Self::type_name_to_property_type(type_name);
-                    (property_type, Some(childrens))
-                }
-                Json::Array(_) => todo!(),
-            };
-            root_properties.insert(property_key, property_type);
-            children.map(|mut children| result.append(&mut children));
-        }
-        let root =
-            TypeStructure::Composite(CompositeTypeStructure::new(root_name, root_properties));
-        result.push_front(root);
-        result.into()
-    }
-    fn obj_to_childrens(
-        // TestObj
         type_name: &TypeName,
+        // {id: usize, name: string, child:{id: usize,data:{name:string}}}
         obj: BTreeMap<String, Self>,
     ) -> VecDeque<TypeStructure> {
         let mut result = VecDeque::new();
+        // tobe {id: usize, name:string, child:TestChild, }
         let mut properties = BTreeMap::new();
         for (key, json) in obj {
-            // data
+            // id,name,child
             let property_key = PropertyKey::from(key);
             match json {
                 Json::String(_) => {
@@ -88,23 +55,30 @@ impl Json {
                     properties.insert(property_key, make_any());
                 }
                 Json::Object(obj) => {
-                    // TestObjData
+                    // TestChild
                     let type_name = property_key.to_type_name(&type_name);
-                    let mut childrens = Self::obj_to_childrens(&type_name, obj);
+                    // vec![TestChild { id:usize, data:TestChildData },TestChildData {name: string}]
+                    let mut childrens = Self::case_obj(&type_name, obj);
+                    // PropertyType::Custom(TestChild)
                     let property_type = PropertyType::new_custom_type(type_name);
                     result.append(&mut childrens);
+                    //insert child TestChild
                     properties.insert(property_key, property_type);
                 }
                 Json::Array(_) => todo!(),
             }
         }
+        // Test {id: usize, name: string, child: TestChild}
         let type_structure =
             TypeStructure::Composite(CompositeTypeStructure::new(type_name, properties));
         result.push_front(type_structure);
+
+        // vec![
+        //    Test {id: usize, name: string, child: TestChild},
+        //    TestChild { id:usize, data:TestChildData },
+        //    TestChildData {name: string}
+        // ]
         result
-    }
-    fn type_name_to_property_type(type_name: TypeName) -> PropertyType {
-        PropertyType::new_custom_type(type_name)
     }
     fn case_arr(arr: Vec<Self>) -> Vec<TypeStructure> {
         vec![]
