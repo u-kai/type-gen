@@ -1,6 +1,25 @@
 use std::path::Path;
+pub fn mv_files(
+    dirs: Vec<impl AsRef<Path>>,
+    src: &str,
+    dist: &str,
+    to_extension: &str,
+) -> Vec<String> {
+    dirs.into_iter()
+        .map(|dir| {
+            let dir = dir.as_ref();
+            let extension = dir.extension().unwrap().to_str().unwrap();
+            let original_filename = dir.file_name().unwrap().to_str().unwrap();
+            let new_filename = original_filename.replace(extension, to_extension);
+            format!("{}{}", get_dir(dir).replace(src, dist), new_filename)
+        })
+        .collect()
+}
 
 pub fn get_dir(path: impl AsRef<Path>) -> String {
+    if path.as_ref().is_dir() {
+        return path.as_ref().to_str().unwrap().to_string();
+    }
     let filename = path.as_ref().file_name().unwrap().to_str().unwrap();
     path.as_ref().to_str().unwrap().replace(filename, "")
 }
@@ -20,6 +39,22 @@ pub fn split_dirs(path: impl AsRef<Path>) -> Vec<String> {
 }
 mod test_file_operations {
     use super::*;
+    #[test]
+    fn test_mv_files() {
+        let paths = vec![
+            "./src/test.txt",
+            "./src/dir1/test.txt",
+            "./src/dir2/test.txt",
+        ];
+        assert_eq!(
+            mv_files(paths, "src", "dist", "rs"),
+            vec![
+                "./dist/test.rs",
+                "./dist/dir1/test.rs",
+                "./dist/dir2/test.rs",
+            ]
+        );
+    }
     #[test]
     fn test_get_dir() {
         let path = "./dir1/test.txt";
