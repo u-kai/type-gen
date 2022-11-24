@@ -1,5 +1,27 @@
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
+pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
+    let mut all_files = Vec::new();
+    let root_dir = fs::read_dir(root_dir_path).unwrap();
+    root_dir
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| match entry.file_type() {
+            Ok(file_type) => Some((file_type, entry.path())),
+            Err(_) => None,
+        })
+        .for_each(|(file_type, path)| {
+            if file_type.is_dir() {
+                let mut files = all_file_path(path);
+                all_files.append(&mut files);
+                return;
+            }
+            all_files.push(path)
+        });
+    all_files
+}
 pub fn all_mkdir(dirs: Vec<impl AsRef<Path>>) {
     dirs.into_iter()
         .map(|dir| get_dir(dir))
