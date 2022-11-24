@@ -3,7 +3,7 @@ use lang_common::{
         additional_defines::additional_statement::AdditionalStatementProvider,
         generators::generator::TypeDefineGenerator,
     },
-    types::{property_key::PropertyKey, structures::TypeStructure, type_name::TypeName},
+    types::{property_key::PropertyKey, type_name::TypeName},
 };
 
 use super::{
@@ -14,45 +14,6 @@ use super::{
     type_statement_generator::RustTypeStatementGenerator,
 };
 
-pub struct RustTypeDefainGenerator {
-    inner: TypeDefineGenerator<
-        RustTypeStatementGenerator,
-        RustPropertyStatementGenerator,
-        RustLangMapper,
-        AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
-    >,
-}
-impl RustTypeDefainGenerator {
-    pub fn new(
-        mapper: RustLangMapper,
-        property_generator: RustPropertyStatementGenerator,
-        type_generator: RustTypeStatementGenerator,
-        additional_provider: AdditionalStatementProvider<
-            RustVisibility,
-            RustComment,
-            RustAttribute,
-        >,
-    ) -> Self {
-        Self {
-            inner: TypeDefineGenerator::new(
-                type_generator,
-                property_generator,
-                mapper,
-                additional_provider,
-            ),
-        }
-    }
-    pub fn generate_one(&self, type_structure: TypeStructure) -> String {
-        self.inner.generate(type_structure)
-    }
-    pub fn generate(&self, type_structures: Vec<TypeStructure>) -> Vec<String> {
-        type_structures
-            .into_iter()
-            .map(|types| self.inner.generate(types))
-            .collect()
-    }
-}
-
 pub struct RustTypeDefainGeneratorBuilder {
     inner: AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
 }
@@ -62,11 +23,18 @@ impl<'a> RustTypeDefainGeneratorBuilder {
             inner: AdditionalStatementProvider::new(),
         }
     }
-    pub fn build(self) -> RustTypeDefainGenerator {
+    pub fn build(
+        self,
+    ) -> TypeDefineGenerator<
+        RustTypeStatementGenerator,
+        RustPropertyStatementGenerator,
+        RustLangMapper,
+        AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
+    > {
         let mapper = RustLangMapper;
         let property_generator = RustPropertyStatementGenerator::new();
         let type_generator = RustTypeStatementGenerator::new();
-        RustTypeDefainGenerator::new(mapper, property_generator, type_generator, self.inner)
+        TypeDefineGenerator::new(type_generator, property_generator, mapper, self.inner)
     }
     pub fn set_all_type_optional(mut self, is_all_optioal: bool) -> Self {
         self.inner.set_all_type_optional(is_all_optioal);
