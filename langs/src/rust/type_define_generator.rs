@@ -1,7 +1,7 @@
 use lang_common::{
     type_defines::{
         additional_defines::additional_statement::AdditionalStatementProvider,
-        generators::generator::TypeDefineGenerator,
+        builder::TypeDefineBuilder, generators::generator::TypeDefineGenerator,
     },
     types::{property_key::PropertyKey, type_name::TypeName},
 };
@@ -17,13 +17,25 @@ use super::{
 pub struct RustTypeDefainGeneratorBuilder {
     inner: AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
 }
-impl<'a> RustTypeDefainGeneratorBuilder {
+impl RustTypeDefainGeneratorBuilder {
     pub fn new() -> Self {
         Self {
             inner: AdditionalStatementProvider::new(),
         }
     }
-    pub fn build(
+}
+impl
+    TypeDefineBuilder<
+        RustTypeStatementGenerator,
+        RustPropertyStatementGenerator,
+        RustLangMapper,
+        AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
+        RustVisibility,
+        RustComment,
+        RustAttribute,
+    > for RustTypeDefainGeneratorBuilder
+{
+    fn build(
         self,
     ) -> TypeDefineGenerator<
         RustTypeStatementGenerator,
@@ -36,35 +48,35 @@ impl<'a> RustTypeDefainGeneratorBuilder {
         let type_generator = RustTypeStatementGenerator::new();
         TypeDefineGenerator::new(type_generator, property_generator, mapper, self.inner)
     }
-    pub fn set_all_type_optional(mut self, is_all_optioal: bool) -> Self {
+    fn set_all_type_optional(mut self, is_all_optioal: bool) -> Self {
         self.inner.set_all_type_optional(is_all_optioal);
         self
     }
-    pub fn set_all_type_visibility(mut self, visibility: RustVisibility) -> Self {
+    fn set_all_type_visibility(mut self, visibility: RustVisibility) -> Self {
         self.inner.set_all_type_visibility(visibility);
         self
     }
-    pub fn set_all_property_visibility(mut self, visibility: RustVisibility) -> Self {
+    fn set_all_property_visibility(mut self, visibility: RustVisibility) -> Self {
         self.inner.set_all_property_visibility(visibility);
         self
     }
-    pub fn set_all_type_comment(mut self, comment: RustComment) -> Self {
+    fn set_all_type_comment(mut self, comment: RustComment) -> Self {
         self.inner.set_all_type_comment(comment);
         self
     }
-    pub fn set_all_property_comment(mut self, comment: RustComment) -> Self {
+    fn set_all_property_comment(mut self, comment: RustComment) -> Self {
         self.inner.set_all_property_comment(comment);
         self
     }
-    pub fn set_all_type_attribute(mut self, attribute: RustAttribute) -> Self {
+    fn set_all_type_attribute(mut self, attribute: RustAttribute) -> Self {
         self.inner.set_all_type_attribute(attribute);
         self
     }
-    pub fn set_all_property_attribute(mut self, attribute: RustAttribute) -> Self {
+    fn set_all_property_attribute(mut self, attribute: RustAttribute) -> Self {
         self.inner.set_all_property_attribute(attribute);
         self
     }
-    pub fn add_type_attribute(
+    fn add_type_attribute(
         mut self,
         type_name: impl Into<TypeName>,
         attribute: RustAttribute,
@@ -72,7 +84,7 @@ impl<'a> RustTypeDefainGeneratorBuilder {
         self.inner.add_type_attribute(type_name, attribute);
         self
     }
-    pub fn add_property_attribute(
+    fn add_property_attribute(
         mut self,
         type_name: impl Into<TypeName>,
         property_key: impl Into<PropertyKey>,
@@ -82,15 +94,11 @@ impl<'a> RustTypeDefainGeneratorBuilder {
             .add_property_attribute(type_name, property_key, attribute);
         self
     }
-    pub fn add_type_comment(
-        mut self,
-        type_name: impl Into<TypeName>,
-        comment: RustComment,
-    ) -> Self {
+    fn add_type_comment(mut self, type_name: impl Into<TypeName>, comment: RustComment) -> Self {
         self.inner.add_type_comment(type_name, comment);
         self
     }
-    pub fn add_property_comment(
+    fn add_property_comment(
         mut self,
         type_name: impl Into<TypeName>,
         property_key: impl Into<PropertyKey>,
@@ -100,7 +108,7 @@ impl<'a> RustTypeDefainGeneratorBuilder {
             .add_property_comment(type_name, property_key, comment);
         self
     }
-    pub fn add_optional(
+    fn add_optional(
         mut self,
         type_name: impl Into<TypeName>,
         property_key: impl Into<PropertyKey>,
@@ -108,7 +116,7 @@ impl<'a> RustTypeDefainGeneratorBuilder {
         self.inner.add_optional(type_name, property_key);
         self
     }
-    pub fn add_require(
+    fn add_require(
         mut self,
         type_name: impl Into<TypeName>,
         property_key: impl Into<PropertyKey>,
@@ -116,7 +124,7 @@ impl<'a> RustTypeDefainGeneratorBuilder {
         self.inner.add_require(type_name, property_key);
         self
     }
-    pub fn add_type_visibility(
+    fn add_type_visibility(
         mut self,
         type_name: impl Into<TypeName>,
         visibility: RustVisibility,
@@ -124,7 +132,7 @@ impl<'a> RustTypeDefainGeneratorBuilder {
         self.inner.add_type_visibility(type_name, visibility);
         self
     }
-    pub fn add_property_visibility(
+    fn add_property_visibility(
         mut self,
         type_name: impl Into<TypeName>,
         property_key: impl Into<PropertyKey>,
@@ -138,12 +146,15 @@ impl<'a> RustTypeDefainGeneratorBuilder {
 
 #[cfg(test)]
 mod test_type_define_generator {
-    use lang_common::types::{
-        primitive_type::primitive_type_factories::{make_string, make_usize},
-        property_type::property_type_factories::{
-            make_array_type, make_custom_type, make_primitive_type,
+    use lang_common::{
+        type_defines::builder::TypeDefineBuilder,
+        types::{
+            primitive_type::primitive_type_factories::{make_string, make_usize},
+            property_type::property_type_factories::{
+                make_array_type, make_custom_type, make_primitive_type,
+            },
+            structures::TypeStructure,
         },
-        structures::TypeStructure,
     };
 
     use crate::rust::{
