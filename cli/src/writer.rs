@@ -1,4 +1,17 @@
-use std::path::Path;
+use std::{fs, path::Path};
+pub fn all_mkdir(dirs: Vec<impl AsRef<Path>>) {
+    dirs.into_iter()
+        .map(|dir| get_dir(dir))
+        .inspect(|dir| println!("get_dir{:#?}", dir))
+        .flat_map(|dir| split_dirs(dir))
+        .inspect(|dir| println!("splited{:#?}", dir))
+        .for_each(|dir| {
+            let path: &Path = dir.as_ref();
+            if !path.exists() {
+                fs::create_dir(path).unwrap();
+            }
+        })
+}
 pub fn mv_files(
     dirs: Vec<impl AsRef<Path>>,
     src: &str,
@@ -6,6 +19,7 @@ pub fn mv_files(
     to_extension: &str,
 ) -> Vec<String> {
     dirs.into_iter()
+        .inspect(|dir| println!("before rename = {:#?}", dir.as_ref()))
         .map(|dir| {
             let dir = dir.as_ref();
             let extension = dir.extension().unwrap().to_str().unwrap();
@@ -13,11 +27,12 @@ pub fn mv_files(
             let new_filename = original_filename.replace(extension, to_extension);
             format!("{}{}", get_dir(dir).replace(src, dist), new_filename)
         })
+        .inspect(|dir| println!("rename = {}", dir))
         .collect()
 }
 
 pub fn get_dir(path: impl AsRef<Path>) -> String {
-    if path.as_ref().is_dir() {
+    if path.as_ref().is_dir() || path.as_ref().extension().is_none() {
         return path.as_ref().to_str().unwrap().to_string();
     }
     let filename = path.as_ref().file_name().unwrap().to_str().unwrap();
@@ -31,6 +46,7 @@ pub fn split_dirs(path: impl AsRef<Path>) -> Vec<String> {
         .split("/")
         .into_iter()
         .filter(|s| *s != "." && *s != "")
+        .inspect(|dir| println!("splited_dirs = {}", dir))
         .fold(Vec::new(), |mut acc, s| {
             dir += &format!("{}/", s);
             acc.push(dir.clone());
@@ -63,6 +79,15 @@ mod test_file_operations {
     #[test]
     fn test_split_dirs() {
         let path = "./src/example/child/test.txt";
+        assert_eq!(
+            split_dirs(path),
+            vec![
+                "src/".to_string(),
+                "src/example/".to_string(),
+                "src/example/child/".to_string(),
+            ]
+        );
+        let path = "./src/example/child/";
         assert_eq!(
             split_dirs(path),
             vec![

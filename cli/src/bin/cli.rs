@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use cli::writer::{all_mkdir, mv_files};
 use json::json::Json;
 use serde::{Deserialize, Serialize};
 
@@ -15,19 +16,13 @@ fn main() {
     let json = read_to_string("config.json").unwrap();
     let json: Config = serde_json::from_str(&json).unwrap();
     let src = json.src;
-    let files = all_file_path(src);
-    mv_files(files, "rs")
+    let files = all_file_path(src)
+        .into_iter()
+        .map(|path| path.to_str().unwrap().to_string())
+        .collect();
+    all_mkdir(mv_files(files, "examples/jsons", "examples/dist", "rs"))
 }
 
-fn mv_files(src: Vec<PathBuf>, to_ext: &str) {
-    src.into_iter().for_each(|path| {
-        let front_of_ext = path
-            .to_str()
-            .unwrap()
-            .replace(path.extension().unwrap().to_str().unwrap(), to_ext);
-        create_dir_all(front_of_ext).unwrap();
-    })
-}
 fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
     let mut all_files = Vec::new();
     let root_dir = fs::read_dir(root_dir_path).unwrap();
