@@ -15,9 +15,21 @@ pub enum Json {
 impl Json {
     pub fn count_array_nest(array: &Vec<Json>) -> usize {
         fn rec_count(array: &Vec<Json>, count: usize) -> usize {
-            0
+            if array.len() == 0 {
+                return count + 1;
+            }
+            let mut max = count;
+            for json in array {
+                match json {
+                    Json::Array(array) => {
+                        max = rec_count(array, count + 1).max(max);
+                    }
+                    _ => return count + 1,
+                }
+            }
+            max
         }
-        0
+        rec_count(array, 0)
     }
     pub fn put_together(array: Vec<Json>) -> [Json; 1] {
         [Self::put_together_array_json(array)]
@@ -90,11 +102,14 @@ enum JsonType {
     String,
 }
 impl JsonType {
-    fn check_array_content_type(array: &Vec<Json>) -> Self {
+    fn get_represent_from_array(array: &Vec<Json>) -> &Json {
         if array.len() == 0 {
-            return Self::Null;
+            return &Json::Null;
         }
-        match &array[0] {
+        &array[0]
+    }
+    fn check_array_content_type(array: &Vec<Json>) -> Self {
+        match Self::get_represent_from_array(array) {
             Json::Object(_) => Self::Object,
             Json::Array(_) => Self::Array,
             Json::Null => Self::Null,
@@ -112,10 +127,70 @@ impl JsonType {
         }
     }
 }
+
+#[cfg(test)]
+mod test_count_nest {
+    use super::*;
+    #[test]
+    fn test_case_first_element_is_empty() {
+        let Json::Array(array_json) = Json::from(r#"[
+            [],
+            [
+                [],
+                [{"key":"value"},{"key":"value2"}],
+                [{"key":"value3"}]
+            ]
+        ]"#) else {
+            panic!()
+         };
+        assert_eq!(Json::count_array_nest(&array_json), 3);
+    }
+    #[test]
+    fn test_case_double() {
+        let Json::Array(array_json) = Json::from(r#"[[{"key":"value"},{"key":"value2"}],[{"key":"value3"}]]"#) else {
+            panic!()
+         };
+        assert_eq!(Json::count_array_nest(&array_json), 2);
+    }
+    #[test]
+    fn test_case_one() {
+        let Json::Array(array_json) = Json::from(r#"[{"key":"value"}]"#) else {
+            panic!()
+         };
+        assert_eq!(Json::count_array_nest(&array_json), 1);
+    }
+}
 #[cfg(test)]
 mod test_put_together {
 
     use super::*;
+    #[test]
+    fn test_case_first_element_is_empty() {
+        let json = Json::from(
+            r#"{
+            "arr":[
+                    [],
+                    [
+                        [],
+                        [{"key":"value"},{"key":"value2"}],
+                        [{"key":"value3"}]
+                    ]
+                ]
+        }"#,
+        );
+        let mut arr = BTreeMap::new();
+        arr.insert("key".to_string(), Json::String(String::default()));
+        let mut tobe = BTreeMap::new();
+        tobe.insert(
+            "arr".to_string(),
+            Json::Array(vec![Json::Array(vec![Json::Array(vec![Json::Object(
+                arr,
+            )])])]),
+        );
+        let tobe = Json::Object(tobe);
+        let expect = Json::put_together_array_json(vec![json]);
+        assert_eq!(expect, tobe);
+    }
     #[test]
     fn test_case_double_nest_array() {
         let obj = r#"
@@ -201,8 +276,6 @@ mod test_put_together {
         );
         let expect = Json::put_together_array_json(vec![Json::from(obj)]);
         assert_eq!(expect, Json::Object(tobe));
-        println!("{:#?}", expect);
-        assert!(false);
     }
     #[test]
     fn test_case_nest_array_obj() {
