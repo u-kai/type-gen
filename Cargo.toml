@@ -5,4 +5,5 @@ members = [
     "lang-common",
     "langs",
     "utils",
+    "cli",
 ]

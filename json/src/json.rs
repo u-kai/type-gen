@@ -1,4 +1,9 @@
-use std::{array, collections::BTreeMap};
+use std::{
+    collections::BTreeMap,
+    fs::File,
+    io::{BufReader, Read},
+    path::PathBuf,
+};
 
 use serde_json::Value;
 use utils::store_fn::push_to_btree_vec;
@@ -18,6 +23,13 @@ impl Json {
     }
     pub(crate) fn count_put_together_nest(put_together: &[Json; 1]) -> usize {
         Self::count_array_nest(put_together)
+    }
+    pub fn from_file(path: impl Into<PathBuf>) -> Self {
+        let file = File::open(path.into()).unwrap();
+        let mut result = String::new();
+        let mut reader = BufReader::new(file);
+        reader.read_to_string(&mut result).unwrap();
+        Json::from(result.as_str())
     }
     fn count_array_nest(array: &[Json]) -> usize {
         fn rec_count(array: &[Json], count: usize) -> usize {
