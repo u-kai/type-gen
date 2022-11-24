@@ -4,7 +4,7 @@ use utils::store_fn::get_tuple_key_store;
 
 use crate::types::{property_key::PropertyKey, type_name::TypeName};
 
-pub trait Comment {
+pub trait Comment: From<String> {
     fn to_type_define(&self) -> String;
     fn to_property_define(&self) -> String;
 }

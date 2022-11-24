@@ -1,4 +1,33 @@
 {
-  "src": "examples/jsons",
-  "dist": "examples/dist"
+  "src": {
+    "root": "examples/jsons",
+    "extension": "json"
+  },
+  "dist": {
+    "root": "examples/dist",
+    "extension": "rs"
+  },
+  "comment": {
+    "type": {
+      "Test": "this is root",
+      "TestData": "this is test data"
+    },
+    "property": {
+      "Test": {
+        "id": "id is must set",
+        "key": "optional"
+      }
+    }
+  },
+  "attribute": {
+    "alltype": "allow(unuse)\nderive(Serialize, Deserialize,Clone,Debug)",
+    "allproperty": "allow(unuse)"
+  },
+  "visibility": {
+    "alltype": "pub",
+    "allproperty": "pub"
+  },
+  "optional": {
+    "all": true
+  }
 }

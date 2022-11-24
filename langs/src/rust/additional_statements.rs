@@ -63,12 +63,34 @@ pub enum RustVisibility {
     Private,
     Public,
     PublicSuper,
-    PubilcSelf,
+    PublicSelf,
     PublicCrate,
 }
+impl RustVisibility {
+    fn from_str(str: &str) -> Result<Self, String> {
+        match str {
+            "pub" | "public" | "Pub" | "Public" | "export" => Ok(Self::Public),
+            "" | "private" | "Private" => Ok(Self::Private),
+            "pub(self)" | "pub (self)" | "pub self" => Ok(Self::PublicSelf),
+            "pub(super)" | "pub (super)" | "pub super" => Ok(Self::PublicSuper),
+            "pub(crate)" | "pub (crate)" | "pub crate" => Ok(Self::PublicCrate),
+            _ => Err(format!("{} is not define rust visibility", str)),
+        }
+    }
+}
+
 impl Default for RustVisibility {
     fn default() -> Self {
         Self::Private
+    }
+}
+impl<T> From<T> for RustVisibility
+where
+    T: Into<String>,
+{
+    fn from(str: T) -> Self {
+        let str: String = str.into();
+        RustVisibility::from_str(&str).unwrap()
     }
 }
 impl Visibility for RustVisibility {
@@ -77,7 +99,7 @@ impl Visibility for RustVisibility {
             Self::Private => "",
             Self::Public => "pub ",
             Self::PublicSuper => "pub(super) ",
-            Self::PubilcSelf => "pub(self) ",
+            Self::PublicSelf => "pub(self) ",
             Self::PublicCrate => "pub(crate) ",
         }
     }
@@ -86,7 +108,7 @@ impl Visibility for RustVisibility {
             Self::Private => "",
             Self::Public => "pub ",
             Self::PublicSuper => "pub(super) ",
-            Self::PubilcSelf => "pub(self) ",
+            Self::PublicSelf => "pub(self) ",
             Self::PublicCrate => "pub(crate) ",
         }
     }

@@ -21,7 +21,16 @@ impl RustAttribute {
 }
 impl From<RustAttributeKind> for RustAttribute {
     fn from(kind: RustAttributeKind) -> Self {
-        Self { all: vec![kind] }
+        match kind {
+            RustAttributeKind::Original(originals) => {
+                let all = originals
+                    .split("\n")
+                    .map(|ori| RustAttributeKind::Original(ori.to_string()))
+                    .collect::<Vec<_>>();
+                Self { all }
+            }
+            _ => Self { all: vec![kind] },
+        }
     }
 }
 
@@ -30,9 +39,12 @@ where
     I: Into<String>,
 {
     fn from(str: I) -> Self {
-        let mut result = Self::new();
-        result.add_attribute(RustAttributeKind::Original(str.into()));
-        result
+        let str: String = str.into();
+        let all = str
+            .split("\n")
+            .map(|ori| RustAttributeKind::Original(ori.to_string()))
+            .collect::<Vec<_>>();
+        Self { all }
     }
 }
 impl Attribute for RustAttribute {

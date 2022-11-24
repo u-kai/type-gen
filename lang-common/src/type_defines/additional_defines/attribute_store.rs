@@ -4,10 +4,19 @@ use utils::store_fn::get_tuple_key_store;
 
 use crate::types::{property_key::PropertyKey, type_name::TypeName};
 
-pub trait Attribute {
+pub trait Attribute: From<String> {
     fn to_type_define(&self) -> String;
     fn to_property_define(&self) -> String;
 }
+///impl<A,I> From<I> for A
+///where
+///A:Attribute,
+///I:Into<String>
+///{
+///fn from(str: I) -> Self {
+///str.into()
+///}
+///}
 pub struct AttributeStore<A>
 where
     A: Attribute,

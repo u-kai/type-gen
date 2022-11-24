@@ -3,24 +3,34 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use cli::writer::{all_mkdir, mv_files};
+use cli::{
+    type_configuration::ConfigJson,
+    writer::{all_mkdir, mv_files},
+};
 use json::json::Json;
-use serde::{Deserialize, Serialize};
+use langs::rust::builder::RustTypeDefainGeneratorBuilder;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Config {
-    src: String,
-    dist: String,
-}
 fn main() {
     let json = read_to_string("config.json").unwrap();
-    let json: Config = serde_json::from_str(&json).unwrap();
-    let src = json.src;
-    let files = all_file_path(src)
+
+    let json: ConfigJson = serde_json::from_str(&json).unwrap();
+    println!("{:#?}", json);
+    let builder = RustTypeDefainGeneratorBuilder::new();
+    let definer = json.to_definer(builder);
+    let type_structure = Json::from(r#"{"key":"value"}"#).into_type_structures("Test");
+    let statements = definer
+        .generate(type_structure)
         .into_iter()
-        .map(|path| path.to_str().unwrap().to_string())
-        .collect();
-    all_mkdir(mv_files(files, "examples/jsons", "examples/dist", "rs"))
+        .reduce(|acc, cur| format!("{}{}\n", acc, cur))
+        .unwrap();
+    println!("{}", statements);
+
+    //let src = json.src;
+    //let files = all_file_path(src)
+    //.into_iter()
+    //.map(|path| path.to_str().unwrap().to_string())
+    //.collect();
+    //all_mkdir(mv_files(files, "examples/jsons", "examples/dist", "rs"))
 }
 
 fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {

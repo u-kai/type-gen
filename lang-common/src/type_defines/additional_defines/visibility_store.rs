@@ -4,7 +4,7 @@ use utils::store_fn::get_tuple_key_store;
 
 use crate::types::{property_key::PropertyKey, type_name::TypeName};
 
-pub trait Visibility {
+pub trait Visibility: From<String> {
     fn to_type_define(&self) -> &'static str;
     fn to_property_define(&self) -> &'static str;
     fn default_type_visibility() -> &'static str;
