@@ -13,6 +13,15 @@ pub enum Json {
     String(String),
 }
 impl Json {
+    pub fn count_array_nest(array: &Vec<Json>) -> usize {
+        fn rec_count(array: &Vec<Json>, count: usize) -> usize {
+            0
+        }
+        0
+    }
+    pub fn put_together(array: Vec<Json>) -> [Json; 1] {
+        [Self::put_together_array_json(array)]
+    }
     pub fn put_together_array_json(array: Vec<Json>) -> Self {
         match JsonType::check_array_content_type(&array) {
             JsonType::Object => {
