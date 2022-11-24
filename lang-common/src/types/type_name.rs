@@ -17,3 +17,9 @@ where
         TypeName::new(str)
     }
 }
+
+impl From<&TypeName> for TypeName {
+    fn from(ref_: &TypeName) -> Self {
+        ref_.as_str().into()
+    }
+}

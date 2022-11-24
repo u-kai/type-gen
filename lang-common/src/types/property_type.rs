@@ -9,6 +9,9 @@ pub enum PropertyType {
     Any,
 }
 impl PropertyType {
+    pub fn new_custom_type(type_name: impl Into<TypeName>) -> Self {
+        Self::CustomType(type_name.into())
+    }
     pub fn to_optional(self) -> Self {
         Self::Optional(Box::new(self))
     }
