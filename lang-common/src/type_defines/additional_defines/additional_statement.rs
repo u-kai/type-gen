@@ -63,6 +63,7 @@ where
             visibility_store: VisibilityStore::new(),
         }
     }
+    // attribute
     pub fn set_all_type_attribute(&mut self, attribute: A) {
         self.attribute_store.set_all_type_attribute(attribute)
     }
@@ -82,6 +83,7 @@ where
         self.attribute_store
             .add_property_attribute(type_name, property_key, attribute)
     }
+    // comment
     pub fn add_type_comment(&mut self, type_name: impl Into<TypeName>, comment: C) {
         self.comment_store.add_type_comment(type_name, comment)
     }
@@ -94,6 +96,7 @@ where
         self.comment_store
             .add_property_comment(type_name, property_key, comment)
     }
+    // optional
     pub fn add_optional(
         &mut self,
         type_name: impl Into<TypeName>,
@@ -110,6 +113,7 @@ where
         self.optional_type_store
             .add_require(type_name, property_key);
     }
+    // visibility
     pub fn add_type_visibility(&mut self, type_name: impl Into<TypeName>, visibility: V) {
         self.visibility_store
             .add_type_visibility(type_name, visibility);
