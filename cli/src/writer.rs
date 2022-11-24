@@ -7,18 +7,16 @@ pub fn get_dir(path: impl AsRef<Path>) -> String {
 
 pub fn split_dirs(path: impl AsRef<Path>) -> Vec<String> {
     let all_dir = get_dir(path);
-    let mut result = Vec::new();
-    let splited_dirs = all_dir
+    let mut dir = String::new();
+    all_dir
         .split("/")
         .into_iter()
         .filter(|s| *s != "." && *s != "")
-        .collect::<Vec<_>>();
-    let mut dir = String::new();
-    for i in 0..splited_dirs.len() {
-        dir += &format!("{}/", splited_dirs[i]);
-        result.push(dir.clone());
-    }
-    result
+        .fold(Vec::new(), |mut acc, s| {
+            dir += &format!("{}/", s);
+            acc.push(dir.clone());
+            acc
+        })
 }
 mod test_file_operations {
     use super::*;
