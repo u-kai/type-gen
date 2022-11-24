@@ -68,6 +68,26 @@ impl<'a> RustTypeDefainGeneratorBuilder {
         let type_generator = RustTypeStatementGenerator::new();
         RustTypeDefainGenerator::new(mapper, property_generator, type_generator, self.inner)
     }
+    pub fn set_all_type_optional(mut self, is_all_optioal: bool) -> Self {
+        self.inner.set_all_type_optional(is_all_optioal);
+        self
+    }
+    pub fn set_all_type_visibility(mut self, visibility: RustVisibility) -> Self {
+        self.inner.set_all_type_visibility(visibility);
+        self
+    }
+    pub fn set_all_property_visibility(mut self, visibility: RustVisibility) -> Self {
+        self.inner.set_all_property_visibility(visibility);
+        self
+    }
+    pub fn set_all_type_comment(mut self, comment: RustComment) -> Self {
+        self.inner.set_all_type_comment(comment);
+        self
+    }
+    pub fn set_all_property_comment(mut self, comment: RustComment) -> Self {
+        self.inner.set_all_property_comment(comment);
+        self
+    }
     pub fn set_all_type_attribute(mut self, attribute: RustAttribute) -> Self {
         self.inner.set_all_type_attribute(attribute);
         self
@@ -160,10 +180,90 @@ mod test_type_define_generator {
 
     use crate::rust::{
         additional_statements::{RustComment, RustVisibility},
-        attribute::RustAttribute,
+        attribute::{RustAttribute, RustAttributeKind},
     };
 
     use super::RustTypeDefainGeneratorBuilder;
+    #[test]
+    fn integration_test_case_set_all() {
+        let root = TypeStructure::make_composite(
+            "Root",
+            vec![
+                ("id", make_primitive_type(make_usize())),
+                ("data", make_array_type(make_custom_type("RootData"))),
+            ],
+        );
+        let root_data = TypeStructure::make_composite(
+            "RootData",
+            vec![(
+                "results",
+                make_array_type(make_custom_type("RootDataResults")),
+            )],
+        );
+        let root_data_results = TypeStructure::make_composite(
+            "RootDataResults",
+            vec![
+                ("name", make_primitive_type(make_string())),
+                ("age", make_primitive_type(make_usize())),
+                ("accountId", make_primitive_type(make_string())),
+            ],
+        );
+        let type_comment = RustComment::from("this is type");
+        let type_attribute = RustAttribute::from_derives(vec!["Clone", "Debug"]);
+        let type_visibility = RustVisibility::Public;
+        let property_comment = RustComment::from("this is property");
+        let property_attribute =
+            RustAttribute::from(RustAttributeKind::Original("allow(unuse)".to_string()));
+        let property_visibility = RustVisibility::Public;
+        let is_all_optional = true;
+        let generator = RustTypeDefainGeneratorBuilder::new()
+            .set_all_type_attribute(type_attribute)
+            .set_all_type_comment(type_comment)
+            .set_all_type_visibility(type_visibility)
+            .set_all_property_attribute(property_attribute)
+            .set_all_property_comment(property_comment)
+            .set_all_property_visibility(property_visibility)
+            .set_all_type_optional(is_all_optional)
+            .build();
+        let tobe = vec![
+            r#"// this is type
+#[derive(Clone,Debug)]
+pub struct Root {
+    // this is property
+    #[allow(unuse)]
+    pub data: Option<Vec<RootData>>,
+    // this is property
+    #[allow(unuse)]
+    pub id: Option<usize>,
+}"#,
+            r#"// this is type
+#[derive(Clone,Debug)]
+pub struct RootData {
+    // this is property
+    #[allow(unuse)]
+    pub results: Option<Vec<RootDataResults>>,
+}"#,
+            r#"// this is type
+#[derive(Clone,Debug)]
+pub struct RootDataResults {
+    // this is property
+    #[allow(unuse)]
+    #[serde(rename = "accountId")]
+    pub account_id: Option<String>,
+    // this is property
+    #[allow(unuse)]
+    pub age: Option<usize>,
+    // this is property
+    #[allow(unuse)]
+    pub name: Option<String>,
+}"#,
+        ];
+        let expect = generator.generate(vec![root, root_data, root_data_results]);
+        for e in &expect {
+            println!("{}", e);
+        }
+        assert_eq!(expect, tobe)
+    }
 
     #[test]
     fn integration_test() {

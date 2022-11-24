@@ -108,6 +108,35 @@ mod test_rust_type_statement_generator {
     use super::RustTypeStatementGenerator;
 
     #[test]
+    fn test_case_custum_set_all() {
+        let type_name = "Test";
+        let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);
+
+        let mut type_comment = RustComment::new();
+        let comment1 = "this is comment1";
+        let comment2 = "this is comment2";
+        type_comment.add_comment_line(comment1);
+        type_comment.add_comment_line(comment2);
+        let mut type_attr = RustAttribute::new();
+        type_attr.add_attribute(RustAttributeKind::Derives(vec!["Clone", "Debug"]));
+        additional_provider.set_all_type_comment(type_comment);
+        additional_provider.set_all_type_attribute(type_attr);
+        additional_provider.set_all_type_visibility(RustVisibility::Public);
+        let generator = RustTypeStatementGenerator::new();
+        let tobe = r#"// this is comment1
+// this is comment2
+#[derive(Clone,Debug)]
+pub struct Test {
+    id: usize,
+}"#;
+        let expect = generator.generate_case_composite(
+            &type_name.into(),
+            format!("    id: usize,\n"),
+            &additional_provider,
+        );
+        assert_eq!(expect, tobe);
+    }
+    #[test]
     fn test_case_custum_with_all() {
         let type_name = "Test";
         let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);

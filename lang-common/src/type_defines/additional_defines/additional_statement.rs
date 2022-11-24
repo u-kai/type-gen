@@ -84,6 +84,12 @@ where
             .add_property_attribute(type_name, property_key, attribute)
     }
     // comment
+    pub fn set_all_type_comment(&mut self, comment: C) {
+        self.comment_store.set_all_type_comment(comment)
+    }
+    pub fn set_all_property_comment(&mut self, comment: C) {
+        self.comment_store.set_all_property_comment(comment)
+    }
     pub fn add_type_comment(&mut self, type_name: impl Into<TypeName>, comment: C) {
         self.comment_store.add_type_comment(type_name, comment)
     }
@@ -96,7 +102,32 @@ where
         self.comment_store
             .add_property_comment(type_name, property_key, comment)
     }
+    // visibility
+    pub fn set_all_type_visibility(&mut self, visibility: V) {
+        self.visibility_store.set_all_type_visibility(visibility)
+    }
+    pub fn set_all_property_visibility(&mut self, visibility: V) {
+        self.visibility_store
+            .set_all_property_visibility(visibility)
+    }
+    pub fn add_type_visibility(&mut self, type_name: impl Into<TypeName>, visibility: V) {
+        self.visibility_store
+            .add_type_visibility(type_name, visibility);
+    }
+    pub fn add_property_visibility(
+        &mut self,
+        type_name: impl Into<TypeName>,
+        property_key: impl Into<PropertyKey>,
+        visibility: V,
+    ) {
+        self.visibility_store
+            .add_property_visibility(type_name, property_key, visibility);
+    }
     // optional
+    pub fn set_all_type_optional(&mut self, is_optional_default: bool) {
+        self.optional_type_store
+            .set_all_is_optional(is_optional_default)
+    }
     pub fn add_optional(
         &mut self,
         type_name: impl Into<TypeName>,
@@ -112,20 +143,6 @@ where
     ) {
         self.optional_type_store
             .add_require(type_name, property_key);
-    }
-    // visibility
-    pub fn add_type_visibility(&mut self, type_name: impl Into<TypeName>, visibility: V) {
-        self.visibility_store
-            .add_type_visibility(type_name, visibility);
-    }
-    pub fn add_property_visibility(
-        &mut self,
-        type_name: impl Into<TypeName>,
-        property_key: impl Into<PropertyKey>,
-        visibility: V,
-    ) {
-        self.visibility_store
-            .add_property_visibility(type_name, property_key, visibility);
     }
 }
 impl<V, C, A> AdditionalStatement for AdditionalStatementProvider<V, C, A>

@@ -19,6 +19,11 @@ impl RustAttribute {
         result
     }
 }
+impl From<RustAttributeKind> for RustAttribute {
+    fn from(kind: RustAttributeKind) -> Self {
+        Self { all: vec![kind] }
+    }
+}
 
 impl<I> From<I> for RustAttribute
 where
