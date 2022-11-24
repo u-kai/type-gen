@@ -113,9 +113,97 @@ impl JsonType {
     }
 }
 #[cfg(test)]
-mod test_from_array_json {
+mod test_put_together {
 
     use super::*;
+    #[test]
+    fn test_case_double_nest_array() {
+        let obj = r#"
+        {
+            "id":0,
+            "name":"kai",
+            "data": [
+                        [
+                            {
+                                "id":0
+                            },
+                            {
+                                "name":"kai"
+                            }
+                        ],
+                        [
+                            {
+                                "age":0
+                            },
+                            {
+                                "arr":[
+                                    {
+                                        "obj": {
+                                            "key":"value"
+                                        },
+                                        "arr": [
+                                            {
+                                                "id":0
+                                            },
+                                            {
+                                                "name":"kai"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        [
+                            {
+                                "arr":[
+                                    {
+                                        "arr": [
+                                            {
+                                                "key":"value"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+
+                        ]
+                    ]
+            }
+        "#;
+
+        let mut data_arr_arr = BTreeMap::new();
+        data_arr_arr.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        data_arr_arr.insert("name".to_string(), Json::String(String::default()));
+        data_arr_arr.insert("key".to_string(), Json::String(String::default()));
+
+        let mut data_arr_obj = BTreeMap::new();
+        data_arr_obj.insert("key".to_string(), Json::String(String::default()));
+
+        let mut data_arr = BTreeMap::new();
+        data_arr.insert(
+            "arr".to_string(),
+            Json::Array(vec![Json::Object(data_arr_arr)]),
+        );
+        data_arr.insert("obj".to_string(), Json::Object(data_arr_obj));
+
+        let mut data = BTreeMap::new();
+        data.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        data.insert("age".to_string(), Json::Number(Number::Usize64(0)));
+        data.insert("name".to_string(), Json::String(String::default()));
+        data.insert("arr".to_string(), Json::Array(vec![Json::Object(data_arr)]));
+
+        let mut tobe = BTreeMap::new();
+        tobe.insert("id".to_string(), Json::Number(Number::Usize64(0)));
+        tobe.insert("name".to_string(), Json::String(String::default()));
+        tobe.insert(
+            "data".to_string(),
+            Json::Array(vec![Json::Array(vec![Json::Object(data)])]),
+        );
+        let expect = Json::put_together_array_json(vec![Json::from(obj)]);
+        assert_eq!(expect, Json::Object(tobe));
+        println!("{:#?}", expect);
+        assert!(false);
+    }
     #[test]
     fn test_case_nest_array_obj() {
         let obj = r#"
