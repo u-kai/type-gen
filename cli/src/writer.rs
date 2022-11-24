@@ -1,10 +1,9 @@
 use std::{fs, path::Path};
+
 pub fn all_mkdir(dirs: Vec<impl AsRef<Path>>) {
     dirs.into_iter()
         .map(|dir| get_dir(dir))
-        .inspect(|dir| println!("get_dir{:#?}", dir))
         .flat_map(|dir| split_dirs(dir))
-        .inspect(|dir| println!("splited{:#?}", dir))
         .for_each(|dir| {
             let path: &Path = dir.as_ref();
             if !path.exists() {
@@ -19,7 +18,6 @@ pub fn mv_files(
     to_extension: &str,
 ) -> Vec<String> {
     dirs.into_iter()
-        .inspect(|dir| println!("before rename = {:#?}", dir.as_ref()))
         .map(|dir| {
             let dir = dir.as_ref();
             let extension = dir.extension().unwrap().to_str().unwrap();
@@ -27,7 +25,6 @@ pub fn mv_files(
             let new_filename = original_filename.replace(extension, to_extension);
             format!("{}{}", get_dir(dir).replace(src, dist), new_filename)
         })
-        .inspect(|dir| println!("rename = {}", dir))
         .collect()
 }
 

@@ -5,6 +5,7 @@ use utils::store_fn::{containes_to_kv_vec, push_to_kv_vec};
 use crate::types::{property_key::PropertyKey, type_name::TypeName};
 
 pub struct OptionalTypeStore {
+    all_option_flag: Option<bool>,
     default_option_flag: bool,
     optionlas: HashMap<TypeName, Vec<PropertyKey>>,
     requires: HashMap<TypeName, Vec<PropertyKey>>,
@@ -13,10 +14,14 @@ pub struct OptionalTypeStore {
 impl OptionalTypeStore {
     pub fn new(default_option_flag: bool) -> Self {
         Self {
+            all_option_flag: None,
             default_option_flag,
             optionlas: HashMap::new(),
             requires: HashMap::new(),
         }
+    }
+    pub fn set_all_is_optional(&mut self, bool: bool) {
+        self.all_option_flag = Some(bool)
     }
     pub fn add_optional(
         &mut self,
@@ -33,6 +38,9 @@ impl OptionalTypeStore {
         push_to_kv_vec(&mut self.requires, type_name.into(), property_key.into())
     }
     pub fn is_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool {
+        if self.all_option_flag.is_some() {
+            return self.all_option_flag.unwrap();
+        }
         if containes_to_kv_vec(&self.requires, &type_name, &property_key) {
             return false;
         }
@@ -45,6 +53,7 @@ impl OptionalTypeStore {
 impl Default for OptionalTypeStore {
     fn default() -> Self {
         Self {
+            all_option_flag: None,
             default_option_flag: true,
             optionlas: HashMap::new(),
             requires: HashMap::new(),
@@ -68,5 +77,10 @@ mod test_optional_checker {
         assert!(oc.is_optional(&"Test".into(), &"default".into()));
         assert!(oc.is_optional(&"TestData".into(), &"default".into()));
         assert!(!oc.is_optional(&"Test".into(), &"req".into()));
+        oc.set_all_is_optional(true);
+        assert!(oc.is_optional(&"Test".into(), &"op".into()));
+        assert!(oc.is_optional(&"Test".into(), &"default".into()));
+        assert!(oc.is_optional(&"TestData".into(), &"default".into()));
+        assert!(oc.is_optional(&"Test".into(), &"req".into()));
     }
 }
