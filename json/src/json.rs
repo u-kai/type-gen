@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{array, collections::BTreeMap};
 
 use serde_json::Value;
 use utils::store_fn::push_to_btree_vec;
@@ -13,8 +13,14 @@ pub enum Json {
     String(String),
 }
 impl Json {
-    pub fn count_array_nest(array: &Vec<Json>) -> usize {
-        fn rec_count(array: &Vec<Json>, count: usize) -> usize {
+    pub(crate) fn put_together_content_type(put_together: &[Json; 1]) -> JsonType {
+        JsonType::check_array_content_type_rec(put_together)
+    }
+    pub(crate) fn count_put_together_nest(put_together: &[Json; 1]) -> usize {
+        Self::count_array_nest(put_together)
+    }
+    fn count_array_nest(array: &[Json]) -> usize {
+        fn rec_count(array: &[Json], count: usize) -> usize {
             if array.len() == 0 {
                 return count + 1;
             }
@@ -91,7 +97,7 @@ impl Json {
         map
     }
 }
-enum JsonType {
+pub(crate) enum JsonType {
     Array,
     Boolean,
     Object,
@@ -102,13 +108,31 @@ enum JsonType {
     String,
 }
 impl JsonType {
-    fn get_represent_from_array(array: &Vec<Json>) -> &Json {
+    fn get_represent_from_array(array: &[Json]) -> &Json {
         if array.len() == 0 {
             return &Json::Null;
         }
         &array[0]
     }
-    fn check_array_content_type(array: &Vec<Json>) -> Self {
+    fn check_array_content_type_rec(array: &[Json]) -> Self {
+        match Self::get_represent_from_array(array) {
+            Json::Array(array) => Self::check_array_content_type(array),
+            Json::Object(_) => Self::Object,
+            Json::Null => Self::Null,
+            Json::String(_) => Self::String,
+            Json::Boolean(_) => Self::Boolean,
+            Json::Number(num) => {
+                if num.is_f64() {
+                    return Self::Float64;
+                }
+                if num.is_u64() {
+                    return Self::Usize64;
+                }
+                Self::Isize64
+            }
+        }
+    }
+    fn check_array_content_type(array: &[Json]) -> Self {
         match Self::get_represent_from_array(array) {
             Json::Object(_) => Self::Object,
             Json::Array(_) => Self::Array,
@@ -164,33 +188,6 @@ mod test_count_nest {
 mod test_put_together {
 
     use super::*;
-    #[test]
-    fn test_case_first_element_is_empty() {
-        let json = Json::from(
-            r#"{
-            "arr":[
-                    [],
-                    [
-                        [],
-                        [{"key":"value"},{"key":"value2"}],
-                        [{"key":"value3"}]
-                    ]
-                ]
-        }"#,
-        );
-        let mut arr = BTreeMap::new();
-        arr.insert("key".to_string(), Json::String(String::default()));
-        let mut tobe = BTreeMap::new();
-        tobe.insert(
-            "arr".to_string(),
-            Json::Array(vec![Json::Array(vec![Json::Array(vec![Json::Object(
-                arr,
-            )])])]),
-        );
-        let tobe = Json::Object(tobe);
-        let expect = Json::put_together_array_json(vec![json]);
-        assert_eq!(expect, tobe);
-    }
     #[test]
     fn test_case_double_nest_array() {
         let obj = r#"
@@ -623,3 +620,34 @@ mod test_json {
         assert_eq!(Json::from(source), tobe);
     }
 }
+
+// under case is not impl
+// because array first element is not same type to after element
+//
+//#[test]
+//fn test_case_first_element_is_empty() {
+//let json = Json::from(
+//r#"{
+//"arr":[
+//[],
+//[
+//[],
+//[{"key":"value"},{"key":"value2"}],
+//[{"key":"value3"}]
+//]
+//]
+//}"#,
+//);
+//let mut arr = BTreeMap::new();
+//arr.insert("key".to_string(), Json::String(String::default()));
+//let mut tobe = BTreeMap::new();
+//tobe.insert(
+//"arr".to_string(),
+//Json::Array(vec![Json::Array(vec![Json::Array(vec![Json::Object(
+//arr,
+//)])])]),
+//);
+//let tobe = Json::Object(tobe);
+//let expect = Json::put_together_array_json(vec![json]);
+//assert_eq!(expect, tobe);
+//}

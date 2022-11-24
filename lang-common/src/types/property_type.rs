@@ -15,6 +15,9 @@ impl PropertyType {
     pub fn to_optional(self) -> Self {
         Self::Optional(Box::new(self))
     }
+    pub fn to_array(self) -> Self {
+        Self::Array(Box::new(self))
+    }
 }
 pub mod property_type_factories {
     use super::*;
