@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[derive(Debug, Clone, Copy)]
 pub enum Extension {
     Rs,
     Txt,
@@ -12,6 +13,20 @@ pub enum Extension {
     Ts,
     Py,
     Json,
+}
+
+impl Into<&'static str> for &Extension {
+    fn into(self) -> &'static str {
+        match self {
+            Extension::Rs => "rs",
+            Extension::Txt => "txt",
+            Extension::Java => "java",
+            Extension::Go => "go",
+            Extension::Ts => "ts",
+            Extension::Py => "py",
+            Extension::Json => "json",
+        }
+    }
 }
 impl Into<&'static str> for Extension {
     fn into(self) -> &'static str {
@@ -27,16 +42,42 @@ impl Into<&'static str> for Extension {
     }
 }
 
-pub(crate) struct FileConfig<'a> {
-    root_dir: &'a str,
-    extension: Extension,
+pub(crate) struct TypeGenDistFilesWriter<'a> {
+    src_all_files: Vec<PathBuf>,
+    dist_extension: Extension,
+    src: &'a str,
+    dist: &'a str,
 }
-impl<'a> FileConfig<'a> {
-    fn new(root_dir: &'a str, extension: Extension) -> Self {
+
+impl<'a> TypeGenDistFilesWriter<'a> {
+    pub fn new(src: &'a str, dist: &'a str, dist_extension: Extension) -> Self {
+        let src_all_files = all_file_path(src);
         Self {
-            root_dir,
-            extension,
+            src_all_files,
+            dist_extension,
+            src,
+            dist,
         }
+    }
+    pub fn generate_all_dist_file_path(&self) -> impl Iterator<Item = String> + '_ {
+        self.src_all_files
+            .iter()
+            .map(|dir| {
+                let extension = dir.extension().unwrap().to_str().unwrap();
+                let dist_extension: &str = self.dist_extension.into();
+                let new_filename = dir
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .replace(extension, dist_extension);
+                format!(
+                    "{}{}",
+                    extract_directory_part_from_path(dir).replace(self.src, self.dist),
+                    new_filename
+                )
+            })
+            .into_iter()
     }
 }
 pub(crate) struct TypeGenDistDirectoriesCreator<'a> {
