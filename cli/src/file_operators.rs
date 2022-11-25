@@ -65,7 +65,6 @@ pub fn split_dirs(path: impl AsRef<Path>) -> Vec<String> {
         .split("/")
         .into_iter()
         .filter(|s| *s != "." && *s != "")
-        .inspect(|dir| println!("splited_dirs = {}", dir))
         .fold(Vec::new(), |mut acc, s| {
             dir += &format!("{}/", s);
             acc.push(dir.clone());

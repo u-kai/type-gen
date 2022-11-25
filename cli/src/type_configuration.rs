@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet, HashSet},
     fs::read_to_string,
     path::{Path, PathBuf},
 };
@@ -17,7 +17,7 @@ use lang_common::type_defines::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::file_operators::all_file_path;
+use crate::file_operators::{all_file_path, all_mkdir, get_dir, split_dirs};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigJson {
@@ -34,8 +34,36 @@ impl ConfigJson {
         let json: ConfigJson = serde_json::from_str(&json).unwrap();
         json
     }
-
-    pub fn get_src_all(&self) -> Vec<PathBuf> {
+    pub fn all_mkdir(&self) {
+        all_mkdir(self.generate_all_dist_dir_path());
+    }
+    pub fn generate_all_dist_dir_path(&self) -> Vec<String> {
+        self.generate_all_dist_file_path()
+            .into_iter()
+            .flat_map(|path| split_dirs(path))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect()
+    }
+    pub fn generate_all_dist_file_path(&self) -> Vec<String> {
+        self.get_src_all()
+            .into_iter()
+            .map(|src| {
+                let dist_file = src
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .replace(&self.src.extension, &self.dist.extension);
+                format!(
+                    "{}{}",
+                    get_dir(src).replace(&self.src.root, &self.dist.root),
+                    dist_file
+                )
+            })
+            .collect()
+    }
+    fn get_src_all(&self) -> Vec<PathBuf> {
         let path = &self.src.root;
         all_file_path(path)
     }

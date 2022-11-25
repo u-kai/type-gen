@@ -4,7 +4,7 @@ use langs::rust::builder::RustTypeDefainGeneratorBuilder;
 
 fn main() {
     let config = ConfigJson::from_file("config.json");
-    println!("{:#?}", config.get_src_all());
+    config.all_mkdir();
     let builder = RustTypeDefainGeneratorBuilder::new();
     let definer = config.to_definer(builder);
     let type_structure = Json::from(r#"{"key":"value"}"#).into_type_structures("Test");
