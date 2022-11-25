@@ -1,4 +1,8 @@
-use std::{collections::BTreeMap, fs::read_to_string, path::Path};
+use std::{
+    collections::BTreeMap,
+    fs::read_to_string,
+    path::{Path, PathBuf},
+};
 
 use lang_common::type_defines::{
     additional_defines::{
@@ -12,6 +16,8 @@ use lang_common::type_defines::{
     },
 };
 use serde::{Deserialize, Serialize};
+
+use crate::file_operators::all_file_path;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigJson {
@@ -27,6 +33,11 @@ impl ConfigJson {
         let json = read_to_string(path).unwrap();
         let json: ConfigJson = serde_json::from_str(&json).unwrap();
         json
+    }
+
+    pub fn get_src_all(&self) -> Vec<PathBuf> {
+        let path = &self.src.root;
+        all_file_path(path)
     }
     pub fn to_definer<T, P, M, A, V, C, At>(
         self,
