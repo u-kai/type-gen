@@ -1,7 +1,18 @@
 use std::{
     collections::BTreeSet,
-    fs,
+    fs::{self, read_to_string},
     path::{Path, PathBuf},
+};
+
+use lang_common::type_defines::{
+    additional_defines::{
+        additional_statement::AdditionalStatement, attribute_store::Attribute,
+        comment_store::Comment, visibility_store::Visibility,
+    },
+    generators::{
+        generator::{PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator},
+        mapper::LangTypeMapper,
+    },
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -41,9 +52,28 @@ impl Into<&'static str> for Extension {
         }
     }
 }
-
+pub(crate) struct TypeDefineSrcReader {
+    all_src_files: Vec<PathBuf>,
+}
+impl TypeDefineSrcReader {
+    fn new(src: &str) -> Self {
+        Self {
+            all_src_files: all_file_path(src),
+        }
+    }
+    fn all_src_filename_and_contents(&self) -> Vec<(String, String)> {
+        self.all_src_files
+            .iter()
+            .map(|src| self.filename_and_contents(src))
+            .collect()
+    }
+    fn filename_and_contents<P: AsRef<Path>>(&self, filepath: P) -> (String, String) {
+        let filepath = filepath.as_ref();
+        let contents = read_to_string(filepath).unwrap();
+        (extract_filename(filepath), contents)
+    }
+}
 pub(crate) struct TypeGenDistFilesWriter<'a> {
-    src_all_files: Vec<PathBuf>,
     dist_extension: Extension,
     src: &'a str,
     dist: &'a str,
@@ -51,16 +81,32 @@ pub(crate) struct TypeGenDistFilesWriter<'a> {
 
 impl<'a> TypeGenDistFilesWriter<'a> {
     pub fn new(src: &'a str, dist: &'a str, dist_extension: Extension) -> Self {
-        let src_all_files = all_file_path(src);
         Self {
-            src_all_files,
             dist_extension,
             src,
             dist,
         }
     }
-    pub fn generate_all_dist_file_path(&self) -> impl Iterator<Item = String> + '_ {
-        self.src_all_files
+    pub fn write_all<T, P, M, A, V, C, At>(
+        &self,
+        type_define_generator: TypeDefineGenerator<T, P, M, A>,
+        reader: TypeDefineSrcReader,
+    ) where
+        T: TypeStatementGenerator<M, A>,
+        P: PropertyStatementGenerator<M, A>,
+        M: LangTypeMapper,
+        A: AdditionalStatement,
+        V: Visibility,
+        C: Comment,
+        At: Attribute,
+    {
+    }
+
+    fn generate_all_dist_file_path(
+        &self,
+        src_all_files: &'a Vec<PathBuf>,
+    ) -> impl Iterator<Item = String> + '_ {
+        src_all_files
             .iter()
             .map(|dir| {
                 let extension = dir.extension().unwrap().to_str().unwrap();
@@ -173,8 +219,19 @@ pub fn mv_files(
         .collect()
 }
 
+fn extract_filename<P: AsRef<Path>>(path: P) -> String {
+    let filename_with_extension = path.as_ref().file_name().unwrap().to_str().unwrap();
+    let extension = format!(".{}", path.as_ref().extension().unwrap().to_str().unwrap());
+    filename_with_extension.replace(&extension, "")
+}
 mod test_file_operations {
     use super::*;
+    #[test]
+    fn test_extract_filename() {
+        let filepath = "./src/test.txt";
+        let tobe = "test";
+        assert_eq!(extract_filename(filepath), tobe.to_string());
+    }
     #[test]
     fn test_mv_files() {
         let paths = vec![

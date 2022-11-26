@@ -32,10 +32,10 @@ impl ConfigJson {
     }
     pub fn test(&self) {
         let writer = TypeGenDistFilesWriter::new(&self.src.root, &self.dist.root, Extension::Rs);
-        println!(
-            "{:#?}",
-            writer.generate_all_dist_file_path().collect::<Vec<_>>()
-        )
+        //println!(
+        //"{:#?}",
+        //writer.generate_all_dist_file_path().collect::<Vec<_>>()
+        //)
     }
     pub fn to_definer<T, P, M, A, V, C, At>(
         self,
