@@ -47,7 +47,7 @@ where
     pub fn generate_concat_define(&self, structures: Vec<TypeStructure>) -> TypeDefine {
         self.generate(structures)
             .into_iter()
-            .reduce(|acc, cur| format!("{}{}\n", acc, cur))
+            .reduce(|acc, cur| format!("{}\n\n{}", acc, cur))
             .unwrap()
     }
     pub fn generate(&self, structures: Vec<TypeStructure>) -> Vec<TypeDefine> {
