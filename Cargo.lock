@@ -3,10 +3,47 @@
 version = 3
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "json",
+ "lang-common",
+ "langs",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4217ad341ebadf8d8e724e264f13e593e0648f5b3e94b3896a5df283be015ecc"
+
+[[package]]
+name = "json"
+version = "0.1.0"
+dependencies = [
+ "lang-common",
+ "serde",
+ "serde_json",
+ "utils",
+]
+
+[[package]]
+name = "lang-common"
+version = "0.1.0"
+dependencies = [
+ "npc",
+ "utils",
+]
+
+[[package]]
+name = "langs"
+version = "0.1.0"
+dependencies = [
+ "lang-common",
+ "npc",
+]
 
 [[package]]
 name = "npc"
@@ -80,16 +117,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "type-gen"
+name = "unicode-ident"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ceab39d59e4c9499d4e5a8ee0e2735b891bb7308ac83dfb4e80cad195c9f6f3"
+
+[[package]]
+name = "utils"
+version = "0.1.0"
+
+[[package]]
+name = "v1"
 version = "0.1.0"
 dependencies = [
  "npc",
  "serde",
  "serde_json",
 ]
-
-[[package]]
-name = "unicode-ident"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ceab39d59e4c9499d4e5a8ee0e2735b891bb7308ac83dfb4e80cad195c9f6f3"
