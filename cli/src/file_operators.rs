@@ -1,9 +1,11 @@
 use std::{
     collections::BTreeSet,
-    fs::{self, read_to_string},
+    fs::{self, read_to_string, File},
+    io::{BufWriter, Write},
     path::{Path, PathBuf},
 };
 
+use json::json::Json;
 use lang_common::type_defines::{
     additional_defines::{
         additional_statement::AdditionalStatement, attribute_store::Attribute,
@@ -24,6 +26,20 @@ pub enum Extension {
     Ts,
     Py,
     Json,
+}
+impl From<&str> for Extension {
+    fn from(s: &str) -> Self {
+        match s {
+            "rs" => Extension::Rs,
+            "txt" => Extension::Txt,
+            "java" => Extension::Java,
+            "go" => Extension::Go,
+            "ts" => Extension::Ts,
+            "py" => Extension::Py,
+            "json" => Extension::Json,
+            _ => panic!("not impl extension {}", s),
+        }
+    }
 }
 
 impl Into<&'static str> for &Extension {
@@ -52,14 +68,17 @@ impl Into<&'static str> for Extension {
         }
     }
 }
-pub(crate) struct TypeDefineSrcReader {
+pub struct TypeDefineSrcReader {
     all_src_files: Vec<PathBuf>,
 }
 impl TypeDefineSrcReader {
-    fn new(src: &str) -> Self {
+    pub fn new(src: &str) -> Self {
         Self {
             all_src_files: all_file_path(src),
         }
+    }
+    fn all_src_filepaths(self) -> Vec<PathBuf> {
+        self.all_src_files
     }
     fn all_src_filename_and_contents(&self) -> Vec<(String, String)> {
         self.all_src_files
@@ -73,7 +92,7 @@ impl TypeDefineSrcReader {
         (extract_filename(filepath), contents)
     }
 }
-pub(crate) struct TypeGenDistFilesWriter<'a> {
+pub struct TypeGenDistFilesWriter<'a> {
     dist_extension: Extension,
     src: &'a str,
     dist: &'a str,
@@ -87,10 +106,10 @@ impl<'a> TypeGenDistFilesWriter<'a> {
             dist,
         }
     }
-    pub fn write_all<T, P, M, A, V, C, At>(
+    pub fn write_all_from_jsons<T, P, M, A, V, C, At>(
         &self,
-        type_define_generator: TypeDefineGenerator<T, P, M, A>,
         reader: TypeDefineSrcReader,
+        type_define_generator: TypeDefineGenerator<T, P, M, A>,
     ) where
         T: TypeStatementGenerator<M, A>,
         P: PropertyStatementGenerator<M, A>,
@@ -100,9 +119,29 @@ impl<'a> TypeGenDistFilesWriter<'a> {
         C: Comment,
         At: Attribute,
     {
+        // filename is without extension
+        let all_src_filename_and_contents = reader.all_src_filename_and_contents();
+
+        // all_src_filepath examples is ["./src/json/test.json","./src/json/demo.json"]
+        let all_src_filepath = reader.all_src_filepaths();
+
+        // setup dist directories
+        let directory_creator = TypeGenDistDirectoriesCreator::new(self.src, self.dist);
+        directory_creator.create_dist_directories(&all_src_filepath);
+
+        // all_dist_filepath examples is ["./dist/json/test.json","./dist/json/demo.json"]
+        let mut all_dist_filepath = self.generate_all_dist_filepath(&all_src_filepath);
+        for (filename, content) in all_src_filename_and_contents {
+            let json = Json::from(content.as_str());
+            let type_strcutres = json.into_type_structures(filename);
+            let type_define = type_define_generator.generate_concat_define(type_strcutres);
+            let dist_file = File::create(all_dist_filepath.next().unwrap()).unwrap();
+            let mut writer = BufWriter::new(dist_file);
+            writer.write_all(&type_define.as_bytes()).unwrap();
+        }
     }
 
-    fn generate_all_dist_file_path(
+    fn generate_all_dist_filepath(
         &self,
         src_all_files: &'a Vec<PathBuf>,
     ) -> impl Iterator<Item = String> + '_ {
@@ -126,7 +165,7 @@ impl<'a> TypeGenDistFilesWriter<'a> {
             .into_iter()
     }
 }
-pub(crate) struct TypeGenDistDirectoriesCreator<'a> {
+struct TypeGenDistDirectoriesCreator<'a> {
     src: &'a str,
     dist: &'a str,
 }

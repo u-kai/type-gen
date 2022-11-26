@@ -1,3 +1,5 @@
+use npc::convertor::NamingPrincipalConvertor;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeName(String);
 impl TypeName {
@@ -14,6 +16,7 @@ where
 {
     fn from(str: I) -> Self {
         let str: String = str.into();
+        let str = NamingPrincipalConvertor::new(&str).to_pascal();
         TypeName::new(str)
     }
 }

@@ -13,8 +13,6 @@ use lang_common::type_defines::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::file_operators::{Extension, TypeGenDistFilesWriter};
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigJson {
     src: IOConfig,
@@ -30,15 +28,17 @@ impl ConfigJson {
         let json: ConfigJson = serde_json::from_str(&json).unwrap();
         json
     }
-    pub fn test(&self) {
-        let writer = TypeGenDistFilesWriter::new(&self.src.root, &self.dist.root, Extension::Rs);
-        //println!(
-        //"{:#?}",
-        //writer.generate_all_dist_file_path().collect::<Vec<_>>()
-        //)
+    pub fn dist_extension(&self) -> &str {
+        &self.dist.extension
+    }
+    pub fn src(&self) -> &str {
+        &self.src.root
+    }
+    pub fn dist(&self) -> &str {
+        &self.dist.root
     }
     pub fn to_definer<T, P, M, A, V, C, At>(
-        self,
+        &self,
         mut builder: impl TypeDefineBuilder<T, P, M, A, V, C, At>,
     ) -> TypeDefineGenerator<T, P, M, A>
     where
