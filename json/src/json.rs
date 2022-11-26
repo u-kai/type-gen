@@ -9,7 +9,7 @@ use serde_json::Value;
 use utils::store_fn::push_to_btree_vec;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Json {
+pub(crate) enum Json {
     Array(Vec<Json>),
     Boolean(bool),
     Object(BTreeMap<String, Json>),
