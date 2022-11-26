@@ -2,7 +2,7 @@ use std::{
     collections::BTreeMap,
     fs::File,
     io::{BufReader, Read},
-    path::PathBuf,
+    path::Path,
 };
 
 use serde_json::Value;
@@ -24,8 +24,8 @@ impl Json {
     pub(crate) fn count_put_together_nest(put_together: &[Json; 1]) -> usize {
         Self::count_array_nest(put_together)
     }
-    pub fn from_file(path: impl Into<PathBuf>) -> Self {
-        let file = File::open(path.into()).unwrap();
+    pub fn from_file(path: impl AsRef<Path>) -> Self {
+        let file = File::open(path).unwrap();
         let mut result = String::new();
         let mut reader = BufReader::new(file);
         reader.read_to_string(&mut result).unwrap();
