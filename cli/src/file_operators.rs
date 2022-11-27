@@ -232,11 +232,6 @@ fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
         });
     all_files
 }
-fn mkdir(path: impl AsRef<Path>) {
-    if !path.as_ref().exists() {
-        fs::create_dir(path.as_ref()).unwrap();
-    }
-}
 fn extract_directory_part_from_path(path: impl AsRef<Path>) -> String {
     if path.as_ref().is_dir() || path.as_ref().extension().is_none() {
         return path.as_ref().to_str().unwrap().to_string();
@@ -265,11 +260,6 @@ pub fn mv_files(
         .collect()
 }
 
-fn extract_filename<P: AsRef<Path>>(path: P) -> String {
-    let filename_with_extension = path.as_ref().file_name().unwrap().to_str().unwrap();
-    let extension = format!(".{}", path.as_ref().extension().unwrap().to_str().unwrap());
-    filename_with_extension.replace(&extension, "")
-}
 mod test_file_operations {
     use super::*;
     #[test]

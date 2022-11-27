@@ -40,9 +40,25 @@ pub fn mkdir(path: impl AsRef<Path>) {
         fs::create_dir(path.as_ref()).unwrap();
     }
 }
+pub fn extract_dir(path: impl AsRef<Path>) -> Option<String> {
+    if is_dir(path.as_ref()) {
+        return path.as_ref().to_str().map(|s| s.to_string());
+    }
+    let filename = path.as_ref().file_name()?.to_str()?;
+    path.as_ref().to_str().map(|s| s.replace(filename, ""))
+}
 #[cfg(test)]
 mod test_util_fns {
+    use crate::from_src_files::fs_operators::util_fns::extract_dir;
+
     use super::{all_file_path, is_dir};
+    #[test]
+    fn test_extract_dir() {
+        let path = "src/dist/test.txt";
+        assert_eq!(extract_dir(path).unwrap(), "src/dist/".to_string());
+        let path = "src/dist/";
+        assert_eq!(extract_dir(path).unwrap(), "src/dist/".to_string());
+    }
     #[test]
     fn test_is_dir() {
         let dir = "src/dist/";
