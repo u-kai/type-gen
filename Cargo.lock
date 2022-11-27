@@ -9,6 +9,7 @@ dependencies = [
  "json",
  "lang-common",
  "langs",
+ "npc",
  "serde",
  "serde_json",
 ]

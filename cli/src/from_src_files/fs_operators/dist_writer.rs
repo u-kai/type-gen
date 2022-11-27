@@ -1,17 +1,71 @@
-use super::{extension::Extension, src_paths::SrcPaths, util_fns::extract_dir};
+use std::{
+    fs::File,
+    io::{BufWriter, Write},
+};
 
-pub struct TypeDefineDistFilesWriter<'a> {
+use json::json::Json;
+use lang_common::type_defines::{
+    additional_defines::{
+        additional_statement::AdditionalStatement, attribute_store::Attribute,
+        comment_store::Comment, visibility_store::Visibility,
+    },
+    generators::{
+        generator::{PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator},
+        mapper::LangTypeMapper,
+    },
+};
+
+use super::{
+    dist_dir_maker::TypeDefineDistDirectoriesMaker, extension::Extension, src_paths::SrcPaths,
+    src_reader::TypeDefineSrcReader, util_fns::extract_dir,
+};
+
+pub trait TypeDefineDistFileDetail {
+    fn filename(&self, original: String) -> String;
+    fn add_content(&self, content: String) -> String;
+}
+pub struct TypeDefineDistFileWriter<'a> {
     src: &'a SrcPaths<'a>,
     dist: &'a str,
     dist_extension: Extension,
 }
 
-impl<'a> TypeDefineDistFilesWriter<'a> {
+impl<'a> TypeDefineDistFileWriter<'a> {
     pub fn new(src: &'a SrcPaths<'a>, dist: &'a str, dist_extension: Extension) -> Self {
         Self {
             dist_extension,
             src,
             dist,
+        }
+    }
+    pub fn write_all_from_jsons<T, P, M, A, V, C, At, D>(
+        &self,
+        reader: TypeDefineSrcReader,
+        type_define_generator: TypeDefineGenerator<T, P, M, A>,
+        detail: D,
+    ) where
+        T: TypeStatementGenerator<M, A>,
+        P: PropertyStatementGenerator<M, A>,
+        M: LangTypeMapper,
+        A: AdditionalStatement,
+        V: Visibility,
+        C: Comment,
+        At: Attribute,
+        D: TypeDefineDistFileDetail,
+    {
+        // setup dist directories
+        TypeDefineDistDirectoriesMaker::new(self.src, self.dist).make_dist_dirs();
+        //
+
+        let mut all_dist_file = self.gen_all_dist_filepath();
+        for src in reader.read_all_srcs() {
+            let json = Json::from(src.content());
+            let type_structures = json.into_type_structures(src.extracted_filename().unwrap());
+            let type_define = type_define_generator.generate_concat_define(type_structures);
+            let dist_file = File::create(detail.filename(all_dist_file.next().unwrap())).unwrap();
+            let write_content = detail.add_content(type_define);
+            let mut writer = BufWriter::new(dist_file);
+            writer.write_all(write_content.as_bytes()).unwrap();
         }
     }
     fn gen_all_dist_filepath(&self) -> impl Iterator<Item = String> + '_ {
@@ -37,9 +91,9 @@ impl<'a> TypeDefineDistFilesWriter<'a> {
 
 #[cfg(test)]
 mod test_dist {
-    use crate::from_src_files::fs_operators::{extension::Extension, src_paths::SrcPaths};
-
-    use super::TypeDefineDistFilesWriter;
+    use crate::from_src_files::fs_operators::{
+        dist_writer::TypeDefineDistFileWriter, extension::Extension, src_paths::SrcPaths,
+    };
 
     #[test]
     fn test_gen_all_dist_filepath() {
@@ -51,7 +105,7 @@ mod test_dist {
                 "./src/dir2/test.txt",
             ],
         );
-        let writer = TypeDefineDistFilesWriter::new(&src, "dist", Extension::Rs);
+        let writer = TypeDefineDistFileWriter::new(&src, "dist", Extension::Rs);
         let mut dists = writer.gen_all_dist_filepath();
         assert_eq!(dists.next().unwrap(), "./dist/test.rs".to_string());
         assert_eq!(dists.next().unwrap(), "./dist/dir1/test.rs".to_string());
