@@ -30,8 +30,15 @@ pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
         }
     }
 }
+
 pub fn is_dir<P: AsRef<Path>>(path: P) -> bool {
     path.as_ref().is_dir() || path.as_ref().extension().is_none()
+}
+
+pub fn mkdir(path: impl AsRef<Path>) {
+    if !path.as_ref().exists() {
+        fs::create_dir(path.as_ref()).unwrap();
+    }
 }
 #[cfg(test)]
 mod test_util_fns {
