@@ -20,6 +20,8 @@ impl<'a> TypeDefineSrcReader<'a> {
         Ok(SrcFile::from_file(filepath, contents))
     }
 }
+
+#[derive(Debug)]
 pub struct SrcFile {
     extracted_filename: Option<String>,
     content: String,

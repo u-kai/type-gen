@@ -80,7 +80,7 @@ impl<'a> TypeDefineDistFileWriter<'a> {
                 .unwrap()
                 .to_str()
                 .unwrap()
-                .replace(extension, dist_extension);
+                .replace(&format!(".{}", extension), &format!(".{}", dist_extension));
             format!(
                 "{}{}",
                 extract_dir(src_path)
@@ -113,6 +113,20 @@ mod test_dist {
         assert_eq!(dists.next().unwrap(), "./dist/test.rs".to_string());
         assert_eq!(dists.next().unwrap(), "./dist/dir1/test.rs".to_string());
         assert_eq!(dists.next().unwrap(), "./dist/dir2/test.rs".to_string());
+        assert_eq!(dists.next(), None);
+        let src = SrcPaths::for_test(
+            "src",
+            vec![
+                "./src/test.json",
+                "./src/dir1/test.json",
+                "./src/dir2/json.json",
+            ],
+        );
+        let writer = TypeDefineDistFileWriter::new(&src, "dist", Extension::Rs);
+        let mut dists = writer.gen_all_dist_filepath();
+        assert_eq!(dists.next().unwrap(), "./dist/test.rs".to_string());
+        assert_eq!(dists.next().unwrap(), "./dist/dir1/test.rs".to_string());
+        assert_eq!(dists.next().unwrap(), "./dist/dir2/json.rs".to_string());
         assert_eq!(dists.next(), None);
     }
 }
