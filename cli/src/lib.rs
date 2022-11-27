@@ -1,2 +1,2 @@
 pub mod from_src_files;
-pub mod type_configuration;
+pub(crate) mod type_configuration;

@@ -22,7 +22,7 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
     fn finaly(&self, dist_file: String, writed_content: String) {
         println!("writed done");
         println!("writed file path is {}", dist_file);
-        println!("writed content is {}", writed_content);
+        println!("writed content is \n{}", writed_content);
     }
 }
 

@@ -14,7 +14,7 @@ use lang_common::type_defines::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct ConfigJson {
+pub struct ConfigJson {
     src: IOConfig,
     dist: IOConfig,
     comment: Option<CommentConfig>,
