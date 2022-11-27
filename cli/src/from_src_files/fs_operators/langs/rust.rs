@@ -19,11 +19,25 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
     fn filename(&self, original: String) -> String {
         NamingPrincipalConvertor::new(&original).to_snake()
     }
+    fn finaly(&self, dist_file: String, writed_content: String) {
+        println!("writed done");
+        println!("writed file path is {}", dist_file);
+        println!("writed content is {}", writed_content);
+    }
 }
 
 #[cfg(test)]
 mod test_rust_typedefine_dist_file_detail {
     use super::*;
+    #[test]
+    fn test_filename() {
+        let old_filename = "test-rust.rs";
+        let tobe = "test_rust.rs";
+        assert_eq!(
+            RustTypeDefineDistFileDetail::new().filename(old_filename.to_string()),
+            tobe.to_string()
+        )
+    }
     #[test]
     fn test_add_content() {
         let content = "test";

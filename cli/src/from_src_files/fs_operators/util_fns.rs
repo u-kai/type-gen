@@ -3,33 +3,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn all_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
-    match fs::read_dir(root_dir_path.as_ref()) {
-        Ok(root_dir) => {
-            let mut results = Vec::new();
-            root_dir
-                .filter_map(|entry| entry.ok())
-                .filter_map(|entry| match entry.file_type() {
-                    Ok(file_type) => Some((file_type, entry.path())),
-                    Err(_) => None,
-                })
-                .for_each(|(file_type, path)| {
-                    if file_type.is_dir() {
-                        let mut files = all_path(path.clone());
-                        results.append(&mut files);
-                    }
-                    println!("path = {:?}", path);
-                    results.push(path)
-                });
-
-            results
-        }
-        Err(e) => {
-            println!("{}", e.to_string());
-            panic!()
-        }
-    }
-}
 pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
     match fs::read_dir(root_dir_path.as_ref()) {
         Ok(root_dir) => {
@@ -95,6 +68,34 @@ pub fn extract_dir<P: AsRef<Path>>(path: P) -> Option<String> {
     }
     let filename = path.as_ref().file_name()?.to_str()?;
     path.as_ref().to_str().map(|s| s.replace(filename, ""))
+}
+#[cfg(test)]
+fn all_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
+    match fs::read_dir(root_dir_path.as_ref()) {
+        Ok(root_dir) => {
+            let mut results = Vec::new();
+            root_dir
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| match entry.file_type() {
+                    Ok(file_type) => Some((file_type, entry.path())),
+                    Err(_) => None,
+                })
+                .for_each(|(file_type, path)| {
+                    if file_type.is_dir() {
+                        let mut files = all_path(path.clone());
+                        results.append(&mut files);
+                    }
+                    println!("path = {:?}", path);
+                    results.push(path)
+                });
+
+            results
+        }
+        Err(e) => {
+            println!("{}", e.to_string());
+            panic!()
+        }
+    }
 }
 #[cfg(test)]
 mod test_util_fns {
