@@ -5,6 +5,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+pub(crate) enum FileNamingPrincipal {
+    Snake,
+    Chain,
+    Camel,
+    Pascal,
+    Constant,
+}
 use json::json::Json;
 use lang_common::type_defines::{
     additional_defines::{
