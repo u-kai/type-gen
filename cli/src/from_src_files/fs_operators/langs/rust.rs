@@ -1,6 +1,6 @@
 use std::{
-    fs::{File, OpenOptions},
-    io::Write,
+    fs::{read_to_string, File, OpenOptions},
+    io::{Read, Write},
     path::Path,
 };
 
@@ -62,11 +62,16 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
                 ))
             };
             let write_mod_content = format!("pub mod {};\n", mod_name);
-            file.write_all(write_mod_content.as_bytes())
-                .expect(&format!(
-                    "path is {:?}, mod_name {} , \ncontent {}",
-                    path, mod_name, writed_content
-                ));
+            match read_to_string(path) {
+                Ok(str) if !str.contains(&write_mod_content) => {
+                    file.write_all(write_mod_content.as_bytes())
+                        .expect(&format!(
+                            "path is {:?}, mod_name {} , \ncontent {}",
+                            path, mod_name, writed_content
+                        ));
+                }
+                _ => (),
+            }
         }
 
         println!("writed done");

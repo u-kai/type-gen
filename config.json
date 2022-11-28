@@ -8,16 +8,8 @@
     "extension": "rs"
   },
   "comment": {
-    "type": {
-      "Test": "this is root",
-      "TestData": "this is test data"
-    },
-    "property": {
-      "Test": {
-        "id": "id is must set",
-        "key": "optional"
-      }
-    }
+    "alltype": "this is auto make type",
+    "allproperty": "this is auto make property"
   },
   "attribute": {
     "alltype": "allow(unuse)\nderive(Serialize, Deserialize,Clone,Debug)",
