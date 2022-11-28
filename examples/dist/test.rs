@@ -10,7 +10,6 @@ pub struct Test {
     #[allow(unuse)]
     pub obj: Option<TestObj>,
 }
-
 #[allow(unuse)]
 #[derive(Serialize, Deserialize,Clone,Debug)]
 pub struct TestObj {

@@ -1,17 +1,1 @@
-use serde_json::Value;
-use serde::{Deserialize,Serialize};
-#[allow(unuse)]
-#[derive(Serialize, Deserialize,Clone,Debug)]
-pub struct Child {
-    #[allow(unuse)]
-    pub child: Option<Vec<ChildChild>>,
-    #[allow(unuse)]
-    pub id: Option<usize>,
-}
-
-#[allow(unuse)]
-#[derive(Serialize, Deserialize,Clone,Debug)]
-pub struct ChildChild {
-    #[allow(unuse)]
-    pub hello: Option<String>,
-}
+pub mod json_placeholder;
