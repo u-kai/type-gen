@@ -108,10 +108,7 @@ mod test_rust_typedefine_dist_file_detail {
     #[test]
     fn test_add_content() {
         let content = "test";
-        let tobe = format!(
-            "use serde_json::Value;\nuse serde::{{Deserialize,Serialize}};\n{}",
-            content
-        );
+        let tobe = format!("use serde::{{Deserialize,Serialize}};\n{}", content);
         let detail = RustTypeDefineDistFileDetail::new();
         assert_eq!(detail.add_content(content.to_string()), tobe);
     }

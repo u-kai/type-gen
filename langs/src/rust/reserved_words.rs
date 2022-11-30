@@ -17,6 +17,7 @@ impl RustReservedWords {
         map.insert("super", "r#super");
         map.insert("crate", "r#crate");
         map.insert("abstract", "r#abstract");
+        map.insert("static", "r#static");
         map.insert("typeof", "r#typeof");
         map.insert("mod", "r#mod");
         map.insert("self", "r#self");
