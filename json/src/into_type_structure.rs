@@ -344,7 +344,34 @@ mod test_into_type_structures {
             ],
         )];
         assert_eq!(json.into_type_structures(name), tobe);
+        //#[test]
+        //fn test_case_not_use_str_obj() {
+        //let name = "Test";
+        //let json = Json::from(r#"{"key:value":{"id":0}}"#);
+        //let child = format!("{}Keyvalue", name);
+        //let tobe = vec![
+        //TypeStructure::make_composite(
+        //name,
+        //vec![("keyvalue", make_custom_type(child.clone()))],
+        //),
+        //TypeStructure::make_composite(
+        //&child,
+        //vec![("idvalue", make_primitive_type(make_usize()))],
+        //),
+        //];
+        //assert_eq!(json.into_type_structures(name), tobe);
+        //}
     }
+    //#[test]
+    //fn test_case_not_use_str() {
+    //let name = "Test";
+    //let json = Json::from(r#"{"key:data":"value"}"#);
+    //let tobe = vec![ TypeStructure::make_composite(
+    //name,
+    //vec![("keydata", make_primitive_type(make_string()))],
+    //)];
+    //assert_eq!(json.into_type_structures(name), tobe);
+    //}
     #[test]
     fn test_simple_obj_case() {
         let name = "Test";

@@ -44,11 +44,11 @@ impl RustPropertyStatementGenerator {
         {
             additional += &attribute;
         };
-        if !NamingPrincipal::is_snake(property_key.as_str()) {
+        if !NamingPrincipal::is_snake(property_key.as_str()) || property_key.is_rename() {
             additional += &format!(
                 "{head}#[serde(rename = \"{original}\")]\n",
                 head = RUST_PROPERTY_HEAD_SPACE,
-                original = property_key.as_str()
+                original = property_key.as_original_str()
             )
         }
         additional
@@ -251,6 +251,52 @@ mod test_rust_property_geneartor {
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let tobe = "    id: TestId,\n".to_string();
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_not_use_str_and_not_snake() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id:Value".into();
+        let property_type = make_primitive_type(make_usize());
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let tobe = format!(
+            "{head}#[serde(rename = \"id:Value\")]\n{head}id_value: usize,\n",
+            head = RUST_PROPERTY_HEAD_SPACE,
+        );
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_not_use_str() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id:value".into();
+        let property_type = make_primitive_type(make_usize());
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let tobe = format!(
+            "{head}#[serde(rename = \"id:value\")]\n{head}idvalue: usize,\n",
+            head = RUST_PROPERTY_HEAD_SPACE,
+        );
         assert_eq!(
             generator.generate(
                 &type_name,
