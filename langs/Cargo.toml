@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 lang-common = { path = "../lang-common" }
-npc = {git = "https://github.com/u-kai/npc.git"}
+npc = {git = "https://github.com/u-kai/npc.git",branch = "main"}
