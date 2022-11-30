@@ -70,6 +70,7 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
                             path, mod_name, writed_content
                         ));
                 }
+                Err(e) => println!("{:#?}", e),
                 _ => (),
             }
         }
