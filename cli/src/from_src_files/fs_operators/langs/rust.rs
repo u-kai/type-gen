@@ -12,7 +12,7 @@ pub struct RustTypeDefineDistFileDetail {
 impl RustTypeDefineDistFileDetail {
     pub fn new() -> Self {
         Self {
-            dependencies: vec!["serde::{Deserialize,Serialize}", "serde_json::Value"],
+            dependencies: vec!["serde::{Deserialize,Serialize}"],
         }
     }
     fn get_parent_filename(dist_file: impl AsRef<Path>) -> Option<String> {

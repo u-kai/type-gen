@@ -11,6 +11,8 @@ impl RustReservedWords {
         map.insert("use", "r#use");
         map.insert("as", "r#as");
         map.insert("if", "r#if");
+        map.insert("override", "r#override");
+        map.insert("virtual", "r#virtual");
         map.insert("while", "r#while");
         map.insert("super", "r#super");
         map.insert("crate", "r#crate");
