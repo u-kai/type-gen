@@ -44,8 +44,10 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
             .to_str()
             .unwrap()
             .replace(".rs", "");
+        println!("mod name = {}", mod_name);
         if let Some(parent_filename) = Self::get_parent_filename(&dist_file) {
             let path: &Path = parent_filename.as_ref();
+            println!("path = {:#?}", path);
             let mut file = if path.exists() {
                 OpenOptions::new()
                     .append(true)
@@ -71,7 +73,12 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
                         ));
                 }
                 Err(e) => println!("{:#?}", e),
-                _ => (),
+                _ => {
+                    println!(
+                        "not consider case . read_string is {:#?}",
+                        read_to_string(path)
+                    )
+                }
             }
         }
     }
