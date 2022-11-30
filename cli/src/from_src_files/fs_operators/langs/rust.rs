@@ -1,6 +1,6 @@
 use std::{
     fs::{read_to_string, File, OpenOptions},
-    io::{Read, Write},
+    io::Write,
     path::Path,
 };
 
@@ -73,10 +73,6 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
                 _ => (),
             }
         }
-
-        println!("writed done");
-        println!("writed file path is {}", dist_file);
-        println!("writed content is \n{}", writed_content);
     }
 }
 

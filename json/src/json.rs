@@ -53,6 +53,7 @@ impl Json {
         [Self::put_together_array_json(array)]
     }
     pub fn put_together_array_json(array: Vec<Json>) -> Self {
+        let for_debug = array.clone();
         match JsonType::check_array_content_type(&array) {
             JsonType::Object => {
                 let map = Self::collect_obj_from_array_json(array);
@@ -70,7 +71,7 @@ impl Json {
                     .into_iter()
                     .map(|json| {
                         let Json::Array(v) = json else {
-                        panic!("array index 0 is array. but array content is not array {:#?}",json);
+                        panic!("array index 0 is array. source array is \n {:#?} but array content is not array {:#?}",for_debug,json);
                     };
                         Self::put_together_array_json(v)
                     })
