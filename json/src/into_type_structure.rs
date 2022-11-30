@@ -12,7 +12,7 @@ use lang_common::types::{
         property_type_factories::{make_any, make_custom_type, make_primitive_type},
         PropertyType,
     },
-    structures::{CompositeTypeStructure, TypeStructure},
+    structures::{AliasTypeStructure, CompositeTypeStructure, TypeStructure},
     type_name::TypeName,
 };
 
@@ -97,8 +97,12 @@ impl Json {
         }
 
         // Test {id: usize, name: string, child: TestChild}
-        let type_structure =
-            TypeStructure::Composite(CompositeTypeStructure::new(type_name, properties));
+        // case obj is empty
+        let type_structure = if properties.len() == 0 {
+            TypeStructure::Alias(AliasTypeStructure::new(type_name, PropertyType::Any))
+        } else {
+            TypeStructure::Composite(CompositeTypeStructure::new(type_name, properties))
+        };
         result.push_front(type_structure);
 
         // vec![
@@ -344,34 +348,14 @@ mod test_into_type_structures {
             ],
         )];
         assert_eq!(json.into_type_structures(name), tobe);
-        //#[test]
-        //fn test_case_not_use_str_obj() {
-        //let name = "Test";
-        //let json = Json::from(r#"{"key:value":{"id":0}}"#);
-        //let child = format!("{}Keyvalue", name);
-        //let tobe = vec![
-        //TypeStructure::make_composite(
-        //name,
-        //vec![("keyvalue", make_custom_type(child.clone()))],
-        //),
-        //TypeStructure::make_composite(
-        //&child,
-        //vec![("idvalue", make_primitive_type(make_usize()))],
-        //),
-        //];
-        //assert_eq!(json.into_type_structures(name), tobe);
-        //}
     }
-    //#[test]
-    //fn test_case_not_use_str() {
-    //let name = "Test";
-    //let json = Json::from(r#"{"key:data":"value"}"#);
-    //let tobe = vec![ TypeStructure::make_composite(
-    //name,
-    //vec![("keydata", make_primitive_type(make_string()))],
-    //)];
-    //assert_eq!(json.into_type_structures(name), tobe);
-    //}
+    #[test]
+    fn test_case_empty_obj() {
+        let name = "Test";
+        let json = Json::from(r#"{}"#);
+        let tobe = vec![TypeStructure::make_alias(name, make_any())];
+        assert_eq!(json.into_type_structures(name), tobe);
+    }
     #[test]
     fn test_simple_obj_case() {
         let name = "Test";

@@ -14,14 +14,11 @@ impl RustReservedWords {
         map.insert("override", "r#override");
         map.insert("virtual", "r#virtual");
         map.insert("while", "r#while");
-        map.insert("super", "r#super");
         map.insert("crate", "r#crate");
         map.insert("abstract", "r#abstract");
         map.insert("static", "r#static");
         map.insert("typeof", "r#typeof");
         map.insert("mod", "r#mod");
-        map.insert("self", "r#self");
-        map.insert("Self", "r#Self");
         map.insert("extern", "r#extern");
         map.insert("f64", "r#f64");
         map.insert("i64", "r#i64");

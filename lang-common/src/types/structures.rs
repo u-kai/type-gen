@@ -45,9 +45,9 @@ pub struct AliasTypeStructure {
 }
 
 impl AliasTypeStructure {
-    pub fn new(name: TypeName, property_type: PropertyType) -> Self {
+    pub fn new(name: impl Into<TypeName>, property_type: PropertyType) -> Self {
         Self {
-            name,
+            name: name.into(),
             property_type,
         }
     }
