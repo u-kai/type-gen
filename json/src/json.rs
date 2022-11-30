@@ -66,19 +66,14 @@ impl Json {
                 json
             }
             JsonType::Array => {
-                let flated_array = array
-                    .into_iter()
-                    // bug todo
-                    // case array containe multi type
-                    .filter_map(|json| {
-                        let Json::Array(v) = json else {
-                        //panic!("array index 0 is array. source array is \n {:#?} but array content is not array {:#?}",for_debug,json);
+                let mut flated_array = vec![];
+                for json in array {
+                    let Json::Array(v) = json else {
                         println!("array index 0 is array. source array is but array content is not array {:#?}",json);
-                        return None;
+                        return Json::Null
                     };
-                        Some(Self::put_together_array_json(v))
-                    })
-                    .collect::<Vec<_>>();
+                    flated_array.push(Self::put_together_array_json(v))
+                }
                 match JsonType::check_array_content_type(&flated_array) {
                     JsonType::Object => {
                         Json::Array(vec![Self::put_together_array_json(flated_array)])
@@ -171,6 +166,14 @@ impl JsonType {
 #[cfg(test)]
 mod test_count_nest {
     use super::*;
+    #[test]
+    fn test_case_array_json_containe_mulit_type() {
+        let Json::Array(array_json) = Json::from(r#"[[{"key":"value"}],{"id":0}]"#)else{
+            panic!()
+        };
+
+        assert_eq!(Json::put_together_array_json(array_json), Json::Null);
+    }
     #[test]
     fn test_case_first_element_is_empty() {
         let Json::Array(array_json) = Json::from(r#"[
