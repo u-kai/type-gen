@@ -9,7 +9,9 @@ use lang_common::types::{
     },
     property_key::PropertyKey,
     property_type::{
-        property_type_factories::{make_any, make_custom_type, make_primitive_type},
+        property_type_factories::{
+            make_any, make_array_type, make_custom_type, make_primitive_type,
+        },
         PropertyType,
     },
     structures::{AliasTypeStructure, CompositeTypeStructure, TypeStructure},
@@ -51,7 +53,7 @@ impl Json {
         let root_name = root_name.into();
         match self {
             Json::Object(obj) => Self::case_obj(&root_name, obj).into(),
-            Json::Array(arr) => Self::case_arr(&root_name, arr).into(),
+            Json::Array(arr) => Self::case_alias_arr(&root_name, arr).into(),
             Json::String(_) => Self::case_alias_string(root_name),
             Json::Null => Self::case_alias_null(root_name),
             Json::Number(num) => Self::case_alias_num(root_name, num),
@@ -111,9 +113,14 @@ impl Json {
         // ]
         result
     }
-    fn case_arr(type_name: &TypeName, array: Vec<Json>) -> VecDeque<TypeStructure> {
+    fn case_alias_arr(type_name: &TypeName, array: Vec<Json>) -> VecDeque<TypeStructure> {
         let put_together = Self::put_together(array);
-        Self::put_togeher_to_structures(type_name, put_together)
+        let mut result = Self::put_togeher_to_structures(type_name, put_together);
+        result.push_front(TypeStructure::make_alias(
+            format!("{}Array", type_name.as_str()),
+            make_array_type(make_custom_type(type_name)),
+        ));
+        result
     }
     fn put_togeher_to_structures(
         type_name: &TypeName,
@@ -197,6 +204,20 @@ mod test_into_type_structures {
     };
 
     use super::*;
+    #[test]
+    fn test_case_only_array() {
+        let json = Json::from(r#"[{"key":"value"}]"#);
+        assert_eq!(
+            json.into_type_structures("Test"),
+            vec![
+                TypeStructure::make_alias("TestArray", make_array_type(make_custom_type("Test"))),
+                TypeStructure::make_composite(
+                    "Test",
+                    vec![("key", make_primitive_type(make_string()))]
+                )
+            ]
+        );
+    }
     #[test]
     fn test_complex_case() {
         let json = r#"{
