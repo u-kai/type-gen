@@ -1,34 +1,39 @@
-use std::collections::HashMap;
-
 #[derive(Debug, Clone)]
-pub struct RustReservedWords(HashMap<&'static str, &'static str>);
+
+pub struct RustReservedWords {
+    reserved: [&'static str; 46],
+    strict: [&'static str; 7],
+}
 impl RustReservedWords {
     pub fn new() -> Self {
-        let mut map = HashMap::new();
-        map.insert("type", "r#type");
-        map.insert("ref", "r#ref");
-        map.insert("match", "r#match");
-        map.insert("use", "r#use");
-        map.insert("as", "r#as");
-        map.insert("if", "r#if");
-        map.insert("override", "r#override");
-        map.insert("virtual", "r#virtual");
-        map.insert("while", "r#while");
-        map.insert("crate", "r#crate");
-        map.insert("abstract", "r#abstract");
-        map.insert("static", "r#static");
-        map.insert("typeof", "r#typeof");
-        map.insert("mod", "r#mod");
-        map.insert("extern", "r#extern");
-        map.insert("f64", "r#f64");
-        map.insert("i64", "r#i64");
-        map.insert("u64", "r#u64");
-        Self(map)
+        let reserved = [
+            "as", "async", "await", "break", "continue", "else", "enum", "false", "true", "fn",
+            "const", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut",
+            "pub", "ref", "return", "static", "struct", "super", "trait", "true", "type", "unsafe",
+            "where", "while", "abstract", "become", "box", "do", "final", "macro", "override",
+            "priv", "try", "typeof", "unsized", "virtual", "yield",
+        ];
+        let strict = ["extern", "Self", "self", "use", "crate", "_", "super"];
+        Self { reserved, strict }
     }
-    pub fn get_or_origin<'a>(&'a self, key: &'a str) -> &'a str {
-        match self.0.get(key) {
-            Some(reseved) => reseved,
-            None => key,
-        }
+    pub fn is_reserved_keywords(&self, word: &str) -> bool {
+        self.reserved.contains(&word)
+    }
+    pub fn is_strict_keywords(&self, word: &str) -> bool {
+        self.strict.contains(&word)
+    }
+}
+
+#[cfg(test)]
+mod test_rust_reserved_words {
+    use super::RustReservedWords;
+
+    #[test]
+    fn test_get_or_origin() {
+        let reserved_words = RustReservedWords::new();
+        assert_eq!(reserved_words.is_reserved_keywords("type"), true);
+        assert_eq!(reserved_words.is_strict_keywords("super"), true);
+        assert_eq!(reserved_words.is_reserved_keywords("data"), false);
+        assert_eq!(reserved_words.is_strict_keywords("data"), false);
     }
 }

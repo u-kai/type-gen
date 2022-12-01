@@ -9,7 +9,7 @@ dependencies = [
  "json",
  "lang-common",
  "langs",
- "npc 0.1.0 (git+https://github.com/u-kai/npc.git?branch=main)",
+ "npc",
  "serde",
  "serde_json",
 ]
@@ -34,7 +34,7 @@ dependencies = [
 name = "lang-common"
 version = "0.1.0"
 dependencies = [
- "npc 0.1.0 (git+https://github.com/u-kai/npc.git?branch=main)",
+ "npc",
  "utils",
 ]
 
@@ -43,18 +43,13 @@ name = "langs"
 version = "0.1.0"
 dependencies = [
  "lang-common",
- "npc 0.1.0 (git+https://github.com/u-kai/npc.git?branch=main)",
+ "npc",
 ]
 
 [[package]]
 name = "npc"
 version = "0.1.0"
-source = "git+https://github.com/u-kai/npc.git?branch=main#7bf2a86d7490998b8c9b27685e9f7b3ae2940c22"
-
-[[package]]
-name = "npc"
-version = "0.1.0"
-source = "git+https://github.com/u-kai/npc.git#7bf2a86d7490998b8c9b27685e9f7b3ae2940c22"
+source = "git+https://github.com/u-kai/npc.git?branch=main#f6ee99c39e08d33fe0694bfa29a7d1bc9b733ec4"
 
 [[package]]
 name = "proc-macro2"
@@ -136,7 +131,7 @@ version = "0.1.0"
 name = "v1"
 version = "0.1.0"
 dependencies = [
- "npc 0.1.0 (git+https://github.com/u-kai/npc.git)",
+ "npc",
  "serde",
  "serde_json",
 ]

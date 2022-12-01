@@ -15,16 +15,72 @@ use super::{
     mapper::RustLangMapper,
     reserved_words::RustReservedWords,
 };
-pub struct RustPropertyStatementGenerator {
-    reserved_words: RustReservedWords,
+struct RustPropertyKey<'a> {
+    convertor: NamingPrincipalConvertor<'a>,
 }
+
+impl<'a> RustPropertyKey<'a> {
+    fn new(original: &'a PropertyKey) -> Self {
+        Self {
+            convertor: NamingPrincipalConvertor::new(original.as_str()),
+        }
+    }
+    fn property_str(&self, reserved_words: &RustReservedWords, visibility: &str) -> String {
+        format!(
+            "{rename_attr}{head}{visibility}{property_key}",
+            head = RUST_PROPERTY_HEAD_SPACE,
+            rename_attr = self.rename_attr(),
+            visibility = visibility,
+            property_key = self.convert_key(reserved_words)
+        )
+    }
+    fn convert_key(&self, reserved_words: &RustReservedWords) -> String {
+        let converted = Self::replace_cannot_use_char(&self.convertor.to_snake());
+        if reserved_words.is_reserved_keywords(&converted) {
+            return Self::from_reserved_word(&converted);
+        }
+        if reserved_words.is_strict_keywords(&converted) {
+            return Self::from_strict_word(&converted);
+        }
+        converted
+    }
+    fn from_strict_word(strict_words: &str) -> String {
+        format!("{}_", strict_words)
+    }
+    fn from_reserved_word(reserved_words: &str) -> String {
+        format!(r"r#{}", reserved_words)
+    }
+    fn rename_attr(&self) -> String {
+        if Self::containe_cannot_use_char(self.convertor.original()) || !self.convertor.is_snake() {
+            format!(
+                "{head}#[serde(rename = \"{original}\")]\n",
+                head = RUST_PROPERTY_HEAD_SPACE,
+                original = self.convertor.original()
+            )
+        } else {
+            "".to_string()
+        }
+    }
+    fn replace_cannot_use_char(str: &str) -> String {
+        str.replace(Self::cannot_use_char, "")
+    }
+    fn containe_cannot_use_char(str: &str) -> bool {
+        str.contains(Self::cannot_use_char)
+    }
+    fn cannot_use_char(c: char) -> bool {
+        match c {
+            ':' | ';' | '#' | '$' | '%' | '&' | '~' | '=' | '|' | '\"' | '\'' | '{' | '}' | '?'
+            | '!' | '<' | '>' | '[' | ']' | '*' | '^' => true,
+            _ => false,
+        }
+    }
+}
+pub struct RustPropertyStatementGenerator {}
 pub const RUST_PROPERTY_HEAD_SPACE: &'static str = "    ";
 impl RustPropertyStatementGenerator {
     const NEXT_LINE: &'static str = ",\n";
     pub fn new() -> Self {
-        Self {
-            reserved_words: RustReservedWords::new(),
-        }
+        Self {}
     }
     fn make_additional(
         &self,
@@ -44,13 +100,6 @@ impl RustPropertyStatementGenerator {
         {
             additional += &attribute;
         };
-        if !NamingPrincipal::is_snake(property_key.as_str()) || property_key.is_rename() {
-            additional += &format!(
-                "{head}#[serde(rename = \"{original}\")]\n",
-                head = RUST_PROPERTY_HEAD_SPACE,
-                original = property_key.as_original_str()
-            )
-        }
         additional
     }
 }
@@ -73,19 +122,20 @@ impl<'a>
         >,
     ) -> String {
         let additional = self.make_additional(type_name, property_key, additional_provider);
-        let property_key_str = NamingPrincipalConvertor::new(property_key.as_str()).to_snake();
-        let property_key_str = self.reserved_words.get_or_origin(&property_key_str);
-        let property_type = if additional_provider.is_property_optional(type_name, property_key) {
+        let reserved_words = RustReservedWords::new();
+        let property_str = RustPropertyKey::new(property_key).property_str(
+            &reserved_words,
+            additional_provider.get_property_visibility(type_name, property_key),
+        );
+        let property_type = if additional_provider.is_property_optional(type_name, &property_key) {
             mapper.case_optional_type(mapper.case_property_type(property_type))
         } else {
             mapper.case_property_type(property_type)
         };
         format!(
-            "{additional}{head}{visibility}{property_key}: {property_type}{next_line}",
+            "{additional}{property_key}: {property_type}{next_line}",
             additional = additional,
-            head = RUST_PROPERTY_HEAD_SPACE,
-            visibility = additional_provider.get_property_visibility(type_name, property_key),
-            property_key = property_key_str,
+            property_key = property_str,
             property_type = property_type,
             next_line = Self::NEXT_LINE
         )

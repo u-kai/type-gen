@@ -46,7 +46,6 @@ impl Into<Vec<TypeStructure>> for IntoTypeStructureJson {
 }
 
 // into type structures impl
-
 impl Json {
     pub fn into_type_structures(self, root_name: impl Into<TypeName>) -> Vec<TypeStructure> {
         let root_name = root_name.into();
