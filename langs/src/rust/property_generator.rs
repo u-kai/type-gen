@@ -29,7 +29,7 @@ impl<'a> RustPropertyKey<'a> {
         format!(
             "{rename_attr}{head}{visibility}{property_key}",
             head = RUST_PROPERTY_HEAD_SPACE,
-            rename_attr = self.rename_attr(),
+            rename_attr = self.rename_attr(reserved_words),
             visibility = visibility,
             property_key = self.convert_key(reserved_words)
         )
@@ -50,8 +50,11 @@ impl<'a> RustPropertyKey<'a> {
     fn from_reserved_word(reserved_words: &str) -> String {
         format!(r"r#{}", reserved_words)
     }
-    fn rename_attr(&self) -> String {
-        if Self::containe_cannot_use_char(self.convertor.original()) || !self.convertor.is_snake() {
+    fn rename_attr(&self, reserved_words: &RustReservedWords) -> String {
+        if Self::containe_cannot_use_char(self.convertor.original())
+            || !self.convertor.is_snake()
+            || reserved_words.is_strict_keywords(self.convertor.original())
+        {
             format!(
                 "{head}#[serde(rename = \"{original}\")]\n",
                 head = RUST_PROPERTY_HEAD_SPACE,
@@ -322,6 +325,29 @@ mod test_rust_property_geneartor {
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let tobe = format!(
             "{head}#[serde(rename = \"id:Value\")]\n{head}id_value: usize,\n",
+            head = RUST_PROPERTY_HEAD_SPACE,
+        );
+        assert_eq!(
+            generator.generate(
+                &type_name,
+                &property_key,
+                &property_type,
+                &mapper,
+                &additional_provider
+            ),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_strict_word() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "super".into();
+        let property_type = make_primitive_type(make_usize());
+        let generator = RustPropertyStatementGenerator::new();
+        let mapper = RustLangMapper;
+        let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let tobe = format!(
+            "{head}#[serde(rename = \"super\")]\n{head}super_: usize,\n",
             head = RUST_PROPERTY_HEAD_SPACE,
         );
         assert_eq!(

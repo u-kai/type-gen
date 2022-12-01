@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 
 pub struct RustReservedWords {
-    reserved: [&'static str; 46],
+    reserved: [&'static str; 45],
     strict: [&'static str; 7],
 }
 impl RustReservedWords {
@@ -9,9 +9,9 @@ impl RustReservedWords {
         let reserved = [
             "as", "async", "await", "break", "continue", "else", "enum", "false", "true", "fn",
             "const", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut",
-            "pub", "ref", "return", "static", "struct", "super", "trait", "true", "type", "unsafe",
-            "where", "while", "abstract", "become", "box", "do", "final", "macro", "override",
-            "priv", "try", "typeof", "unsized", "virtual", "yield",
+            "pub", "ref", "return", "static", "struct", "trait", "true", "type", "unsafe", "where",
+            "while", "abstract", "become", "box", "do", "final", "macro", "override", "priv",
+            "try", "typeof", "unsized", "virtual", "yield",
         ];
         let strict = ["extern", "Self", "self", "use", "crate", "_", "super"];
         Self { reserved, strict }
