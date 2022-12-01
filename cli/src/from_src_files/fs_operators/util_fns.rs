@@ -3,6 +3,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[cfg(not(target_os = "windows"))]
+pub const SEPARATOR: &'static str = r#"/"#;
+#[cfg(target_os = "windows")]
+pub const SEPARATOR: &'static str = r#"\\"#;
+
 pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
     match fs::read_dir(root_dir_path.as_ref()) {
         Ok(root_dir) => {
@@ -51,11 +56,11 @@ fn split_dirs(path: impl AsRef<Path>) -> Option<impl Iterator<Item = String>> {
     let mut dir = String::new();
     Some(
         all_dir
-            .split("/")
+            .split(SEPARATOR)
             .into_iter()
             .filter(|s| *s != "." && *s != "")
             .fold(Vec::new(), |mut acc, s| {
-                dir += &format!("{}/", s);
+                dir += &format!("{}{}", s, SEPARATOR);
                 acc.push(dir.clone());
                 acc
             })
@@ -97,6 +102,7 @@ fn all_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
         }
     }
 }
+#[cfg(not(target_os = "windows"))]
 #[cfg(test)]
 mod test_util_fns {
 

@@ -92,6 +92,7 @@ impl<'a> TypeDefineDistFileWriter<'a> {
     }
 }
 
+#[cfg(not(target_os = "windows"))]
 #[cfg(test)]
 mod test_dist {
     use crate::from_src_files::fs_operators::{

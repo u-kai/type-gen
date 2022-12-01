@@ -4,7 +4,9 @@ use std::{
     path::Path,
 };
 
-use crate::from_src_files::fs_operators::dist_writer::TypeDefineDistFileDetail;
+use crate::from_src_files::fs_operators::{
+    dist_writer::TypeDefineDistFileDetail, util_fns::SEPARATOR,
+};
 use npc::convertor::NamingPrincipalConvertor;
 pub struct RustTypeDefineDistFileDetail {
     dependencies: Vec<&'static str>,
@@ -19,12 +21,10 @@ impl RustTypeDefineDistFileDetail {
         fn get_writed_filename(dist_file: impl AsRef<Path>) -> Option<String> {
             Some(dist_file.as_ref().file_name()?.to_str()?.to_string())
         }
-        Some(
-            dist_file
-                .as_ref()
-                .to_str()?
-                .replace(&format!("/{}", get_writed_filename(&dist_file)?), ".rs"),
-        )
+        Some(dist_file.as_ref().to_str()?.replace(
+            &format!("{}{}", SEPARATOR, get_writed_filename(&dist_file)?),
+            ".rs",
+        ))
     }
 }
 impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
@@ -84,6 +84,7 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
     }
 }
 
+#[cfg(not(target_os = "windows"))]
 #[cfg(test)]
 mod test_rust_typedefine_dist_file_detail {
     use super::*;

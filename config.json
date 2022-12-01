@@ -12,8 +12,8 @@
     "allproperty": "this is auto make property"
   },
   "attribute": {
-    "alltype": "allow(unuse)\nderive(Serialize, Deserialize,Clone,Debug)",
-    "allproperty": "allow(unuse)"
+    "alltype": "allow(unused)\nderive(Serialize, Deserialize,Clone,Debug)",
+    "allproperty": "allow(unused)"
   },
   "visibility": {
     "alltype": "pub",
