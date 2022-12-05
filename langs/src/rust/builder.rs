@@ -245,6 +245,63 @@ pub struct RootDataResults {
     }
 
     #[test]
+    fn integration_test_case_cannot_use() {
+        let root = TypeStructure::make_composite(
+            "Root",
+            vec![
+                ("id", make_primitive_type(make_usize())),
+                (
+                    "data:valu:e",
+                    make_array_type(make_custom_type("RootDatavalue")),
+                ),
+            ],
+        );
+        let root_data = TypeStructure::make_composite(
+            "RootDatavalue",
+            vec![(
+                "results",
+                make_array_type(make_custom_type("RootDatavalueResults")),
+            )],
+        );
+        let root_data_results = TypeStructure::make_composite(
+            "RootDatavalueResults",
+            vec![
+                ("name", make_primitive_type(make_string())),
+                ("age", make_primitive_type(make_usize())),
+                ("accountId", make_primitive_type(make_string())),
+            ],
+        );
+        let generator = RustTypeDefainGeneratorBuilder::new()
+            .add_require("Root", "id")
+            .add_type_visibility("Root", RustVisibility::Public)
+            .add_property_visibility("Root", "id", RustVisibility::Public)
+            .set_all_type_attribute(RustAttribute::from_derives(vec!["Clone", "Debug"]))
+            .build();
+        let tobe = vec![
+            r#"#[derive(Clone,Debug)]
+pub struct Root {
+    #[serde(rename = "data:valu:e")]
+    datavalue: Option<Vec<RootDatavalue>>,
+    pub id: usize,
+}"#,
+            r#"#[derive(Clone,Debug)]
+struct RootDatavalue {
+    results: Option<Vec<RootDatavalueResults>>,
+}"#,
+            r#"#[derive(Clone,Debug)]
+struct RootDatavalueResults {
+    #[serde(rename = "accountId")]
+    account_id: Option<String>,
+    age: Option<usize>,
+    name: Option<String>,
+}"#,
+        ];
+        assert_eq!(
+            generator.generate(vec![root, root_data, root_data_results]),
+            tobe
+        )
+    }
+    #[test]
     fn integration_test() {
         let root = TypeStructure::make_composite(
             "Root",

@@ -55,7 +55,7 @@ fn split_dirs(path: impl AsRef<Path>) -> Option<impl Iterator<Item = String>> {
             .split(SEPARATOR)
             .into_iter()
             .filter(|s| *s != "." && *s != "")
-            .fold(Vec::new(), |mut acc, s| {
+            .fold(Vec::new().clone(), |mut acc, s| {
                 dir += &format!("{}{}", s, SEPARATOR);
                 acc.push(dir.clone());
                 acc
