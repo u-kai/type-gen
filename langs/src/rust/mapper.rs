@@ -11,8 +11,7 @@ impl LangTypeMapper for RustLangMapper {
     fn case_null(&self) -> TypeString {
         self.case_any()
     }
-
-    fn caes_custom_type(&self, custom_type: &lang_common::types::type_name::TypeName) -> String {
+    fn case_custom_type(&self, custom_type: &lang_common::types::type_name::TypeName) -> String {
         replace_cannot_use_char(custom_type.as_str())
     }
     fn case_any(&self) -> TypeString {

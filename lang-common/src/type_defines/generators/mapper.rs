@@ -26,7 +26,7 @@ pub trait LangTypeMapper {
             },
         }
     }
-    fn caes_custom_type(&self, custom_type: &TypeName) -> String {
+    fn case_custom_type(&self, custom_type: &TypeName) -> String {
         custom_type.as_str().to_string()
     }
     fn case_property_type(&self, property_type: &PropertyType) -> TypeString {
@@ -39,7 +39,7 @@ pub trait LangTypeMapper {
             PropertyType::Array(array_type) => {
                 self.case_array_type(self.case_property_type(array_type))
             }
-            PropertyType::CustomType(custom_type) => custom_type.as_str().to_string(),
+            PropertyType::CustomType(custom_type) => self.case_custom_type(custom_type),
         }
     }
 }
