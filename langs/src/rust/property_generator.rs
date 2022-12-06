@@ -5,15 +5,15 @@ use lang_common::{
         },
         generators::{generator::PropertyStatementGenerator, mapper::LangTypeMapper},
     },
-    types::{property_key::PropertyKey, type_name::TypeName},
+    types::{property_key::PropertyKey, property_type::PropertyType, type_name::TypeName},
 };
-use npc::{convertor::NamingPrincipalConvertor, naming_principal::NamingPrincipal};
+use npc::convertor::NamingPrincipalConvertor;
 
 use super::{
     additional_statements::{RustComment, RustVisibility},
     attribute::RustAttribute,
     mapper::RustLangMapper,
-    reserved_words::RustReservedWords,
+    reserved_words::{containe_cannot_use_char, replace_cannot_use_char, RustReservedWords},
 };
 struct RustPropertyKey<'a> {
     convertor: NamingPrincipalConvertor<'a>,
@@ -35,7 +35,7 @@ impl<'a> RustPropertyKey<'a> {
         )
     }
     fn convert_key(&self, reserved_words: &RustReservedWords) -> String {
-        let converted = Self::replace_cannot_use_char(&self.convertor.to_snake());
+        let converted = replace_cannot_use_char(&self.convertor.to_snake());
         if reserved_words.is_reserved_keywords(&converted) {
             return Self::from_reserved_word(&converted);
         }
@@ -51,7 +51,7 @@ impl<'a> RustPropertyKey<'a> {
         format!(r"r#{}", reserved_words)
     }
     fn rename_attr(&self, reserved_words: &RustReservedWords) -> String {
-        if Self::containe_cannot_use_char(self.convertor.original())
+        if containe_cannot_use_char(self.convertor.original())
             || !self.convertor.is_snake()
             || reserved_words.is_strict_keywords(self.convertor.original())
         {
@@ -62,19 +62,6 @@ impl<'a> RustPropertyKey<'a> {
             )
         } else {
             "".to_string()
-        }
-    }
-    fn replace_cannot_use_char(str: &str) -> String {
-        str.replace(Self::cannot_use_char, "")
-    }
-    fn containe_cannot_use_char(str: &str) -> bool {
-        str.contains(Self::cannot_use_char)
-    }
-    fn cannot_use_char(c: char) -> bool {
-        match c {
-            ':' | ';' | '#' | '$' | '%' | '&' | '~' | '=' | '|' | '\"' | '\'' | '{' | '}' | '?'
-            | '!' | '<' | '>' | '[' | ']' | '*' | '^' => true,
-            _ => false,
         }
     }
 }
@@ -135,6 +122,7 @@ impl<'a>
         } else {
             mapper.case_property_type(property_type)
         };
+
         format!(
             "{additional}{property_key}: {property_type}{next_line}",
             additional = additional,

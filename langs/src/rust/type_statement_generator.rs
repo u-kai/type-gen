@@ -12,6 +12,7 @@ use super::{
     additional_statements::{RustComment, RustVisibility},
     attribute::RustAttribute,
     mapper::RustLangMapper,
+    reserved_words::replace_cannot_use_char,
 };
 
 pub struct RustTypeStatementGenerator {}
@@ -60,7 +61,7 @@ impl<'a>
         format!(
             "{additional}type {name} = {type_str};",
             additional = additional,
-            name = primitive_type.name.as_str(),
+            name = replace_cannot_use_char(primitive_type.name.as_str()),
             type_str = mapper.case_property_type(&primitive_type.property_type)
         )
     }
@@ -79,7 +80,7 @@ impl<'a>
             "{}{} {} {{\n{}}}",
             additional,
             Self::TYPE_PREFIX,
-            type_name.as_str(),
+            replace_cannot_use_char(type_name.as_str()),
             properties_statement
         )
     }

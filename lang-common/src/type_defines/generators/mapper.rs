@@ -1,6 +1,7 @@
 use crate::types::{
     primitive_type::{Number, PrimitiveType},
     property_type::PropertyType,
+    type_name::TypeName,
 };
 
 pub type TypeString = String;
@@ -24,6 +25,9 @@ pub trait LangTypeMapper {
                 Number::Isize => self.case_isize(),
             },
         }
+    }
+    fn caes_custom_type(&self, custom_type: &TypeName) -> String {
+        custom_type.as_str().to_string()
     }
     fn case_property_type(&self, property_type: &PropertyType) -> TypeString {
         match property_type {

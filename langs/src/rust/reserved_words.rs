@@ -4,6 +4,20 @@ pub struct RustReservedWords {
     reserved: [&'static str; 45],
     strict: [&'static str; 7],
 }
+
+pub fn replace_cannot_use_char(str: &str) -> String {
+    str.replace(cannot_use_char, "")
+}
+pub fn containe_cannot_use_char(str: &str) -> bool {
+    str.contains(cannot_use_char)
+}
+pub fn cannot_use_char(c: char) -> bool {
+    match c {
+        ':' | ';' | '#' | '$' | '%' | '&' | '~' | '=' | '|' | '\"' | '\'' | '{' | '}' | '?'
+        | '!' | '<' | '>' | '[' | ']' | '*' | '^' => true,
+        _ => false,
+    }
+}
 impl RustReservedWords {
     pub fn new() -> Self {
         let reserved = [

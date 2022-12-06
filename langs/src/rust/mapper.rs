@@ -1,5 +1,7 @@
 use lang_common::type_defines::generators::mapper::{LangTypeMapper, TypeString};
 
+use super::reserved_words::replace_cannot_use_char;
+
 pub struct RustLangMapper;
 
 impl LangTypeMapper for RustLangMapper {
@@ -10,6 +12,9 @@ impl LangTypeMapper for RustLangMapper {
         self.case_any()
     }
 
+    fn caes_custom_type(&self, custom_type: &lang_common::types::type_name::TypeName) -> String {
+        replace_cannot_use_char(custom_type.as_str())
+    }
     fn case_any(&self) -> TypeString {
         "serde_json::Value".to_string()
     }
