@@ -82,9 +82,11 @@ where
                     &self.additional_statement,
                 )
             }
-            TypeStructure::Alias(primitive) => self
-                .type_statement_generator
-                .generate_case_primitive(&primitive, &self.mapper, &self.additional_statement),
+            TypeStructure::Alias(primitive) => self.type_statement_generator.generate_case_alias(
+                &primitive,
+                &self.mapper,
+                &self.additional_statement,
+            ),
         }
     }
 }
@@ -101,7 +103,7 @@ where
         properties_statement: String,
         additional_statement: &A,
     ) -> String;
-    fn generate_case_primitive(
+    fn generate_case_alias(
         &self,
         primitive_type: &AliasTypeStructure,
         mapper: &M,
@@ -199,7 +201,7 @@ pub mod fakes {
                 properties_statement
             )
         }
-        fn generate_case_primitive(
+        fn generate_case_alias(
             &self,
             primitive_type: &crate::types::structures::AliasTypeStructure,
             mapper: &FakeLangTypeMapper,

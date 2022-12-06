@@ -20,7 +20,7 @@ impl<'a> RustTypeStatementGenerator {
     pub fn new() -> Self {
         Self {}
     }
-    fn make_additional_case_primitive(
+    fn make_additional_case_alias(
         &self,
         type_name: &TypeName,
         additional_provider: &AdditionalStatementProvider<
@@ -63,7 +63,7 @@ impl<'a>
     > for RustTypeStatementGenerator
 {
     const TYPE_PREFIX: &'static str = "struct";
-    fn generate_case_primitive(
+    fn generate_case_alias(
         &self,
         primitive_type: &lang_common::types::structures::AliasTypeStructure,
         mapper: &RustLangMapper,
@@ -74,7 +74,7 @@ impl<'a>
         >,
     ) -> String {
         let additional =
-            self.make_additional_case_primitive(&primitive_type.name, additional_statement);
+            self.make_additional_case_alias(&primitive_type.name, additional_statement);
         format!(
             "{additional}type {name} = {type_str};",
             additional = additional,
@@ -242,12 +242,12 @@ struct Test {
         let generator = RustTypeStatementGenerator::new();
         let tobe = format!("// {comment1}\n// {comment2}\ntype Test = String;");
         assert_eq!(
-            generator.generate_case_primitive(&primitive_type, &mapper, &additional_provider),
+            generator.generate_case_alias(&primitive_type, &mapper, &additional_provider),
             tobe
         );
     }
     #[test]
-    fn test_case_primitive_all_none_additional() {
+    fn test_case_alias_all_none_additional() {
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let type_name: TypeName = "Test".into();
         let mapper = RustLangMapper;
@@ -255,7 +255,7 @@ struct Test {
         let generator = RustTypeStatementGenerator::new();
         let tobe = format!("type Test = String;");
         assert_eq!(
-            generator.generate_case_primitive(&primitive_type, &mapper, &additional_provider),
+            generator.generate_case_alias(&primitive_type, &mapper, &additional_provider),
             tobe
         );
     }
