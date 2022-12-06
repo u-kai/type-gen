@@ -6,7 +6,7 @@ use std::{
 #[cfg(not(target_os = "windows"))]
 pub const SEPARATOR: &'static str = r#"/"#;
 #[cfg(any(target_os = "windows", feature = "test_win"))]
-pub const SEPARATOR: &'static str = r"\\";
+pub const SEPARATOR: &'static str = "\\";
 
 pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
     match fs::read_dir(root_dir_path.as_ref()) {
@@ -98,7 +98,7 @@ fn all_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
         }
     }
 }
-#[cfg(any(target_os = "windows", feature = "test_win", test))]
+#[cfg(test)]
 mod test_util_fns_win {
 
     use crate::from_src_files::fs_operators::util_fns::{all_path, extract_dir, split_dirs};
