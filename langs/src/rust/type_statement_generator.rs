@@ -20,7 +20,23 @@ impl<'a> RustTypeStatementGenerator {
     pub fn new() -> Self {
         Self {}
     }
-    fn make_additional(
+    fn make_additional_case_primitive(
+        &self,
+        type_name: &TypeName,
+        additional_provider: &AdditionalStatementProvider<
+            RustVisibility,
+            RustComment,
+            RustAttribute,
+        >,
+    ) -> String {
+        let mut result = String::new();
+        if let Some(comment) = additional_provider.get_type_comment(type_name) {
+            result += &comment;
+        };
+        result += additional_provider.get_type_visibility(type_name);
+        result
+    }
+    fn make_additional_case_composite(
         &self,
         type_name: &TypeName,
         additional_provider: &AdditionalStatementProvider<
@@ -57,7 +73,8 @@ impl<'a>
             RustAttribute,
         >,
     ) -> String {
-        let additional = self.make_additional(&primitive_type.name, additional_statement);
+        let additional =
+            self.make_additional_case_primitive(&primitive_type.name, additional_statement);
         format!(
             "{additional}type {name} = {type_str};",
             additional = additional,
@@ -75,7 +92,7 @@ impl<'a>
             RustAttribute,
         >,
     ) -> String {
-        let additional = self.make_additional(type_name, additional_statement);
+        let additional = self.make_additional_case_composite(type_name, additional_statement);
         format!(
             "{}{} {} {{\n{}}}",
             additional,
