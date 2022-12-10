@@ -33,7 +33,7 @@ impl TypeDefineDistFileDetail for RustTypeDefineDistFileDetail {
             .iter()
             .fold(content, |acc, cur| format!("use {};\n{}", cur, acc))
     }
-    fn filename(&self, original: String) -> String {
+    fn convert_lang_filename(&self, original: String) -> String {
         NamingPrincipalConvertor::new(&original).to_snake()
     }
     fn finaly(&self, dist_file: String, writed_content: String) {

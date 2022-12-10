@@ -5,7 +5,7 @@ use lang_common::{
         },
         generators::{generator::PropertyStatementGenerator, mapper::LangTypeMapper},
     },
-    types::{property_key::PropertyKey, property_type::PropertyType, type_name::TypeName},
+    types::{property_key::PropertyKey, type_name::TypeName},
 };
 use npc::convertor::NamingPrincipalConvertor;
 
@@ -51,10 +51,7 @@ impl<'a> RustPropertyKey<'a> {
         format!(r"r#{}", reserved_words)
     }
     fn rename_attr(&self, reserved_words: &RustReservedWords) -> String {
-        if containe_cannot_use_char(self.convertor.original())
-            || !self.convertor.is_snake()
-            || reserved_words.is_strict_keywords(self.convertor.original())
-        {
+        if self.do_need_rename(reserved_words) {
             format!(
                 "{head}#[serde(rename = \"{original}\")]\n",
                 head = RUST_PROPERTY_HEAD_SPACE,
@@ -63,6 +60,11 @@ impl<'a> RustPropertyKey<'a> {
         } else {
             "".to_string()
         }
+    }
+    fn do_need_rename(&self, reserved_words: &RustReservedWords) -> bool {
+        containe_cannot_use_char(self.convertor.original())
+            || !self.convertor.is_snake()
+            || reserved_words.is_strict_keywords(self.convertor.original())
     }
 }
 pub struct RustPropertyStatementGenerator {}

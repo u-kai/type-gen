@@ -21,7 +21,7 @@ use super::{
 };
 
 pub trait TypeDefineDistFileDetail {
-    fn filename(&self, original: String) -> String;
+    fn convert_lang_filename(&self, original: String) -> String;
     fn add_content(&self, content: String) -> String;
     fn finaly(&self, dist_file: String, writed_content: String);
 }
@@ -63,7 +63,7 @@ impl<'a> TypeDefineDistFileWriter<'a> {
             let json = Json::from(src.content());
             let type_structures = json.into_type_structures(src.extracted_filename().unwrap());
             let type_define = type_define_generator.generate_concat_define(type_structures);
-            let filename = detail.filename(all_dist_file.next().unwrap());
+            let filename = detail.convert_lang_filename(all_dist_file.next().unwrap());
             let dist_file = File::create(&filename).expect(&format!("not found {}", filename));
             let write_content = detail.add_content(type_define);
             let mut writer = BufWriter::new(&dist_file);
