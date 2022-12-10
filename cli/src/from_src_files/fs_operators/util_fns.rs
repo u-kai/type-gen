@@ -27,7 +27,7 @@ pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
             }),
         Err(e) => {
             println!("{}", e.to_string());
-            panic!()
+            panic!("not found path = {:?}", root_dir_path.as_ref())
         }
     }
 }

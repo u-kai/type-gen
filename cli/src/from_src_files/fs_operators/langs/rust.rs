@@ -102,7 +102,7 @@ mod test_rust_typedefine_dist_file_detail {
         let old_filename = "test-rust.rs";
         let tobe = "test_rust.rs";
         assert_eq!(
-            RustTypeDefineDistFileDetail::new().filename(old_filename.to_string()),
+            RustTypeDefineDistFileDetail::new().convert_lang_filename(old_filename.to_string()),
             tobe.to_string()
         )
     }

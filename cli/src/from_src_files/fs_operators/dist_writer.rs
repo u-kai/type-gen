@@ -30,6 +30,10 @@ pub struct TypeDefineDistFileWriter<'a> {
     dist: &'a str,
     dist_extension: Extension,
 }
+//pub struct DistConfig {
+//path:&'a str,
+//extension:Ex
+//}
 
 impl<'a> TypeDefineDistFileWriter<'a> {
     pub fn new(src: &'a SrcPaths<'a>, dist: &'a str, dist_extension: Extension) -> Self {
@@ -90,6 +94,14 @@ impl<'a> TypeDefineDistFileWriter<'a> {
             )
         })
     }
+}
+
+#[cfg(test)]
+mod test_dist_writer {
+    use crate::from_src_files::fs_operators::src_paths::SrcPaths;
+
+    #[test]
+    fn test_write_all() {}
 }
 
 #[cfg(not(target_os = "windows"))]
