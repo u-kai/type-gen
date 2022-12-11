@@ -155,10 +155,10 @@ impl Json {
         if num.is_f64() {
             return make_primitive_type(make_float());
         }
-        if num.is_u64() {
-            return make_primitive_type(make_usize());
+        if num.is_i64() {
+            return make_primitive_type(make_isize());
         }
-        make_primitive_type(make_isize())
+        make_primitive_type(make_usize())
     }
 }
 
