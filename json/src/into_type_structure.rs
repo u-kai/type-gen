@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, VecDeque},
-    path::Path,
-};
+use std::collections::{BTreeMap, VecDeque};
 
 use lang_common::types::{
     primitive_type::primitive_type_factories::{
@@ -69,7 +66,6 @@ impl Json {
                 }
             }
         }
-
         // Test {id: usize, name: string, child: TestChild}
         // case obj is empty
         let type_structure = if properties.len() == 0 {
@@ -78,7 +74,6 @@ impl Json {
             TypeStructure::Composite(CompositeTypeStructure::new(type_name, properties))
         };
         result.push_front(type_structure);
-
         // vec![
         //    Test {id: usize, name: string, child: TestChild},
         //    TestChild { id:usize, data:TestChildData },

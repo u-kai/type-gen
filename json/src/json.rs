@@ -120,6 +120,18 @@ pub(crate) enum JsonType {
     String,
 }
 impl JsonType {
+    fn get_represent_from_array(array: &[Json]) -> &Json {
+        if array.len() == 0 {
+            return &Json::Null;
+        }
+        let first_json = Self::from_json(&array[0]);
+        for json in array {
+            if first_json != Self::from_json(json) {
+                return &Json::Null;
+            }
+        }
+        return &array[0];
+    }
     fn from_array_json(array: &[Json]) -> Self {
         if array.len() == 0 {
             return Self::Null;
@@ -133,18 +145,6 @@ impl JsonType {
         }
         first_json
     }
-    fn get_represent_from_array(array: &[Json]) -> &Json {
-        if array.len() == 0 {
-            return &Json::Null;
-        }
-        let first_json = Self::from_json(&array[0]);
-        for json in array {
-            if first_json != Self::from_json(json) {
-                return &Json::Null;
-            }
-        }
-        return &array[0];
-    }
     fn check_array_content_type_rec(array: &[Json]) -> Self {
         let represent_json = Self::get_represent_from_array(array);
         match represent_json {
@@ -154,22 +154,7 @@ impl JsonType {
     }
     fn check_array_content_type(array: &[Json]) -> Self {
         let array_json_type = Self::get_represent_from_array(array);
-        match array_json_type {
-            Json::Object(_) => Self::Object,
-            Json::Array(_) => Self::Array,
-            Json::Null => Self::Null,
-            Json::String(_) => Self::String,
-            Json::Boolean(_) => Self::Boolean,
-            Json::Number(num) => {
-                if num.is_f64() {
-                    return Self::Float64;
-                }
-                if num.is_u64() {
-                    return Self::Usize64;
-                }
-                Self::Isize64
-            }
-        }
+        Self::from_json(array_json_type)
     }
     fn from_json(json: &Json) -> Self {
         match json {
@@ -182,10 +167,10 @@ impl JsonType {
                 if num.is_f64() {
                     return Self::Float64;
                 }
-                if num.is_u64() {
-                    return Self::Usize64;
+                if num.is_i64() {
+                    return Self::Isize64;
                 }
-                Self::Isize64
+                Self::Usize64
             }
         }
     }
