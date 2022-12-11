@@ -6,12 +6,13 @@ use std::{
 };
 
 use cli::from_src_files::{
-    fs_operators::util_fns::{extract_dir, mkdir_rec},
+    fs_operators::util_fns::{all_file_path, extract_dir, mkdir_rec},
     mains::json_to_rust_define,
 };
 
-//#[test]
-fn test_json_to_rust_define() {
+#[test]
+#[ignore]
+fn test_json_to_rust_define_gen_dist_dirs_and_dist_files() {
     //set up config
     let config_file = "tests/type-define-config.json";
     let src_root = "tests/json";
@@ -59,11 +60,25 @@ fn test_json_to_rust_define() {
     sources.write_all_source_files();
 
     json_to_rust_define(config_file);
-
+    let all_path = all_file_path("tests/dist")
+        .into_iter()
+        .map(|f| f.as_os_str().to_str().unwrap().to_string())
+        .collect::<Vec<_>>();
+    let tobe = vec![
+        "tests/dist/parent.rs".to_string(),
+        "tests/dist/child.rs".to_string(),
+        "tests/dist/child/grand_child.rs".to_string(),
+        "tests/dist/child/grand_child/grand_child.rs".to_string(),
+        "tests/dist/child/child.rs".to_string(),
+    ];
+    let path: &Path = "tests/dist.rs".as_ref();
+    let exist = path.exists();
     config.clean_up();
     sources.clean_up();
     delete_dirs(dist_root);
     delete_file("tests/dist.rs");
+    assert_eq!(all_path, tobe);
+    assert!(exist);
 }
 
 struct SourceFiles<'a> {
@@ -149,11 +164,6 @@ impl<'a> Default for TypeDefineConfigFile<'a> {
     }
 }
 
-fn mkdir_from_filepath<P: AsRef<Path>>(paths: &[P]) {
-    for path in paths {
-        mkdir_rec(extract_dir(path).unwrap()).unwrap()
-    }
-}
 fn write_new_file<P: AsRef<Path>>(path: P, content: &str) {
     let mut config_writer = BufWriter::new(File::create(path).unwrap());
     config_writer.write_all(content.as_bytes()).unwrap();
