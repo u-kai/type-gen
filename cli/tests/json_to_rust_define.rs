@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{BufWriter, Write},
     path::Path,
@@ -9,38 +10,122 @@ use cli::from_src_files::{
     mains::json_to_rust_define,
 };
 
-#[test]
+//#[test]
 fn test_json_to_rust_define() {
     //set up config
-    let config = TypeDefineConfigFile::default();
-    config.write_config_file();
-    config.clean_up();
-    let source_files = [
-        "tests/json/parent.json",
-        "tests/json/child/child.json",
-        "tests/json/child/grand_child/grand_child.json",
-    ];
-    mkdir_from_filepath(&source_files);
-    delete_dirs("tests/json");
-    //let src_file1=
-    // set up source of json
+    let config_file = "tests/type-define-config.json";
+    let src_root = "tests/json";
+    let dist_root = "tests/dist";
 
-    //json_to_rust_define("tests/type-define-config.json")
+    let config = TypeDefineConfigFile::new_with_src_dist(config_file, src_root, dist_root);
+    config.write_config_file();
+
+    let parent = r#"
+            {
+                "id":0,
+                "name":"parent",
+                "obj": {
+                    "age":20
+                }
+            }
+        "#;
+    let child = r#"
+            {
+                "id":0,
+                "name":"parent",
+                "arr": [0,1]
+            }
+        "#;
+    let grand_child = r#"
+            {
+                "id":0,
+                "name":"parent",
+                "arr": [
+                    {
+                        "from":"kanagawa"
+                    }
+                ]
+            }
+        "#;
+    let sources = SourceFiles::new(
+        src_root,
+        vec![
+            ("tests/json/parent.json", parent),
+            ("tests/json/child/child.json", child),
+            ("tests/json/child/grand_child/grand_child.json", grand_child),
+        ],
+    );
+    sources.mkdir_all_source_dirs();
+    sources.write_all_source_files();
+
+    json_to_rust_define(config_file);
+
+    config.clean_up();
+    sources.clean_up();
+    delete_dirs(dist_root);
+    delete_file("tests/dist.rs");
 }
 
+struct SourceFiles<'a> {
+    root: &'a str,
+    file: HashMap<&'a str, &'a str>,
+}
+impl<'a> SourceFiles<'a> {
+    fn new(root: &'a str, path_and_content: Vec<(&'a str, &'a str)>) -> Self {
+        let file = path_and_content.into_iter().collect();
+        SourceFiles { root, file }
+    }
+    fn clean_up(self) {
+        delete_dirs(self.root)
+    }
+    fn mkdir_all_source_dirs(&self) {
+        let paths = self.file.keys();
+        for path in paths {
+            mkdir_rec(extract_dir(path).unwrap()).unwrap()
+        }
+    }
+    fn write_all_source_files(&self) {
+        let paths = self.file.keys();
+        for path in paths {
+            let content = self.file.get(path).unwrap();
+            write_new_file(path, content)
+        }
+    }
+}
 struct TypeDefineConfigFile<'a> {
     config_file: &'a str,
-    content: &'a str,
+    content: String,
 }
 impl<'a> TypeDefineConfigFile<'a> {
-    fn new(config_file: &'a str, content: &'a str) -> Self {
+    fn new(config_file: &'a str, content: &str) -> Self {
+        Self {
+            config_file,
+            content: content.to_string(),
+        }
+    }
+    fn new_with_src_dist(config_file: &'a str, src_root: &'a str, dist_root: &'a str) -> Self {
+        let content = format!(
+            r#"
+            {{
+                "src": {{
+                    "root": "{}",
+                    "extension": "json"
+                }},
+                "dist": {{
+                    "root": "{}",
+                    "extension": "rs"
+                }}
+            }}
+        "#,
+            src_root, dist_root
+        );
         Self {
             config_file,
             content,
         }
     }
     fn write_config_file(&self) {
-        write_new_file(self.config_file, self.content);
+        write_new_file(self.config_file, &self.content);
     }
     fn clean_up(self) {
         delete_file(self.config_file)

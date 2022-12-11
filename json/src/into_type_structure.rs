@@ -20,33 +20,6 @@ use lang_common::types::{
 
 use crate::json::{Json, JsonType, Number};
 
-pub struct IntoTypeStructureJson {
-    root: TypeName,
-    json: Json,
-}
-impl IntoTypeStructureJson {
-    pub fn from_str<T: Into<TypeName>>(json: &str, root: T) -> Self {
-        let json = Json::from(json);
-        Self {
-            root: root.into(),
-            json,
-        }
-    }
-    pub fn from_file<P: AsRef<Path>, T: Into<TypeName>>(path: P, root: T) -> Self {
-        let json = Json::from_file(path);
-        Self {
-            json,
-            root: root.into(),
-        }
-    }
-}
-
-impl Into<Vec<TypeStructure>> for IntoTypeStructureJson {
-    fn into(self) -> Vec<TypeStructure> {
-        self.json.into_type_structures(self.root)
-    }
-}
-
 // into type structures impl
 impl Json {
     pub fn into_type_structures(self, root_name: impl Into<TypeName>) -> Vec<TypeStructure> {

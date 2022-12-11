@@ -96,14 +96,6 @@ impl<'a> TypeDefineDistFileWriter<'a> {
     }
 }
 
-#[cfg(test)]
-mod test_dist_writer {
-    use crate::from_src_files::fs_operators::src_paths::SrcPaths;
-
-    #[test]
-    fn test_write_all() {}
-}
-
 #[cfg(not(target_os = "windows"))]
 #[cfg(test)]
 mod test_dist {

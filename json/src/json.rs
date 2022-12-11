@@ -18,36 +18,12 @@ pub enum Json {
     String(String),
 }
 impl Json {
-    pub(crate) fn put_together_content_type(put_together: &[Json; 1]) -> JsonType {
-        JsonType::check_array_content_type_rec(put_together)
-    }
-    pub(crate) fn count_put_together_nest(put_together: &[Json; 1]) -> usize {
-        Self::count_array_nest(put_together)
-    }
     pub fn from_file(path: impl AsRef<Path>) -> Self {
         let file = File::open(path).unwrap();
         let mut result = String::new();
         let mut reader = BufReader::new(file);
         reader.read_to_string(&mut result).unwrap();
         Json::from(result.as_str())
-    }
-    fn count_array_nest(array: &[Json]) -> usize {
-        fn rec_count(array: &[Json], count: usize) -> usize {
-            if array.len() == 0 {
-                return count + 1;
-            }
-            let mut max = count;
-            for json in array {
-                match json {
-                    Json::Array(array) => {
-                        max = rec_count(array, count + 1).max(max);
-                    }
-                    _ => return count + 1,
-                }
-            }
-            max
-        }
-        rec_count(array, 0)
     }
     pub fn put_together(array: Vec<Json>) -> [Json; 1] {
         [Self::put_together_array_json(array)]
@@ -89,6 +65,30 @@ impl Json {
             JsonType::Null => Json::Null,
         }
     }
+    pub(crate) fn put_together_content_type(put_together: &[Json; 1]) -> JsonType {
+        JsonType::check_array_content_type_rec(put_together)
+    }
+    pub(crate) fn count_put_together_nest(put_together: &[Json; 1]) -> usize {
+        Self::count_array_nest(put_together)
+    }
+    fn count_array_nest(array: &[Json]) -> usize {
+        fn rec_count(array: &[Json], count: usize) -> usize {
+            if array.len() == 0 {
+                return count + 1;
+            }
+            let mut max = count;
+            for json in array {
+                match json {
+                    Json::Array(array) => {
+                        max = rec_count(array, count + 1).max(max);
+                    }
+                    _ => return count + 1,
+                }
+            }
+            max
+        }
+        rec_count(array, 0)
+    }
     fn collect_obj_from_array_json(array: Vec<Json>) -> BTreeMap<String, Vec<Json>> {
         fn rec(map: &mut BTreeMap<String, Vec<Json>>, array: Vec<Json>) {
             for json in array {
@@ -108,6 +108,7 @@ impl Json {
         map
     }
 }
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) enum JsonType {
     Array,
     Boolean,
@@ -119,16 +120,43 @@ pub(crate) enum JsonType {
     String,
 }
 impl JsonType {
+    fn from_array_json(array: &[Json]) -> Self {
+        if array.len() == 0 {
+            return Self::Null;
+        }
+        let first_json = Self::from_json(&array[0]);
+        if let Self::Array = first_json {};
+        for json in array {
+            if first_json != Self::from_json(json) {
+                return Self::Null;
+            }
+        }
+        first_json
+    }
     fn get_represent_from_array(array: &[Json]) -> &Json {
         if array.len() == 0 {
             return &Json::Null;
         }
-        &array[0]
+        let first_json = Self::from_json(&array[0]);
+        for json in array {
+            if first_json != Self::from_json(json) {
+                return &Json::Null;
+            }
+        }
+        return &array[0];
     }
     fn check_array_content_type_rec(array: &[Json]) -> Self {
-        match Self::get_represent_from_array(array) {
+        let represent_json = Self::get_represent_from_array(array);
+        match represent_json {
             Json::Array(array) => Self::check_array_content_type(array),
+            _ => Self::from_json(represent_json),
+        }
+    }
+    fn check_array_content_type(array: &[Json]) -> Self {
+        let array_json_type = Self::get_represent_from_array(array);
+        match array_json_type {
             Json::Object(_) => Self::Object,
+            Json::Array(_) => Self::Array,
             Json::Null => Self::Null,
             Json::String(_) => Self::String,
             Json::Boolean(_) => Self::Boolean,
@@ -143,8 +171,8 @@ impl JsonType {
             }
         }
     }
-    fn check_array_content_type(array: &[Json]) -> Self {
-        match Self::get_represent_from_array(array) {
+    fn from_json(json: &Json) -> Self {
+        match json {
             Json::Object(_) => Self::Object,
             Json::Array(_) => Self::Array,
             Json::Null => Self::Null,
@@ -171,7 +199,6 @@ mod test_count_nest {
         let Json::Array(array_json) = Json::from(r#"[[{"key":"value"}],{"id":0}]"#)else{
             panic!()
         };
-
         assert_eq!(Json::put_together_array_json(array_json), Json::Null);
     }
     #[test]
@@ -207,6 +234,18 @@ mod test_count_nest {
 mod test_put_together {
 
     use super::*;
+    #[test]
+    fn test_case_array_containe_multi_type_tobe_any() {
+        let obj = r#"
+            [
+                "string",0
+            ]
+        "#;
+        let Json::Array(json) = Json::from(obj) else {
+            panic!()
+        };
+        assert_eq!(Json::put_together(json), [Json::Null])
+    }
     #[test]
     fn test_case_double_nest_array() {
         let obj = r#"
