@@ -2,11 +2,11 @@
 
 ## What is it?
 
-- type-gen is generate some programing language type define from json, other language type define.
+-   type-gen is generate some programing language type define from json, other language type define.
 
 ## How to use
 
-- below sample is json -> rust type define
+-   below sample is json -> rust type define
 
 ```rust
 fn main () {
@@ -23,27 +23,19 @@ fn main () {
             ]
         }
     }"#;
-    let rust_type_define = RustTypeGeneratorBuilder::new()
-        .set_visibility_to_all_struct(RustVisibility::Public)
-        .set_visibility_to_all_field(RustVisibility::PublicSuper)
-        .set_attr_to_all_struct(vec![RustTypeAttribute::Derive(vec![
-            "Clone".to_string(),
-            "Debug".to_string(),
-            "Serialize".to_string(),
-            "Deserialize".to_string(),
-        ])])
-        .add_require("UKai", "id")
-        .add_comment_to_field("id", "id is must set")
-        .add_comment_to_struct("UKai", "This is Demo")
-        .add_comment_to_struct("UKaiProfile", "My Follower is Only One...")
-        .build("UKai")
-        .gen_from_json(json);
-    println!("{}", rust_type_define)
-}
+    use std::env;
+    use cli::from_src_files::mains::json_to_rust_define;
+    fn main() {
+        let Some(config_file)= env::args().skip(1).next() else {
+            return json_to_rust_define("config.json")
+        };
+        json_to_rust_define(config_file)
+    }
 
 /// ------------------Output below!!-------------------- ///
 
 // This is Demo
+use serde::{Serialize,Deserialize};
 #[derive(Clone,Debug,Serialize,Deserialize)]
 pub struct UKai {
     // id is must set

@@ -132,19 +132,6 @@ impl JsonType {
         }
         return &array[0];
     }
-    fn from_array_json(array: &[Json]) -> Self {
-        if array.len() == 0 {
-            return Self::Null;
-        }
-        let first_json = Self::from_json(&array[0]);
-        if let Self::Array = first_json {};
-        for json in array {
-            if first_json != Self::from_json(json) {
-                return Self::Null;
-            }
-        }
-        first_json
-    }
     fn check_array_content_type_rec(array: &[Json]) -> Self {
         let represent_json = Self::get_represent_from_array(array);
         match represent_json {
