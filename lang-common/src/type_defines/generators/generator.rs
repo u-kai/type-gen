@@ -12,36 +12,28 @@ use crate::{
 
 use super::mapper::LangTypeMapper;
 
-pub struct TypeDefineGenerator<T, P, M, A>
+pub struct TypeDefineGenerator<T, P, M>
 where
     T: TypeStatementGenerator<M>, //, A>,
     P: PropertyStatementGenerator<M>,
     M: LangTypeMapper,
-    A: AdditionalStatement,
 {
     type_statement_generator: T,
     property_statement_generator: P,
     mapper: M,
-    additional_statement: A,
 }
-impl<T, P, M, A> TypeDefineGenerator<T, P, M, A>
+impl<T, P, M> TypeDefineGenerator<T, P, M>
+//, A>
 where
     T: TypeStatementGenerator<M>,     //, A>,
     P: PropertyStatementGenerator<M>, //, A>,
     M: LangTypeMapper,
-    A: AdditionalStatement,
 {
-    pub fn new(
-        type_statement_generator: T,
-        property_statement_generator: P,
-        mapper: M,
-        additional_statement: A,
-    ) -> Self {
+    pub fn new(type_statement_generator: T, property_statement_generator: P, mapper: M) -> Self {
         Self {
             type_statement_generator,
             property_statement_generator,
             mapper,
-            additional_statement,
         }
     }
     pub fn generate_concat_define(&self, structures: Vec<TypeStructure>) -> TypeDefine {
@@ -125,7 +117,6 @@ where
 #[cfg(test)]
 pub mod fakes {
     use crate::type_defines::additional_defines::additional_statement::fake_additional_statement::{FakeAllNoneAdditionalStatement, FakeAlwaysSomeAdditionalStatement};
-    use crate::type_defines::additional_defines::additional_statement::AdditionalStatement;
     use crate::type_defines::generators::mapper::LangTypeMapper;
     use crate::types::property_type::PropertyType;
     use crate::types::type_name::TypeName;
@@ -227,7 +218,6 @@ pub mod fakes {
             FakeTypeStatementGenerator,
             FakePropertyStatementGenerator,
             FakeLangTypeMapper,
-            FakeAllNoneAdditionalStatement,
         >
     {
         pub fn new_none_additional_fake() -> Self {
@@ -236,7 +226,6 @@ pub mod fakes {
                 mapper,
                 type_statement_generator: FakeTypeStatementGenerator,
                 property_statement_generator: FakePropertyStatementGenerator,
-                additional_statement: FakeAllNoneAdditionalStatement,
             }
         }
     }
@@ -246,7 +235,6 @@ pub mod fakes {
             FakeTypeStatementGenerator,
             FakePropertyStatementGenerator,
             FakeLangTypeMapper,
-            FakeAlwaysSomeAdditionalStatement,
         >
     {
         pub fn new_always_additional_fake() -> Self {
@@ -255,7 +243,6 @@ pub mod fakes {
                 mapper,
                 type_statement_generator: FakeTypeStatementGenerator,
                 property_statement_generator: FakePropertyStatementGenerator,
-                additional_statement: FakeAlwaysSomeAdditionalStatement,
             }
         }
     }

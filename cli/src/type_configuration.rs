@@ -40,7 +40,8 @@ impl ConfigJson {
     pub fn to_definer<T, P, M, A, V, C, At>(
         &self,
         mut builder: impl TypeDefineBuilder<T, P, M, A, V, C, At>,
-    ) -> TypeDefineGenerator<T, P, M, A>
+    ) -> TypeDefineGenerator<T, P, M>
+    //, A>
     where
         T: TypeStatementGenerator<M>,     // A>,
         P: PropertyStatementGenerator<M>, //, A>,

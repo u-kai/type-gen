@@ -46,7 +46,7 @@ impl<'a> TypeDefineDistFileWriter<'a> {
     pub fn write_all_from_jsons<T, P, M, A, V, C, At, D>(
         &self,
         reader: TypeDefineSrcReader,
-        type_define_generator: TypeDefineGenerator<T, P, M, A>,
+        type_define_generator: TypeDefineGenerator<T, P, M>, //, A>,
         detail: D,
     ) where
         T: TypeStatementGenerator<M>,     //, A>,

@@ -21,7 +21,7 @@ where
     C: Comment,
     At: Attribute,
 {
-    fn build(self) -> TypeDefineGenerator<T, P, M, A>;
+    fn build(self) -> TypeDefineGenerator<T, P, M>; //, A>;
     fn set_all_type_optional(self, is_all_optioal: bool) -> Self;
     fn set_all_type_visibility(self, visibility: V) -> Self;
     fn set_all_property_visibility(self, visibility: V) -> Self;

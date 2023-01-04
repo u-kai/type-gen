@@ -41,12 +41,12 @@ impl
         RustTypeStatementGenerator,
         RustPropertyStatementGenerator,
         RustLangMapper,
-        AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
+        //AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
     > {
         let mapper = RustLangMapper;
         let property_generator = RustPropertyStatementGenerator::new(self.inner.clone());
         let type_generator = RustTypeStatementGenerator::new(self.inner.clone());
-        TypeDefineGenerator::new(type_generator, property_generator, mapper, self.inner)
+        TypeDefineGenerator::new(type_generator, property_generator, mapper)
     }
     fn set_all_type_optional(mut self, is_all_optioal: bool) -> Self {
         self.inner.set_all_type_optional(is_all_optioal);
