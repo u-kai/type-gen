@@ -15,6 +15,8 @@ pub trait LangTypeMapper {
     fn case_any(&self) -> TypeString;
     fn case_array_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString;
     fn case_optional_type<T: Into<TypeString>>(&self, type_statement: T) -> TypeString;
+
+    // not customize developer
     fn case_primitive(&self, primitive_type: &PrimitiveType) -> TypeString {
         match primitive_type {
             PrimitiveType::Boolean => self.case_boolean(),

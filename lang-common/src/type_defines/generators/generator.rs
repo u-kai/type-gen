@@ -50,22 +50,18 @@ where
             TypeStructure::Composite(composite) => {
                 let properties_statement =
                     composite
-                        .properties
                         .iter()
-                        .fold(String::new(), |acc, (k, v)| {
-                            format!(
-                                "{}{}",
-                                acc,
-                                self.property_statement_generator.generate(
-                                    &composite.name,
-                                    k,
-                                    v,
-                                    &self.mapper,
-                                )
-                            )
+                        .fold(String::new(), |acc, (property_key, property_type)| {
+                            let property_statement = self.property_statement_generator.generate(
+                                &composite.type_name(),
+                                property_key,
+                                property_type,
+                                &self.mapper,
+                            );
+                            format!("{}{}", acc, property_statement)
                         });
                 self.type_statement_generator
-                    .generate_case_composite(&composite.name, properties_statement)
+                    .generate_case_composite(&composite.type_name(), properties_statement)
             }
             TypeStructure::Alias(primitive) => self
                 .type_statement_generator
