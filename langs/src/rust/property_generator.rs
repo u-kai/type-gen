@@ -67,28 +67,34 @@ impl<'a> RustPropertyKey<'a> {
             || reserved_words.is_strict_keywords(self.convertor.original())
     }
 }
-pub struct RustPropertyStatementGenerator {}
+pub struct RustPropertyStatementGenerator {
+    additional_provider: AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
+}
 pub const RUST_PROPERTY_HEAD_SPACE: &'static str = "    ";
 impl RustPropertyStatementGenerator {
     const NEXT_LINE: &'static str = ",\n";
-    pub fn new() -> Self {
-        Self {}
-    }
-    fn make_additional(
-        &self,
-        type_name: &TypeName,
-        property_key: &PropertyKey,
-        additional_provider: &AdditionalStatementProvider<
+    pub fn new(
+        additional_provider: AdditionalStatementProvider<
             RustVisibility,
             RustComment,
             RustAttribute,
         >,
-    ) -> String {
+    ) -> Self {
+        Self {
+            additional_provider,
+        }
+    }
+    fn make_additional(&self, type_name: &TypeName, property_key: &PropertyKey) -> String {
         let mut additional = String::new();
-        if let Some(comment) = additional_provider.get_property_comment(type_name, property_key) {
+        if let Some(comment) = self
+            .additional_provider
+            .get_property_comment(type_name, property_key)
+        {
             additional += &comment;
         };
-        if let Some(attribute) = additional_provider.get_property_attribute(type_name, property_key)
+        if let Some(attribute) = self
+            .additional_provider
+            .get_property_attribute(type_name, property_key)
         {
             additional += &attribute;
         };
@@ -98,7 +104,7 @@ impl RustPropertyStatementGenerator {
 impl<'a>
     PropertyStatementGenerator<
         RustLangMapper,
-        AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
+        //    AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
     > for RustPropertyStatementGenerator
 {
     fn generate(
@@ -107,19 +113,23 @@ impl<'a>
         property_key: &lang_common::types::property_key::PropertyKey,
         property_type: &lang_common::types::property_type::PropertyType,
         mapper: &RustLangMapper,
-        additional_provider: &AdditionalStatementProvider<
-            RustVisibility,
-            RustComment,
-            RustAttribute,
-        >,
+        //        additional_provider: &AdditionalStatementProvider<
+        //            RustVisibility,
+        //            RustComment,
+        //            RustAttribute,
+        //        >,
     ) -> String {
-        let additional = self.make_additional(type_name, property_key, additional_provider);
+        let additional = self.make_additional(type_name, property_key);
         let reserved_words = RustReservedWords::new();
         let property_str = RustPropertyKey::new(property_key).property_str(
             &reserved_words,
-            additional_provider.get_property_visibility(type_name, property_key),
+            self.additional_provider
+                .get_property_visibility(type_name, property_key),
         );
-        let property_type = if additional_provider.is_property_optional(type_name, &property_key) {
+        let property_type = if self
+            .additional_provider
+            .is_property_optional(type_name, &property_key)
+        {
             mapper.case_optional_type(mapper.case_property_type(property_type))
         } else {
             mapper.case_property_type(property_type)
@@ -166,7 +176,6 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "accountId".into();
         let property_type = make_primitive_type(make_string());
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let mut attr = RustAttribute::new();
@@ -180,13 +189,14 @@ mod test_rust_property_geneartor {
             "{head}// this is test\n{head}#[test]\n{head}#[serde(rename = \"accountId\")]\n{head}account_id: Option<String>,\n",
             head = RUST_PROPERTY_HEAD_SPACE,
         );
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         assert_eq!(
             generator.generate(
                 &type_name,
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -196,20 +206,20 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "accountId".into();
         let property_type = make_primitive_type(make_string());
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let tobe = format!(
             "{head}#[serde(rename = \"accountId\")]\n{head}account_id: String,\n",
             head = RUST_PROPERTY_HEAD_SPACE,
         );
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         assert_eq!(
             generator.generate(
                 &type_name,
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -219,9 +229,9 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "type".into();
         let property_type = make_primitive_type(make_string());
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = format!("{head}r#type: String,\n", head = RUST_PROPERTY_HEAD_SPACE,);
         assert_eq!(
             generator.generate(
@@ -229,7 +239,7 @@ mod test_rust_property_geneartor {
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -244,10 +254,10 @@ mod test_rust_property_geneartor {
         comment.add_comment_line(comment1);
         comment.add_comment_line(comment2);
         let property_type = make_array_type(make_custom_type("TestId"));
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let mut additional_provider = AdditionalStatementProvider::with_default_optional(true);
         additional_provider.add_property_comment(type_name.clone(), property_key.clone(), comment);
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = format!(
             "{head}// {comment1}\n{head}// {comment2}\n{head}id: Option<Vec<TestId>>,\n",
             head = RUST_PROPERTY_HEAD_SPACE,
@@ -260,7 +270,7 @@ mod test_rust_property_geneartor {
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -270,9 +280,9 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type = make_array_type(make_custom_type("TestId"));
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(true);
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = "    id: Option<Vec<TestId>>,\n".to_string();
         assert_eq!(
             generator.generate(
@@ -280,7 +290,7 @@ mod test_rust_property_geneartor {
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -290,9 +300,9 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type = make_custom_type("TestId");
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = "    id: TestId,\n".to_string();
         assert_eq!(
             generator.generate(
@@ -300,7 +310,7 @@ mod test_rust_property_geneartor {
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -310,9 +320,9 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id:Value".into();
         let property_type = make_primitive_type(make_usize());
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = format!(
             "{head}#[serde(rename = \"id:Value\")]\n{head}id_value: usize,\n",
             head = RUST_PROPERTY_HEAD_SPACE,
@@ -323,7 +333,7 @@ mod test_rust_property_geneartor {
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -333,9 +343,9 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "super".into();
         let property_type = make_primitive_type(make_usize());
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = format!(
             "{head}#[serde(rename = \"super\")]\n{head}super_: usize,\n",
             head = RUST_PROPERTY_HEAD_SPACE,
@@ -346,7 +356,7 @@ mod test_rust_property_geneartor {
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -356,9 +366,9 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id:value".into();
         let property_type = make_primitive_type(make_usize());
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = format!(
             "{head}#[serde(rename = \"id:value\")]\n{head}idvalue: usize,\n",
             head = RUST_PROPERTY_HEAD_SPACE,
@@ -369,7 +379,7 @@ mod test_rust_property_geneartor {
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );
@@ -379,9 +389,9 @@ mod test_rust_property_geneartor {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type = make_primitive_type(make_usize());
-        let generator = RustPropertyStatementGenerator::new();
         let mapper = RustLangMapper;
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
+        let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = "    id: usize,\n".to_string();
         assert_eq!(
             generator.generate(
@@ -389,7 +399,7 @@ mod test_rust_property_geneartor {
                 &property_key,
                 &property_type,
                 &mapper,
-                &additional_provider
+                //&additional_provider
             ),
             tobe
         );

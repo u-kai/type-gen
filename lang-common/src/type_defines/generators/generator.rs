@@ -15,7 +15,7 @@ use super::mapper::LangTypeMapper;
 pub struct TypeDefineGenerator<T, P, M, A>
 where
     T: TypeStatementGenerator<M>, //, A>,
-    P: PropertyStatementGenerator<M, A>,
+    P: PropertyStatementGenerator<M>,
     M: LangTypeMapper,
     A: AdditionalStatement,
 {
@@ -26,8 +26,8 @@ where
 }
 impl<T, P, M, A> TypeDefineGenerator<T, P, M, A>
 where
-    T: TypeStatementGenerator<M>, //, A>,
-    P: PropertyStatementGenerator<M, A>,
+    T: TypeStatementGenerator<M>,     //, A>,
+    P: PropertyStatementGenerator<M>, //, A>,
     M: LangTypeMapper,
     A: AdditionalStatement,
 {
@@ -72,7 +72,7 @@ where
                                     k,
                                     v,
                                     &self.mapper,
-                                    &self.additional_statement
+                                    //&self.additional_statement
                                 )
                             )
                         });
@@ -109,10 +109,9 @@ where
         //additional_statement: &A,
     ) -> String;
 }
-pub trait PropertyStatementGenerator<M, A>
+pub trait PropertyStatementGenerator<M>
 where
     M: LangTypeMapper,
-    A: AdditionalStatement,
 {
     fn generate(
         &self,
@@ -120,7 +119,7 @@ where
         property_key: &PropertyKey,
         property_type: &PropertyType,
         mapper: &M,
-        additional_statement: &A,
+        //        additional_statement: &A,
     ) -> String;
 }
 #[cfg(test)]
@@ -137,10 +136,10 @@ pub mod fakes {
 
     use super::{PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator};
     pub struct FakePropertyStatementGenerator;
-    impl<M, A> PropertyStatementGenerator<M, A> for FakePropertyStatementGenerator
+    impl<M> PropertyStatementGenerator<M> for FakePropertyStatementGenerator
     where
         M: LangTypeMapper,
-        A: AdditionalStatement,
+        //    A: AdditionalStatement,
     {
         fn generate(
             &self,
@@ -148,27 +147,29 @@ pub mod fakes {
             property_key: &PropertyKey,
             property_type: &PropertyType,
             mapper: &M,
-            a: &A,
+            //       a: &A,
         ) -> String {
-            let mut result = String::new();
-            if let Some(comment) = a.get_property_comment(type_name, property_key) {
-                result += &comment;
-            };
-            if let Some(attribute) = a.get_property_attribute(type_name, property_key) {
-                result += &attribute;
-            };
-            let property_type = if a.is_property_optional(type_name, property_key) {
-                mapper.case_optional_type(mapper.case_property_type(property_type))
-            } else {
-                mapper.case_property_type(property_type)
-            };
-            let visibility = a.get_property_visibility(type_name, property_key);
+            //let mut result = String::new();
+            //            if let Some(comment) = a.get_property_comment(type_name, property_key) {
+            //                result += &comment;
+            //            };
+            //            if let Some(attribute) = a.get_property_attribute(type_name, property_key) {
+            //                result += &attribute;
+            //            };
+            //            let property_type = if a.is_property_optional(type_name, property_key) {
+            //                mapper.case_optional_type(mapper.case_property_type(property_type))
+            //            } else {
+            //                mapper.case_property_type(property_type)
+            //            };
+            //            let visibility = a.get_property_visibility(type_name, property_key);
             format!(
-                "{}{}{}: {},",
-                result,
-                visibility,
+                // "{}{}{}: {},",
+                // "{}{}: {},",
+                "{}: {},",
+                // result,
+                //               visibility,
                 property_key.as_str(),
-                property_type
+                mapper.case_property_type(property_type) //      property_typ
             )
         }
     }
