@@ -13,15 +13,15 @@ use super::{
 
 pub trait TypeDefineBuilder<T, P, M, A, V, C, At>
 where
-    T: TypeStatementGenerator<M>,     //, A>,
-    P: PropertyStatementGenerator<M>, //, A>,
+    T: TypeStatementGenerator<M>,
+    P: PropertyStatementGenerator<M>,
     M: LangTypeMapper,
     A: AdditionalStatement,
     V: Visibility,
     C: Comment,
     At: Attribute,
 {
-    fn build(self) -> TypeDefineGenerator<T, P, M>; //, A>;
+    fn build(self) -> TypeDefineGenerator<T, P, M>;
     fn set_all_type_optional(self, is_all_optioal: bool) -> Self;
     fn set_all_type_visibility(self, visibility: V) -> Self;
     fn set_all_property_visibility(self, visibility: V) -> Self;

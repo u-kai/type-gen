@@ -30,10 +30,6 @@ pub struct TypeDefineDistFileWriter<'a> {
     dist: &'a str,
     dist_extension: Extension,
 }
-//pub struct DistConfig {
-//path:&'a str,
-//extension:Ex
-//}
 
 impl<'a> TypeDefineDistFileWriter<'a> {
     pub fn new(src: &'a SrcPaths<'a>, dist: &'a str, dist_extension: Extension) -> Self {
@@ -46,11 +42,11 @@ impl<'a> TypeDefineDistFileWriter<'a> {
     pub fn write_all_from_jsons<T, P, M, A, V, C, At, D>(
         &self,
         reader: TypeDefineSrcReader,
-        type_define_generator: TypeDefineGenerator<T, P, M>, //, A>,
+        type_define_generator: TypeDefineGenerator<T, P, M>,
         detail: D,
     ) where
-        T: TypeStatementGenerator<M>,     //, A>,
-        P: PropertyStatementGenerator<M>, //, A>,
+        T: TypeStatementGenerator<M>,
+        P: PropertyStatementGenerator<M>,
         M: LangTypeMapper,
         A: AdditionalStatement,
         V: Visibility,

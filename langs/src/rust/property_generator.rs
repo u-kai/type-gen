@@ -101,23 +101,13 @@ impl RustPropertyStatementGenerator {
         additional
     }
 }
-impl<'a>
-    PropertyStatementGenerator<
-        RustLangMapper,
-        //    AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
-    > for RustPropertyStatementGenerator
-{
+impl<'a> PropertyStatementGenerator<RustLangMapper> for RustPropertyStatementGenerator {
     fn generate(
         &self,
         type_name: &lang_common::types::type_name::TypeName,
         property_key: &lang_common::types::property_key::PropertyKey,
         property_type: &lang_common::types::property_type::PropertyType,
         mapper: &RustLangMapper,
-        //        additional_provider: &AdditionalStatementProvider<
-        //            RustVisibility,
-        //            RustComment,
-        //            RustAttribute,
-        //        >,
     ) -> String {
         let additional = self.make_additional(type_name, property_key);
         let reserved_words = RustReservedWords::new();
@@ -191,13 +181,7 @@ mod test_rust_property_geneartor {
         );
         let generator = RustPropertyStatementGenerator::new(additional_provider);
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -214,13 +198,7 @@ mod test_rust_property_geneartor {
         );
         let generator = RustPropertyStatementGenerator::new(additional_provider);
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -234,13 +212,7 @@ mod test_rust_property_geneartor {
         let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = format!("{head}r#type: String,\n", head = RUST_PROPERTY_HEAD_SPACE,);
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -265,13 +237,7 @@ mod test_rust_property_geneartor {
             comment2 = comment2
         );
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -285,13 +251,7 @@ mod test_rust_property_geneartor {
         let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = "    id: Option<Vec<TestId>>,\n".to_string();
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -305,13 +265,7 @@ mod test_rust_property_geneartor {
         let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = "    id: TestId,\n".to_string();
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -328,13 +282,7 @@ mod test_rust_property_geneartor {
             head = RUST_PROPERTY_HEAD_SPACE,
         );
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -351,13 +299,7 @@ mod test_rust_property_geneartor {
             head = RUST_PROPERTY_HEAD_SPACE,
         );
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -374,13 +316,7 @@ mod test_rust_property_geneartor {
             head = RUST_PROPERTY_HEAD_SPACE,
         );
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }
@@ -394,13 +330,7 @@ mod test_rust_property_geneartor {
         let generator = RustPropertyStatementGenerator::new(additional_provider);
         let tobe = "    id: usize,\n".to_string();
         assert_eq!(
-            generator.generate(
-                &type_name,
-                &property_key,
-                &property_type,
-                &mapper,
-                //&additional_provider
-            ),
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
     }

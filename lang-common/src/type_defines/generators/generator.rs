@@ -1,7 +1,5 @@
 use crate::{
-    type_defines::{
-        additional_defines::additional_statement::AdditionalStatement, type_define::TypeDefine,
-    },
+    type_defines::type_define::TypeDefine,
     types::{
         property_key::PropertyKey,
         property_type::PropertyType,
@@ -14,7 +12,7 @@ use super::mapper::LangTypeMapper;
 
 pub struct TypeDefineGenerator<T, P, M>
 where
-    T: TypeStatementGenerator<M>, //, A>,
+    T: TypeStatementGenerator<M>,
     P: PropertyStatementGenerator<M>,
     M: LangTypeMapper,
 {
@@ -23,10 +21,9 @@ where
     mapper: M,
 }
 impl<T, P, M> TypeDefineGenerator<T, P, M>
-//, A>
 where
-    T: TypeStatementGenerator<M>,     //, A>,
-    P: PropertyStatementGenerator<M>, //, A>,
+    T: TypeStatementGenerator<M>,
+    P: PropertyStatementGenerator<M>,
     M: LangTypeMapper,
 {
     pub fn new(type_statement_generator: T, property_statement_generator: P, mapper: M) -> Self {
@@ -64,21 +61,15 @@ where
                                     k,
                                     v,
                                     &self.mapper,
-                                    //&self.additional_statement
                                 )
                             )
                         });
-                self.type_statement_generator.generate_case_composite(
-                    &composite.name,
-                    properties_statement,
-                    //   &self.additional_statement,
-                )
+                self.type_statement_generator
+                    .generate_case_composite(&composite.name, properties_statement)
             }
-            TypeStructure::Alias(primitive) => self.type_statement_generator.generate_case_alias(
-                &primitive,
-                &self.mapper,
-                //&self.additional_statement,
-            ),
+            TypeStructure::Alias(primitive) => self
+                .type_statement_generator
+                .generate_case_alias(&primitive, &self.mapper),
         }
     }
 }
@@ -88,18 +79,9 @@ where
     M: LangTypeMapper,
 {
     const TYPE_PREFIX: &'static str = "class";
-    fn generate_case_composite(
-        &self,
-        type_name: &TypeName,
-        properties_statement: String,
-        //additional_statement: &A,
-    ) -> String;
-    fn generate_case_alias(
-        &self,
-        primitive_type: &AliasTypeStructure,
-        mapper: &M,
-        //additional_statement: &A,
-    ) -> String;
+    fn generate_case_composite(&self, type_name: &TypeName, properties_statement: String)
+        -> String;
+    fn generate_case_alias(&self, primitive_type: &AliasTypeStructure, mapper: &M) -> String;
 }
 pub trait PropertyStatementGenerator<M>
 where
@@ -111,12 +93,10 @@ where
         property_key: &PropertyKey,
         property_type: &PropertyType,
         mapper: &M,
-        //        additional_statement: &A,
     ) -> String;
 }
 #[cfg(test)]
 pub mod fakes {
-    use crate::type_defines::additional_defines::additional_statement::fake_additional_statement::{FakeAllNoneAdditionalStatement, FakeAlwaysSomeAdditionalStatement};
     use crate::type_defines::generators::mapper::LangTypeMapper;
     use crate::types::property_type::PropertyType;
     use crate::types::type_name::TypeName;
@@ -130,37 +110,18 @@ pub mod fakes {
     impl<M> PropertyStatementGenerator<M> for FakePropertyStatementGenerator
     where
         M: LangTypeMapper,
-        //    A: AdditionalStatement,
     {
         fn generate(
             &self,
-            type_name: &TypeName,
+            _: &TypeName,
             property_key: &PropertyKey,
             property_type: &PropertyType,
             mapper: &M,
-            //       a: &A,
         ) -> String {
-            //let mut result = String::new();
-            //            if let Some(comment) = a.get_property_comment(type_name, property_key) {
-            //                result += &comment;
-            //            };
-            //            if let Some(attribute) = a.get_property_attribute(type_name, property_key) {
-            //                result += &attribute;
-            //            };
-            //            let property_type = if a.is_property_optional(type_name, property_key) {
-            //                mapper.case_optional_type(mapper.case_property_type(property_type))
-            //            } else {
-            //                mapper.case_property_type(property_type)
-            //            };
-            //            let visibility = a.get_property_visibility(type_name, property_key);
             format!(
-                // "{}{}{}: {},",
-                // "{}{}: {},",
                 "{}: {},",
-                // result,
-                //               visibility,
                 property_key.as_str(),
-                mapper.case_property_type(property_type) //      property_typ
+                mapper.case_property_type(property_type)
             )
         }
     }
@@ -172,41 +133,15 @@ pub mod fakes {
             type_name: &TypeName,
             properties_statement: String,
         ) -> String {
-            let mut result = String::new();
-            ////            if let Some(comment) = a.get_type_comment(type_name) {
-            //                result += &comment;
-            //            };
-            //            if let Some(attribute) = a.get_type_attribute(type_name) {
-            //                result += &attribute;
-            //            };
-            //            let visibility = a.get_type_visibility(type_name);
-            format!(
-                //"{}{}struct {} {{{}}}",
-                "{}struct {} {{{}}}",
-                result,
-                //visibility,
-                type_name.as_str(),
-                properties_statement
-            )
+            format!("struct {} {{{}}}", type_name.as_str(), properties_statement)
         }
         fn generate_case_alias(
             &self,
             primitive_type: &crate::types::structures::AliasTypeStructure,
             mapper: &FakeLangTypeMapper,
         ) -> String {
-            let mut result = String::new();
-            //            if let Some(comment) = a.get_type_comment(&primitive_type.name) {
-            //                result += &comment;
-            //            };
-            //            if let Some(attribute) = a.get_type_attribute(&primitive_type.name) {
-            //                result += &attribute;
-            //            };
-            //            let visibility = a.get_type_visibility(&primitive_type.name);
             format!(
-                //"{}{}type {} = {};",
-                "{}type {} = {};",
-                result,
-                //visibility,
+                "type {} = {};",
                 primitive_type.name.as_str(),
                 mapper.case_property_type(&primitive_type.property_type)
             )
@@ -258,49 +193,6 @@ mod test_type_define_statement_generator {
             structures::TypeStructure,
         },
     };
-    //    #[test]
-    //    fn test_has_child_case_and_additional() {
-    //        let simple_statement = TypeStructure::make_composite(
-    //            "Test",
-    //            vec![
-    //                ("id", make_primitive_type(make_usize())),
-    //                ("child", make_custom_type("Child")),
-    //            ],
-    //        );
-    //        let tobe = "// get_type_comment#[get_type_attribute]public struct Test {// get_property_comment#[get_property_attribute]public child: Option<Child>,// get_property_comment#[get_property_attribute]public id: Option<usize>,}".to_string();
-    //        let generator = TypeDefineGenerator::new_always_additional_fake();
-    //        let statements = generator.generate_one(simple_statement);
-    //        assert_eq!(statements, tobe);
-    //    }
-    //    #[test]
-    //    fn test_simple_case_and_additional() {
-    //        let simple_statement =
-    //            TypeStructure::make_composite("Test", vec![("id", make_primitive_type(make_usize()))]);
-    //        let tobe = "// get_type_comment#[get_type_attribute]public struct Test {// get_property_comment#[get_property_attribute]public id: Option<usize>,}".to_string();
-    //        let generator = TypeDefineGenerator::new_always_additional_fake();
-    //        let statements = generator.generate_one(simple_statement);
-    //        assert_eq!(statements, tobe);
-    //        let simple_statement = TypeStructure::make_composite(
-    //            "Test",
-    //            vec![
-    //                ("id", make_primitive_type(make_usize())),
-    //                ("name", make_primitive_type(make_string())),
-    //            ],
-    //        );
-    //        let tobe = "struct Test {id: usize,name: String,}".to_string();
-    //        let generator = TypeDefineGenerator::new_none_additional_fake();
-    //        let statements = generator.generate_one(simple_statement);
-    //        assert_eq!(statements, tobe);
-    //    }
-    //    #[test]
-    //    fn test_case_primitive_and_additional() {
-    //        let simple_statement =
-    //            TypeStructure::make_alias("Test", make_primitive_type(make_string()));
-    //        let tobe = "// get_type_comment#[get_type_attribute]public type Test = String;".to_string();
-    //        let generator = TypeDefineGenerator::new_always_additional_fake();
-    //        let statements = generator.generate_one(simple_statement);
-    //        assert_eq!(statements, tobe);
-    //    }
     #[test]
     fn test_case_primitive() {
         let simple_statement =

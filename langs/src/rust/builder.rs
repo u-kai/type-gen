@@ -41,7 +41,6 @@ impl
         RustTypeStatementGenerator,
         RustPropertyStatementGenerator,
         RustLangMapper,
-        //AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
     > {
         let mapper = RustLangMapper;
         let property_generator = RustPropertyStatementGenerator::new(self.inner.clone());
