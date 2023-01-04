@@ -31,7 +31,7 @@ fn json_to_type_define<T, P, M, A, V, C, At, D>(
     builder: impl TypeDefineBuilder<T, P, M, A, V, C, At>,
     detail: D,
 ) where
-    T: TypeStatementGenerator<M, A>,
+    T: TypeStatementGenerator<M>, //, A>,
     P: PropertyStatementGenerator<M, A>,
     M: LangTypeMapper,
     A: AdditionalStatement,

@@ -4,6 +4,7 @@ use lang_common::type_defines::additional_defines::{
 
 use super::property_generator::RUST_PROPERTY_HEAD_SPACE;
 
+#[derive(Debug, Clone)]
 pub struct RustComment(Vec<String>);
 impl RustComment {
     const COMMENT_PREFIX: &'static str = "// ";

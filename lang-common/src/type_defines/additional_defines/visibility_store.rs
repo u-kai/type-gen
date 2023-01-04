@@ -10,6 +10,7 @@ pub trait Visibility: From<String> {
     fn default_type_visibility() -> &'static str;
     fn default_property_visibility() -> &'static str;
 }
+#[derive(Debug, Clone)]
 pub struct VisibilityStore<V: Visibility> {
     all_type_visibility: Option<V>,
     all_property_visibility: Option<V>,

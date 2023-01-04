@@ -2,6 +2,7 @@ use lang_common::type_defines::additional_defines::attribute_store::Attribute;
 
 use super::property_generator::RUST_PROPERTY_HEAD_SPACE;
 
+#[derive(Debug, Clone)]
 pub struct RustAttribute {
     all: Vec<RustAttributeKind>,
 }
@@ -59,6 +60,7 @@ impl Attribute for RustAttribute {
         })
     }
 }
+#[derive(Debug, Clone)]
 pub enum RustAttributeKind {
     CfgTest,
     Test,

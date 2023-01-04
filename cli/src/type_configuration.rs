@@ -42,7 +42,7 @@ impl ConfigJson {
         mut builder: impl TypeDefineBuilder<T, P, M, A, V, C, At>,
     ) -> TypeDefineGenerator<T, P, M, A>
     where
-        T: TypeStatementGenerator<M, A>,
+        T: TypeStatementGenerator<M>, // A>,
         P: PropertyStatementGenerator<M, A>,
         M: LangTypeMapper,
         A: AdditionalStatement,

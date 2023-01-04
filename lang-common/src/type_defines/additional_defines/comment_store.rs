@@ -8,6 +8,7 @@ pub trait Comment: From<String> {
     fn to_type_define(&self) -> String;
     fn to_property_define(&self) -> String;
 }
+#[derive(Debug, Clone)]
 pub struct CommentStore<C>
 where
     C: Comment,

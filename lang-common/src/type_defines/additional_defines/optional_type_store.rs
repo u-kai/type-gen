@@ -4,6 +4,7 @@ use utils::store_fn::{containes_to_kv_vec, push_to_kv_vec};
 
 use crate::types::{property_key::PropertyKey, type_name::TypeName};
 
+#[derive(Debug, Clone)]
 pub struct OptionalTypeStore {
     all_option_flag: Option<bool>,
     default_option_flag: bool,

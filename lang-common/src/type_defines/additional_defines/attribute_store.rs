@@ -8,6 +8,7 @@ pub trait Attribute: From<String> {
     fn to_type_define(&self) -> String;
     fn to_property_define(&self) -> String;
 }
+#[derive(Debug, Clone)]
 pub struct AttributeStore<A>
 where
     A: Attribute,

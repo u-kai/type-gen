@@ -15,66 +15,54 @@ use super::{
     reserved_words::replace_cannot_use_char,
 };
 
-pub struct RustTypeStatementGenerator {}
+pub struct RustTypeStatementGenerator {
+    additional_provider: AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
+}
 impl<'a> RustTypeStatementGenerator {
-    pub fn new() -> Self {
-        Self {}
-    }
-    fn make_additional_case_alias(
-        &self,
-        type_name: &TypeName,
-        additional_provider: &AdditionalStatementProvider<
+    pub fn new(
+        additional_provider: AdditionalStatementProvider<
             RustVisibility,
             RustComment,
             RustAttribute,
         >,
-    ) -> String {
+    ) -> Self {
+        Self {
+            additional_provider,
+        }
+    }
+    fn make_additional_case_alias(&self, type_name: &TypeName) -> String {
         let mut result = String::new();
-        if let Some(comment) = additional_provider.get_type_comment(type_name) {
+        if let Some(comment) = self.additional_provider.get_type_comment(type_name) {
             result += &comment;
         };
-        result += additional_provider.get_type_visibility(type_name);
+        result += self.additional_provider.get_type_visibility(type_name);
         result
     }
-    fn make_additional_case_composite(
-        &self,
-        type_name: &TypeName,
-        additional_provider: &AdditionalStatementProvider<
-            RustVisibility,
-            RustComment,
-            RustAttribute,
-        >,
-    ) -> String {
+    fn make_additional_case_composite(&self, type_name: &TypeName) -> String {
         let mut result = String::new();
-        if let Some(comment) = additional_provider.get_type_comment(type_name) {
+        if let Some(comment) = self.additional_provider.get_type_comment(type_name) {
             result += &comment;
         };
-        if let Some(attribute) = additional_provider.get_type_attribute(type_name) {
+        if let Some(attribute) = self.additional_provider.get_type_attribute(type_name) {
             result += &attribute;
         };
-        result += additional_provider.get_type_visibility(type_name);
+        result += self.additional_provider.get_type_visibility(type_name);
         result
     }
 }
-impl<'a>
-    TypeStatementGenerator<
-        RustLangMapper,
-        AdditionalStatementProvider<RustVisibility, RustComment, RustAttribute>,
-    > for RustTypeStatementGenerator
-{
+impl<'a> TypeStatementGenerator<RustLangMapper> for RustTypeStatementGenerator {
     const TYPE_PREFIX: &'static str = "struct";
     fn generate_case_alias(
         &self,
         primitive_type: &lang_common::types::structures::AliasTypeStructure,
         mapper: &RustLangMapper,
-        additional_statement: &AdditionalStatementProvider<
-            RustVisibility,
-            RustComment,
-            RustAttribute,
-        >,
+        //        additional_statement: &AdditionalStatementProvider<
+        //            RustVisibility,
+        //            RustComment,
+        //            RustAttribute,
+        //        >,
     ) -> String {
-        let additional =
-            self.make_additional_case_alias(&primitive_type.name, additional_statement);
+        let additional = self.make_additional_case_alias(&primitive_type.name);
         format!(
             "{additional}type {name} = {type_str};",
             additional = additional,
@@ -86,13 +74,13 @@ impl<'a>
         &self,
         type_name: &lang_common::types::type_name::TypeName,
         properties_statement: String,
-        additional_statement: &AdditionalStatementProvider<
-            RustVisibility,
-            RustComment,
-            RustAttribute,
-        >,
+        //  additional_statement: &AdditionalStatementProvider<
+        //      RustVisibility,
+        //      RustComment,
+        //      RustAttribute,
+        //  >,
     ) -> String {
-        let additional = self.make_additional_case_composite(type_name, additional_statement);
+        let additional = self.make_additional_case_composite(type_name);
         format!(
             "{}{} {} {{\n{}}}",
             additional,
@@ -140,18 +128,15 @@ mod test_rust_type_statement_generator {
         additional_provider.set_all_type_comment(type_comment);
         additional_provider.set_all_type_attribute(type_attr);
         additional_provider.set_all_type_visibility(RustVisibility::Public);
-        let generator = RustTypeStatementGenerator::new();
+        let generator = RustTypeStatementGenerator::new(additional_provider);
         let tobe = r#"// this is comment1
 // this is comment2
 #[derive(Clone,Debug)]
 pub struct Test {
     id: usize,
 }"#;
-        let expect = generator.generate_case_composite(
-            &type_name.into(),
-            format!("    id: usize,\n"),
-            &additional_provider,
-        );
+        let expect =
+            generator.generate_case_composite(&type_name.into(), format!("    id: usize,\n"));
         assert_eq!(expect, tobe);
     }
     #[test]
@@ -168,7 +153,7 @@ pub struct Test {
         additional_provider.add_type_comment(type_name, comment);
         additional_provider.add_type_attribute(type_name, attr);
         additional_provider.add_type_visibility(type_name, RustVisibility::Public);
-        let generator = RustTypeStatementGenerator::new();
+        let generator = RustTypeStatementGenerator::new(additional_provider);
         let tobe = r#"// this is comment1
 // this is comment2
 #[derive(Clone,Debug)]
@@ -176,11 +161,7 @@ pub struct Test {
     id: usize,
 }"#;
         assert_eq!(
-            generator.generate_case_composite(
-                &type_name.into(),
-                format!("    id: usize,\n"),
-                &additional_provider
-            ),
+            generator.generate_case_composite(&type_name.into(), format!("    id: usize,\n"),),
             tobe
         );
     }
@@ -194,18 +175,14 @@ pub struct Test {
         comment.add_comment_line(comment1);
         comment.add_comment_line(comment2);
         additional_provider.add_type_comment(type_name.clone(), comment);
-        let generator = RustTypeStatementGenerator::new();
+        let generator = RustTypeStatementGenerator::new(additional_provider);
         let tobe = r#"// this is comment1
 // this is comment2
 struct Test {
     id: usize,
 }"#;
         assert_eq!(
-            generator.generate_case_composite(
-                &type_name,
-                format!("    id: usize,\n"),
-                &additional_provider
-            ),
+            generator.generate_case_composite(&type_name, format!("    id: usize,\n"),),
             tobe
         );
     }
@@ -213,16 +190,12 @@ struct Test {
     fn test_case_custum_all_none_additional() {
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let type_name: TypeName = "Test".into();
-        let generator = RustTypeStatementGenerator::new();
+        let generator = RustTypeStatementGenerator::new(additional_provider);
         let tobe = r#"struct Test {
     id: usize,
 }"#;
         assert_eq!(
-            generator.generate_case_composite(
-                &type_name,
-                format!("    id: usize,\n"),
-                &additional_provider
-            ),
+            generator.generate_case_composite(&type_name, format!("    id: usize,\n"),),
             tobe
         );
     }
@@ -239,10 +212,10 @@ struct Test {
         let mapper = RustLangMapper;
         let primitive_type =
             AliasTypeStructure::new(type_name.clone(), make_primitive_type(make_string()));
-        let generator = RustTypeStatementGenerator::new();
+        let generator = RustTypeStatementGenerator::new(additional_provider);
         let tobe = format!("// {comment1}\n// {comment2}\ntype Test = String;");
         assert_eq!(
-            generator.generate_case_alias(&primitive_type, &mapper, &additional_provider),
+            generator.generate_case_alias(&primitive_type, &mapper,),
             tobe
         );
     }
@@ -252,10 +225,10 @@ struct Test {
         let type_name: TypeName = "Test".into();
         let mapper = RustLangMapper;
         let primitive_type = AliasTypeStructure::new(type_name, make_primitive_type(make_string()));
-        let generator = RustTypeStatementGenerator::new();
+        let generator = RustTypeStatementGenerator::new(additional_provider);
         let tobe = format!("type Test = String;");
         assert_eq!(
-            generator.generate_case_alias(&primitive_type, &mapper, &additional_provider),
+            generator.generate_case_alias(&primitive_type, &mapper,),
             tobe
         );
     }

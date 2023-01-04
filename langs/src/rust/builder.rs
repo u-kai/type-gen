@@ -45,7 +45,7 @@ impl
     > {
         let mapper = RustLangMapper;
         let property_generator = RustPropertyStatementGenerator::new();
-        let type_generator = RustTypeStatementGenerator::new();
+        let type_generator = RustTypeStatementGenerator::new(self.inner.clone());
         TypeDefineGenerator::new(type_generator, property_generator, mapper, self.inner)
     }
     fn set_all_type_optional(mut self, is_all_optioal: bool) -> Self {

@@ -29,6 +29,7 @@ pub trait AdditionalStatement {
     fn is_property_optional(&self, type_name: &TypeName, property_key: &PropertyKey) -> bool;
 }
 
+#[derive(Debug, Clone)]
 pub struct AdditionalStatementProvider<V, C, A>
 where
     V: Visibility,
