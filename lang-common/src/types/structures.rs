@@ -12,7 +12,9 @@ impl TypeStructure {
         name: impl Into<TypeName>,
         properties: Vec<(&str, PropertyType)>,
     ) -> Self {
-        Self::Composite(CompositeTypeStructure::new_easy(name, properties))
+        let name = name.into();
+        let properties = properties.into_iter().map(|(p, t)| (p.into(), t)).collect();
+        Self::Composite(CompositeTypeStructure::new(name, properties))
     }
     pub fn make_alias(name: impl Into<TypeName>, property_type: PropertyType) -> Self {
         Self::Alias(AliasTypeStructure::new(name.into(), property_type))
@@ -31,11 +33,6 @@ impl CompositeTypeStructure {
             name: name.into(),
             properties,
         }
-    }
-    fn new_easy(name: impl Into<TypeName>, properties: Vec<(&str, PropertyType)>) -> Self {
-        let name = name.into();
-        let properties = properties.into_iter().map(|(p, t)| (p.into(), t)).collect();
-        Self { name, properties }
     }
 }
 #[derive(Debug, Clone, PartialEq)]
