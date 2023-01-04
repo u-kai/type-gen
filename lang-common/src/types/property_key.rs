@@ -6,6 +6,7 @@ use super::type_name::TypeName;
 pub struct PropertyKey {
     original: String,
 }
+
 impl PropertyKey {
     pub fn to_type_name(&self, parent_type_name: &TypeName) -> TypeName {
         TypeName::new(format!(
