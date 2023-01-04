@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "v1",
     "json",
     "lang-common",
     "langs",
