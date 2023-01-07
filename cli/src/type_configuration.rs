@@ -7,8 +7,10 @@ use lang_common::type_defines::{
     },
     builder::TypeDefineBuilder,
     generators::{
-        generator::{PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator},
         mapper::LangTypeMapper,
+        type_define_generator::{
+            PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator,
+        },
     },
 };
 use serde::{Deserialize, Serialize};

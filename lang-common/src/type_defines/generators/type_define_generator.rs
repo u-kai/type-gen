@@ -166,7 +166,7 @@ pub mod fakes {
 mod test_type_define_statement_generator {
 
     use crate::{
-        type_defines::generators::generator::TypeDefineGenerator,
+        type_defines::generators::type_define_generator::TypeDefineGenerator,
         types::{
             primitive_type::primitive_type_factories::*, property_type::property_type_factories::*,
             structures::TypeStructure,

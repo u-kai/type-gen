@@ -3,7 +3,7 @@ use lang_common::{
         additional_defines::additional_statement::{
             AdditionalStatement, AdditionalStatementProvider,
         },
-        generators::{generator::TypeStatementGenerator, mapper::LangTypeMapper},
+        generators::{mapper::LangTypeMapper, type_define_generator::TypeStatementGenerator},
     },
     types::type_name::TypeName,
 };
@@ -96,7 +96,7 @@ mod test_rust_type_statement_generator {
     use lang_common::{
         type_defines::{
             additional_defines::additional_statement::AdditionalStatementProvider,
-            generators::generator::TypeStatementGenerator,
+            generators::type_define_generator::TypeStatementGenerator,
         },
         types::{
             primitive_type::primitive_type_factories::make_string,

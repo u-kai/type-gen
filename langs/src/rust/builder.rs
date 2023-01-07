@@ -1,7 +1,7 @@
 use lang_common::{
     type_defines::{
         additional_defines::additional_statement::AdditionalStatementProvider,
-        builder::TypeDefineBuilder, generators::generator::TypeDefineGenerator,
+        builder::TypeDefineBuilder, generators::type_define_generator::TypeDefineGenerator,
     },
     types::{property_key::PropertyKey, type_name::TypeName},
 };

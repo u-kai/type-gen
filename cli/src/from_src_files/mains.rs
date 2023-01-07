@@ -7,8 +7,8 @@ use lang_common::type_defines::{
     },
     builder::TypeDefineBuilder,
     generators::{
-        generator::{PropertyStatementGenerator, TypeStatementGenerator},
         mapper::LangTypeMapper,
+        type_define_generator::{PropertyStatementGenerator, TypeStatementGenerator},
     },
 };
 use langs::rust::builder::RustTypeDefainGeneratorBuilder;

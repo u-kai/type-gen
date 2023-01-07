@@ -3,7 +3,7 @@ use lang_common::{
         additional_defines::additional_statement::{
             AdditionalStatement, AdditionalStatementProvider,
         },
-        generators::{generator::PropertyStatementGenerator, mapper::LangTypeMapper},
+        generators::{mapper::LangTypeMapper, type_define_generator::PropertyStatementGenerator},
     },
     types::{property_key::PropertyKey, type_name::TypeName},
 };
@@ -140,7 +140,7 @@ mod test_rust_property_geneartor {
     use lang_common::{
         type_defines::{
             additional_defines::additional_statement::AdditionalStatementProvider,
-            generators::generator::PropertyStatementGenerator,
+            generators::type_define_generator::PropertyStatementGenerator,
         },
         types::{
             primitive_type::primitive_type_factories::{make_string, make_usize},

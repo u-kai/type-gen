@@ -6,8 +6,10 @@ use super::{
         comment_store::Comment, visibility_store::Visibility,
     },
     generators::{
-        generator::{PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator},
         mapper::LangTypeMapper,
+        type_define_generator::{
+            PropertyStatementGenerator, TypeDefineGenerator, TypeStatementGenerator,
+        },
     },
 };
 
