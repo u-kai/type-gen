@@ -151,24 +151,7 @@ pub mod fakes {
             FakeLangTypeMapper,
         >
     {
-        pub fn new_none_additional_fake() -> Self {
-            let mapper = FakeLangTypeMapper;
-            Self {
-                mapper,
-                type_statement_generator: FakeTypeStatementGenerator,
-                property_statement_generator: FakePropertyStatementGenerator,
-            }
-        }
-    }
-    #[cfg(test)]
-    impl
-        TypeDefineGenerator<
-            FakeTypeStatementGenerator,
-            FakePropertyStatementGenerator,
-            FakeLangTypeMapper,
-        >
-    {
-        pub fn new_always_additional_fake() -> Self {
+        pub fn fake_new() -> Self {
             let mapper = FakeLangTypeMapper;
             Self {
                 mapper,
@@ -194,7 +177,7 @@ mod test_type_define_statement_generator {
         let simple_statement =
             TypeStructure::make_alias("Test", make_primitive_type(make_string()));
         let tobe = "type Test = String;".to_string();
-        let generator = TypeDefineGenerator::new_none_additional_fake();
+        let generator = TypeDefineGenerator::fake_new();
         let statements = generator.generate_one(simple_statement);
         assert_eq!(statements, tobe);
     }
@@ -211,7 +194,7 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {child: Vec<Option<Child>>,id: Option<usize>,}".to_string();
-        let generator = TypeDefineGenerator::new_none_additional_fake();
+        let generator = TypeDefineGenerator::fake_new();
         let statements = generator.generate_one(simple_statement);
         assert_eq!(statements, tobe);
     }
@@ -228,7 +211,7 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {child: Vec<Vec<Child>>,id: usize,}".to_string();
-        let generator = TypeDefineGenerator::new_none_additional_fake();
+        let generator = TypeDefineGenerator::fake_new();
         let statements = generator.generate_one(simple_statement);
         assert_eq!(statements, tobe);
     }
@@ -242,7 +225,7 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {child: Vec<Child>,id: usize,}".to_string();
-        let generator = TypeDefineGenerator::new_none_additional_fake();
+        let generator = TypeDefineGenerator::fake_new();
         let statements = generator.generate_one(simple_statement);
         assert_eq!(statements, tobe);
     }
@@ -256,7 +239,7 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {child: Child,id: usize,}".to_string();
-        let generator = TypeDefineGenerator::new_none_additional_fake();
+        let generator = TypeDefineGenerator::fake_new();
         let statements = generator.generate_one(simple_statement);
         assert_eq!(statements, tobe);
     }
@@ -265,7 +248,7 @@ mod test_type_define_statement_generator {
         let simple_statement =
             TypeStructure::make_composite("Test", vec![("id", make_primitive_type(make_usize()))]);
         let tobe = "struct Test {id: usize,}".to_string();
-        let generator = TypeDefineGenerator::new_none_additional_fake();
+        let generator = TypeDefineGenerator::fake_new();
         let statements = generator.generate_one(simple_statement);
         assert_eq!(statements, tobe);
         let simple_statement = TypeStructure::make_composite(
@@ -276,7 +259,7 @@ mod test_type_define_statement_generator {
             ],
         );
         let tobe = "struct Test {id: usize,name: String,}".to_string();
-        let generator = TypeDefineGenerator::new_none_additional_fake();
+        let generator = TypeDefineGenerator::fake_new();
         let statements = generator.generate_one(simple_statement);
         assert_eq!(statements, tobe);
     }
