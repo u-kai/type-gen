@@ -160,7 +160,7 @@ mod test {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type: PropertyType = make_primitive_type(make_usize());
-        let tobe = format!("// this is comment1\n// this is comment2\nid:usize");
+        let tobe = format!("// this is comment1\n// this is comment2\n#[cfg(test)]\nid:usize");
         let add_comment_clouser1 = |acc: &mut String,
                                     _: &TypeName,
                                     _: &PropertyKey,
@@ -179,7 +179,17 @@ mod test {
             let add_comment = "// this is comment2\n";
             *acc = format!("{}{}", add_comment, acc);
         };
+        let add_attr_clouser1 = |acc: &mut String,
+                                 _: &TypeName,
+                                 _: &PropertyKey,
+                                 _: &PropertyType,
+                                 _: &FakeLangTypeMapper|
+         -> () {
+            let add_comment = "#[cfg(test)]\n";
+            *acc = format!("{}{}", add_comment, acc);
+        };
         let generator = CustomizablePropertyStatementGenerator::default();
+        generator.add_statement_convertor(Box::new(add_attr_clouser1));
         generator.add_statement_convertor(Box::new(add_comment_clouser2));
         generator.add_statement_convertor(Box::new(add_comment_clouser1));
         assert_eq!(
