@@ -13,6 +13,10 @@
 ## 決定
 
 - AdditionalStatement を排除し，TypeName や PropertyKey を引数にして変換処理を行うような関数やコンポーネントを追加していくことで柔軟性を高める
+  - 変換処理を行うのはどうすれば良いか
+  - 要件としては，変換処理を行うかどうかの判断として，変換前の PropertyKey や PropertyType は残しておきたい
+    - 例:PropertyKey.as_str が gender なら Optional に変換みたいな
+    - しかし，複数回変換作業は行いたいので元の情報は残しつつ，変換によって状態を変えるようにはしたい
 - WhiteList などの処理は全ての言語で利用することができるので重複をなくせるはず
 
 ## 影響
