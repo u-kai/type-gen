@@ -12,20 +12,24 @@ type PropertyKeyConvertClouser<M: LangTypeMapper> = Box<
     ) -> (),
 >;
 type PropertyTypeConvertClouser<M: LangTypeMapper> = PropertyKeyConvertClouser<M>;
-pub struct CustomizablePropertyStatementGenerator<M>
+pub struct CustomizablePropertyStatementGenerator<F, M>
 where
+    F: Fn(String, String) -> String,
     M: LangTypeMapper,
 {
+    concut_key_and_property_type_clouser: F,
     property_key_convertor: RefCell<Vec<PropertyKeyConvertClouser<M>>>,
     property_type_convertor: RefCell<Vec<PropertyTypeConvertClouser<M>>>,
 }
 
-impl<M> CustomizablePropertyStatementGenerator<M>
+impl<F, M> CustomizablePropertyStatementGenerator<F, M>
 where
+    F: Fn(String, String) -> String,
     M: LangTypeMapper,
 {
-    pub fn new() -> Self {
+    pub fn new(f: F) -> Self {
         Self {
+            concut_key_and_property_type_clouser: f,
             property_key_convertor: RefCell::new(Vec::new()),
             property_type_convertor: RefCell::new(Vec::new()),
         }
@@ -74,8 +78,9 @@ where
     }
 }
 
-impl<M> PropertyStatementGenerator<M> for CustomizablePropertyStatementGenerator<M>
+impl<F, M> PropertyStatementGenerator<M> for CustomizablePropertyStatementGenerator<F, M>
 where
+    F: Fn(String, String) -> String,
     M: LangTypeMapper,
 {
     fn generate(
@@ -85,11 +90,29 @@ where
         property_type: &crate::types::property_type::PropertyType,
         mapper: &M,
     ) -> String {
-        format!(
-            "{}:{}",
+        let c = &self.concut_key_and_property_type_clouser;
+        c(
             self.gen_key_str(type_name, property_key, property_type, mapper),
-            self.gen_type_str(type_name, property_key, property_type, mapper)
+            self.gen_type_str(type_name, property_key, property_type, mapper),
         )
+    }
+}
+fn default_concat_property_key_and_property_type(
+    key_statement: String,
+    type_statement: String,
+) -> String {
+    format!("{}:{}", key_statement, type_statement)
+}
+impl<M> Default for CustomizablePropertyStatementGenerator<fn(String, String) -> String, M>
+where
+    M: LangTypeMapper,
+{
+    fn default() -> Self {
+        Self {
+            concut_key_and_property_type_clouser: default_concat_property_key_and_property_type,
+            property_key_convertor: RefCell::new(Vec::new()),
+            property_type_convertor: RefCell::new(Vec::new()),
+        }
     }
 }
 
@@ -112,13 +135,27 @@ mod test {
         },
     };
     #[test]
+    fn test_case_primitive_type_concat_split_char_change() {
+        let mapper = FakeLangTypeMapper;
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type: PropertyType = make_primitive_type(make_usize());
+        let tobe = "id usize";
+        let concat_fn = |key: String, type_: String| -> String { format!("{} {}", key, type_) };
+        let generator = CustomizablePropertyStatementGenerator::new(concat_fn);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper),
+            tobe.to_string()
+        );
+    }
+    #[test]
     fn test_case_primitive_type_none_condition() {
         let mapper = FakeLangTypeMapper;
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type: PropertyType = make_primitive_type(make_usize());
         let tobe = "id:usize";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
@@ -128,7 +165,7 @@ mod test {
         let property_key: PropertyKey = "name".into();
         let property_type: PropertyType = make_primitive_type(make_string());
         let tobe = "name:String";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
@@ -138,7 +175,7 @@ mod test {
         let property_key: PropertyKey = "any".into();
         let property_type: PropertyType = make_any();
         let tobe = "any:any";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
@@ -151,7 +188,7 @@ mod test {
         let property_key: PropertyKey = "obj".into();
         let property_type: PropertyType = make_custom_type("TestObj");
         let tobe = "obj:TestObj";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
@@ -164,7 +201,7 @@ mod test {
         let property_key: PropertyKey = "id".into();
         let property_type: PropertyType = make_array_type(make_primitive_type(make_usize()));
         let tobe = "id:Vec<usize>";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
@@ -175,7 +212,7 @@ mod test {
         let property_key: PropertyKey = "obj".into();
         let property_type: PropertyType = make_custom_type("TestObj");
         let tobe = "obj:TestObj";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
@@ -198,7 +235,7 @@ mod test {
             }
         };
         let tobe = "id:Option<usize>";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
         generator.add_property_type_convertor(Box::new(optional_checker));
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
@@ -218,7 +255,34 @@ mod test {
                             _: &FakeLangTypeMapper|
          -> () { *acc = format!("    {}", &acc) };
         let tobe = "    id:usize";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
+        generator.add_property_key_convertor(Box::new(insert_space));
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper),
+            tobe.to_string()
+        );
+    }
+    #[test]
+    fn test_case_multi_convertor_property_key() {
+        let mapper = FakeLangTypeMapper;
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type: PropertyType = make_primitive_type(make_usize());
+        let insert_pub = |acc: &mut String,
+                          _: &TypeName,
+                          _: &PropertyKey,
+                          _: &PropertyType,
+                          _: &FakeLangTypeMapper|
+         -> () { *acc = format!("pub {}", &acc) };
+        let insert_space = |acc: &mut String,
+                            _: &TypeName,
+                            _: &PropertyKey,
+                            _: &PropertyType,
+                            _: &FakeLangTypeMapper|
+         -> () { *acc = format!("    {}", &acc) };
+        let tobe = "    pub id:usize";
+        let generator = CustomizablePropertyStatementGenerator::default();
+        generator.add_property_key_convertor(Box::new(insert_pub));
         generator.add_property_key_convertor(Box::new(insert_space));
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
@@ -248,7 +312,7 @@ mod test {
                             _: &FakeLangTypeMapper|
          -> () { *acc = format!(" {}", &acc) };
         let tobe = "id: Option<usize>";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::default();
         generator.add_property_type_convertor(Box::new(optional_checker));
         generator.add_property_type_convertor(Box::new(insert_empty));
         assert_eq!(
