@@ -12,12 +12,14 @@ type PropertyKeyConvertClouser<M: LangTypeMapper> = Box<
     ) -> (),
 >;
 type PropertyTypeConvertClouser<M: LangTypeMapper> = PropertyKeyConvertClouser<M>;
+type StatementConvertClouser<M: LangTypeMapper> = PropertyKeyConvertClouser<M>;
 pub struct CustomizablePropertyStatementGenerator<F, M>
 where
     F: Fn(String, String) -> String,
     M: LangTypeMapper,
 {
     concut_key_and_property_type_clouser: F,
+    statement_convertor: RefCell<Vec<StatementConvertClouser<M>>>,
     property_key_convertor: RefCell<Vec<PropertyKeyConvertClouser<M>>>,
     property_type_convertor: RefCell<Vec<PropertyTypeConvertClouser<M>>>,
 }
@@ -30,9 +32,13 @@ where
     pub fn new(f: F) -> Self {
         Self {
             concut_key_and_property_type_clouser: f,
+            statement_convertor: RefCell::new(Vec::new()),
             property_key_convertor: RefCell::new(Vec::new()),
             property_type_convertor: RefCell::new(Vec::new()),
         }
+    }
+    pub fn add_statement_convertor(&self, convertor: StatementConvertClouser<M>) {
+        self.statement_convertor.borrow_mut().push(convertor);
     }
     pub fn add_property_type_convertor(&self, convertor: PropertyTypeConvertClouser<M>) {
         self.property_type_convertor.borrow_mut().push(convertor);
@@ -91,10 +97,23 @@ where
         mapper: &M,
     ) -> String {
         let c = &self.concut_key_and_property_type_clouser;
-        c(
+        let mut concated_str = c(
             self.gen_key_str(type_name, property_key, property_type, mapper),
             self.gen_type_str(type_name, property_key, property_type, mapper),
-        )
+        );
+        self.statement_convertor
+            .borrow_mut()
+            .iter_mut()
+            .for_each(|c| {
+                c(
+                    &mut concated_str,
+                    type_name,
+                    property_key,
+                    property_type,
+                    mapper,
+                );
+            });
+        concated_str
     }
 }
 fn default_concat_property_key_and_property_type(
@@ -110,6 +129,7 @@ where
     fn default() -> Self {
         Self {
             concut_key_and_property_type_clouser: default_concat_property_key_and_property_type,
+            statement_convertor: RefCell::new(Vec::new()),
             property_key_convertor: RefCell::new(Vec::new()),
             property_type_convertor: RefCell::new(Vec::new()),
         }
@@ -134,6 +154,39 @@ mod test {
             type_name::TypeName,
         },
     };
+    #[test]
+    fn test_case_add_comment_and_attr() {
+        let mapper = FakeLangTypeMapper;
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type: PropertyType = make_primitive_type(make_usize());
+        let tobe = format!("// this is comment1\n// this is comment2\nid:usize");
+        let add_comment_clouser1 = |acc: &mut String,
+                                    _: &TypeName,
+                                    _: &PropertyKey,
+                                    _: &PropertyType,
+                                    _: &FakeLangTypeMapper|
+         -> () {
+            let add_comment = "// this is comment1\n";
+            *acc = format!("{}{}", add_comment, acc);
+        };
+        let add_comment_clouser2 = |acc: &mut String,
+                                    _: &TypeName,
+                                    _: &PropertyKey,
+                                    _: &PropertyType,
+                                    _: &FakeLangTypeMapper|
+         -> () {
+            let add_comment = "// this is comment2\n";
+            *acc = format!("{}{}", add_comment, acc);
+        };
+        let generator = CustomizablePropertyStatementGenerator::default();
+        generator.add_statement_convertor(Box::new(add_comment_clouser2));
+        generator.add_statement_convertor(Box::new(add_comment_clouser1));
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper),
+            tobe
+        );
+    }
     #[test]
     fn test_case_primitive_type_concat_split_char_change() {
         let mapper = FakeLangTypeMapper;
