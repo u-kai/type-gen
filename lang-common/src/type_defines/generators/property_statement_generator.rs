@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use super::{mapper::LangTypeMapper, type_define_generator::PropertyStatementGenerator};
 
-type F<M: LangTypeMapper> = Box<
+type PropertyKeyConvertClouser<M: LangTypeMapper> = Box<
     dyn FnMut(
         &mut String,
         &crate::types::type_name::TypeName,
@@ -15,7 +15,7 @@ pub struct CustomizablePropertyStatementGenerator<M>
 where
     M: LangTypeMapper,
 {
-    property_type_convertor: RefCell<Vec<F<M>>>,
+    property_type_convertor: RefCell<Vec<PropertyKeyConvertClouser<M>>>,
 }
 
 impl<M> CustomizablePropertyStatementGenerator<M>
@@ -27,7 +27,7 @@ where
             property_type_convertor: RefCell::new(Vec::new()),
         }
     }
-    pub fn add_property_type_convertor(&self, convertor: F<M>) {
+    pub fn add_property_type_convertor(&self, convertor: PropertyKeyConvertClouser<M>) {
         self.property_type_convertor.borrow_mut().push(convertor);
     }
 }
