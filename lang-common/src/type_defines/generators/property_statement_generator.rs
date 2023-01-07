@@ -14,6 +14,7 @@ pub trait ConvertorPropertyKeyStr {
 }
 type F<M: LangTypeMapper> = Box<
     dyn Fn(
+        String,
         &crate::types::type_name::TypeName,
         &crate::types::property_key::PropertyKey,
         &crate::types::property_type::PropertyType,
@@ -56,7 +57,13 @@ where
     ) -> String {
         let mut type_str = mapper.case_property_type(property_type);
         self.property_type_convertor.iter().for_each(|c| {
-            type_str = c(type_name, property_key, property_type, mapper);
+            type_str = c(
+                type_str.clone(),
+                type_name,
+                property_key,
+                property_type,
+                mapper,
+            );
         });
         let mut property_key_str = property_key.as_str();
         format!("{}:{}", property_key_str, type_str)
@@ -65,12 +72,14 @@ where
 
 #[cfg(test)]
 mod test {
+    use std::any::type_name;
+
     use super::*;
     use crate::{
         type_defines::generators::mapper::fake_mapper::FakeLangTypeMapper,
         types::{
             primitive_type::primitive_type_factories::{make_string, make_usize},
-            property_key::PropertyKey,
+            property_key::{self, PropertyKey},
             property_type::{
                 property_type_factories::{
                     make_any, make_array_type, make_custom_type, make_primitive_type,
@@ -151,12 +160,13 @@ mod test {
         );
     }
     #[test]
-    fn test_case_option_type() {
+    fn test_case_one_convertor_property_type() {
         let mapper = FakeLangTypeMapper;
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type: PropertyType = make_primitive_type(make_usize());
-        let optional_checker = |type_name: &TypeName,
+        let optional_checker = |acc: String,
+                                type_name: &TypeName,
                                 property_key: &PropertyKey,
                                 property_type: &PropertyType,
                                 mapper: &FakeLangTypeMapper|
@@ -175,13 +185,35 @@ mod test {
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
         );
-
+    }
+    #[test]
+    fn test_case_multi_convertor_property_type() {
         let mapper = FakeLangTypeMapper;
         let type_name: TypeName = "Test".into();
-        let property_key: PropertyKey = "obj".into();
-        let property_type: PropertyType = make_custom_type("TestObj");
-        let tobe = "obj:TestObj";
-        let generator = CustomizablePropertyStatementGenerator::new();
+        let property_key: PropertyKey = "id".into();
+        let property_type: PropertyType = make_primitive_type(make_usize());
+        let optional_checker = |acc: String,
+                                type_name: &TypeName,
+                                property_key: &PropertyKey,
+                                property_type: &PropertyType,
+                                mapper: &FakeLangTypeMapper|
+         -> String {
+            if type_name.as_str() == "Test" && property_key.as_str() == "id" {
+                mapper.case_optional_type(acc)
+            } else {
+                acc
+            }
+        };
+        let insert_empty = |acc: String,
+                            _: &TypeName,
+                            _: &PropertyKey,
+                            property_type: &PropertyType,
+                            mapper: &FakeLangTypeMapper|
+         -> String { format!(" {}", acc) };
+        let tobe = "id: Option<usize>";
+        let mut generator = CustomizablePropertyStatementGenerator::new();
+        generator.add_property_type_convertor(Box::new(optional_checker));
+        generator.add_property_type_convertor(Box::new(insert_empty));
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
