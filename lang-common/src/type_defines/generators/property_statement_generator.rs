@@ -1,19 +1,7 @@
 use std::cell::RefCell;
 
-use crate::types::{primitive_type::PrimitiveType, property_type::PropertyType};
-
 use super::{mapper::LangTypeMapper, type_define_generator::PropertyStatementGenerator};
 
-pub trait ConvertorPropertyKeyStr {
-    type Mapper: LangTypeMapper;
-    fn call(
-        self,
-        type_name: &crate::types::type_name::TypeName,
-        property_key: &crate::types::property_key::PropertyKey,
-        property_type: &crate::types::property_type::PropertyType,
-        mapper: &Self::Mapper,
-    ) -> String;
-}
 type F<M: LangTypeMapper> = Box<
     dyn FnMut(
         &mut String,
@@ -25,7 +13,6 @@ type F<M: LangTypeMapper> = Box<
 >;
 pub struct CustomizablePropertyStatementGenerator<M>
 where
-    //C: FnOnce() -> String,
     M: LangTypeMapper,
 {
     property_type_convertor: RefCell<Vec<F<M>>>,
@@ -34,14 +21,13 @@ where
 impl<M> CustomizablePropertyStatementGenerator<M>
 where
     M: LangTypeMapper,
-    //    C: ConvertorPropertyKeyStr,
 {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             property_type_convertor: RefCell::new(Vec::new()),
         }
     }
-    fn add_property_type_convertor(&mut self, convertor: F<M>) {
+    pub fn add_property_type_convertor(&self, convertor: F<M>) {
         self.property_type_convertor.borrow_mut().push(convertor);
     }
 }
@@ -77,14 +63,13 @@ where
 
 #[cfg(test)]
 mod test {
-    use std::any::type_name;
 
     use super::*;
     use crate::{
         type_defines::generators::mapper::fake_mapper::FakeLangTypeMapper,
         types::{
             primitive_type::primitive_type_factories::{make_string, make_usize},
-            property_key::{self, PropertyKey},
+            property_key::PropertyKey,
             property_type::{
                 property_type_factories::{
                     make_any, make_array_type, make_custom_type, make_primitive_type,
@@ -173,7 +158,7 @@ mod test {
         let optional_checker = |acc: &mut String,
                                 type_name: &TypeName,
                                 property_key: &PropertyKey,
-                                property_type: &PropertyType,
+                                _: &PropertyType,
                                 mapper: &FakeLangTypeMapper|
          -> () {
             if type_name.as_str() == "Test" && property_key.as_str() == "id" {
@@ -181,7 +166,7 @@ mod test {
             }
         };
         let tobe = "id:Option<usize>";
-        let mut generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::new();
         generator.add_property_type_convertor(Box::new(optional_checker));
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
@@ -197,7 +182,7 @@ mod test {
         let optional_checker = |acc: &mut String,
                                 type_name: &TypeName,
                                 property_key: &PropertyKey,
-                                property_type: &PropertyType,
+                                _: &PropertyType,
                                 mapper: &FakeLangTypeMapper|
          -> () {
             if type_name.as_str() == "Test" && property_key.as_str() == "id" {
@@ -207,11 +192,11 @@ mod test {
         let insert_empty = |acc: &mut String,
                             _: &TypeName,
                             _: &PropertyKey,
-                            property_type: &PropertyType,
-                            mapper: &FakeLangTypeMapper|
+                            _: &PropertyType,
+                            _: &FakeLangTypeMapper|
          -> () { *acc = format!(" {}", &acc) };
         let tobe = "id: Option<usize>";
-        let mut generator = CustomizablePropertyStatementGenerator::new();
+        let generator = CustomizablePropertyStatementGenerator::new();
         generator.add_property_type_convertor(Box::new(optional_checker));
         generator.add_property_type_convertor(Box::new(insert_empty));
         assert_eq!(
