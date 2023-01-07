@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use crate::types::{primitive_type::PrimitiveType, property_type::PropertyType};
 
 use super::{mapper::LangTypeMapper, type_define_generator::PropertyStatementGenerator};
@@ -13,20 +15,20 @@ pub trait ConvertorPropertyKeyStr {
     ) -> String;
 }
 type F<M: LangTypeMapper> = Box<
-    dyn Fn(
-        String,
+    dyn FnMut(
+        &mut String,
         &crate::types::type_name::TypeName,
         &crate::types::property_key::PropertyKey,
         &crate::types::property_type::PropertyType,
         &M,
-    ) -> String,
+    ) -> (),
 >;
 pub struct CustomizablePropertyStatementGenerator<M>
 where
     //C: FnOnce() -> String,
     M: LangTypeMapper,
 {
-    property_type_convertor: Vec<F<M>>,
+    property_type_convertor: RefCell<Vec<F<M>>>,
 }
 
 impl<M> CustomizablePropertyStatementGenerator<M>
@@ -36,11 +38,11 @@ where
 {
     fn new() -> Self {
         Self {
-            property_type_convertor: Vec::new(),
+            property_type_convertor: RefCell::new(Vec::new()),
         }
     }
     fn add_property_type_convertor(&mut self, convertor: F<M>) {
-        self.property_type_convertor.push(convertor);
+        self.property_type_convertor.borrow_mut().push(convertor);
     }
 }
 
@@ -56,15 +58,18 @@ where
         mapper: &M,
     ) -> String {
         let mut type_str = mapper.case_property_type(property_type);
-        self.property_type_convertor.iter().for_each(|c| {
-            type_str = c(
-                type_str.clone(),
-                type_name,
-                property_key,
-                property_type,
-                mapper,
-            );
-        });
+        self.property_type_convertor
+            .borrow_mut()
+            .iter_mut()
+            .for_each(|c| {
+                c(
+                    &mut type_str,
+                    type_name,
+                    property_key,
+                    property_type,
+                    mapper,
+                );
+            });
         let mut property_key_str = property_key.as_str();
         format!("{}:{}", property_key_str, type_str)
     }
@@ -165,17 +170,14 @@ mod test {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type: PropertyType = make_primitive_type(make_usize());
-        let optional_checker = |acc: String,
+        let optional_checker = |acc: &mut String,
                                 type_name: &TypeName,
                                 property_key: &PropertyKey,
                                 property_type: &PropertyType,
                                 mapper: &FakeLangTypeMapper|
-         -> String {
-            let type_str = mapper.case_property_type(property_type);
+         -> () {
             if type_name.as_str() == "Test" && property_key.as_str() == "id" {
-                mapper.case_optional_type(type_str)
-            } else {
-                type_str
+                *acc = mapper.case_optional_type(acc.clone())
             }
         };
         let tobe = "id:Option<usize>";
@@ -192,24 +194,22 @@ mod test {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type: PropertyType = make_primitive_type(make_usize());
-        let optional_checker = |acc: String,
+        let optional_checker = |acc: &mut String,
                                 type_name: &TypeName,
                                 property_key: &PropertyKey,
                                 property_type: &PropertyType,
                                 mapper: &FakeLangTypeMapper|
-         -> String {
+         -> () {
             if type_name.as_str() == "Test" && property_key.as_str() == "id" {
-                mapper.case_optional_type(acc)
-            } else {
-                acc
+                *acc = mapper.case_optional_type(acc.clone())
             }
         };
-        let insert_empty = |acc: String,
+        let insert_empty = |acc: &mut String,
                             _: &TypeName,
                             _: &PropertyKey,
                             property_type: &PropertyType,
                             mapper: &FakeLangTypeMapper|
-         -> String { format!(" {}", acc) };
+         -> () { *acc = format!(" {}", &acc) };
         let tobe = "id: Option<usize>";
         let mut generator = CustomizablePropertyStatementGenerator::new();
         generator.add_property_type_convertor(Box::new(optional_checker));
