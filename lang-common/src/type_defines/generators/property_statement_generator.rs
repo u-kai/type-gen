@@ -1,6 +1,6 @@
 use super::{mapper::LangTypeMapper, type_define_generator::PropertyStatementGenerator};
 
-pub trait ConvertorClouser<M: LangTypeMapper> {
+pub trait Convertor<M: LangTypeMapper> {
     fn convert(
         &self,
         acc: &mut String,
@@ -10,18 +10,18 @@ pub trait ConvertorClouser<M: LangTypeMapper> {
         mapper: &M,
     ) -> ();
 }
-type PropertyKeyConvertClouser<M: LangTypeMapper> = Box<dyn ConvertorClouser<M>>;
-type PropertyTypeConvertClouser<M: LangTypeMapper> = PropertyKeyConvertClouser<M>;
-type StatementConvertClouser<M: LangTypeMapper> = PropertyKeyConvertClouser<M>;
+type PropertyKeyConvertor<M: LangTypeMapper> = Box<dyn Convertor<M>>;
+type PropertyTypeConvertor<M: LangTypeMapper> = PropertyKeyConvertor<M>;
+type StatementConvertor<M: LangTypeMapper> = PropertyKeyConvertor<M>;
 pub struct CustomizablePropertyStatementGenerator<F, M>
 where
     F: Fn(String, String) -> String,
     M: LangTypeMapper,
 {
     concut_key_and_property_type_clouser: F,
-    statement_convertor: Vec<StatementConvertClouser<M>>,
-    property_key_convertor: Vec<PropertyKeyConvertClouser<M>>,
-    property_type_convertor: Vec<PropertyTypeConvertClouser<M>>,
+    statement_convertor: Vec<StatementConvertor<M>>,
+    property_key_convertor: Vec<PropertyKeyConvertor<M>>,
+    property_type_convertor: Vec<PropertyTypeConvertor<M>>,
 }
 
 impl<F, M> CustomizablePropertyStatementGenerator<F, M>
@@ -37,13 +37,13 @@ where
             property_type_convertor: Vec::new(),
         }
     }
-    pub fn add_statement_convertor(&mut self, convertor: StatementConvertClouser<M>) {
+    pub fn add_statement_convertor(&mut self, convertor: StatementConvertor<M>) {
         self.statement_convertor.push(convertor);
     }
-    pub fn add_property_type_convertor(&mut self, convertor: PropertyTypeConvertClouser<M>) {
+    pub fn add_property_type_convertor(&mut self, convertor: PropertyTypeConvertor<M>) {
         self.property_type_convertor.push(convertor);
     }
-    pub fn add_property_key_convertor(&mut self, convertor: PropertyKeyConvertClouser<M>) {
+    pub fn add_property_key_convertor(&mut self, convertor: PropertyKeyConvertor<M>) {
         self.property_key_convertor.push(convertor);
     }
     fn gen_key_str(
@@ -152,7 +152,7 @@ mod test {
         struct Store<'a> {
             filter: Vec<&'a str>,
         }
-        impl<'a> ConvertorClouser<FakeLangTypeMapper> for Store<'a> {
+        impl<'a> Convertor<FakeLangTypeMapper> for Store<'a> {
             fn convert(
                 &self,
                 acc: &mut String,
@@ -193,7 +193,7 @@ mod test {
         let tobe = format!("// this is comment1\n// this is comment2\n#[cfg(test)]\nid:usize");
         let mut generator = CustomizablePropertyStatementGenerator::default();
         struct Clo1 {}
-        impl ConvertorClouser<FakeLangTypeMapper> for Clo1 {
+        impl Convertor<FakeLangTypeMapper> for Clo1 {
             fn convert(
                 &self,
                 acc: &mut String,
@@ -207,7 +207,7 @@ mod test {
             }
         }
         struct Clo2 {}
-        impl ConvertorClouser<FakeLangTypeMapper> for Clo2 {
+        impl Convertor<FakeLangTypeMapper> for Clo2 {
             fn convert(
                 &self,
                 acc: &mut String,
@@ -221,7 +221,7 @@ mod test {
             }
         }
         struct Clo3 {}
-        impl ConvertorClouser<FakeLangTypeMapper> for Clo3 {
+        impl Convertor<FakeLangTypeMapper> for Clo3 {
             fn convert(
                 &self,
                 acc: &mut String,
