@@ -116,17 +116,17 @@ where
         concated_str
     }
 }
-fn default_concat_property_key_and_property_type(
-    key_statement: String,
-    type_statement: String,
-) -> String {
-    format!("{}:{}", key_statement, type_statement)
-}
 impl<M> Default for CustomizablePropertyStatementGenerator<fn(String, String) -> String, M>
 where
     M: LangTypeMapper,
 {
     fn default() -> Self {
+        fn default_concat_property_key_and_property_type(
+            key_statement: String,
+            type_statement: String,
+        ) -> String {
+            format!("{}:{}", key_statement, type_statement)
+        }
         Self {
             concut_key_and_property_type_clouser: default_concat_property_key_and_property_type,
             statement_convertor: RefCell::new(Vec::new()),
