@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use super::{mapper::LangTypeMapper, type_define_generator::PropertyStatementGenerator};
 
 pub trait ConvertorClouser<M: LangTypeMapper> {
@@ -21,9 +19,9 @@ where
     M: LangTypeMapper,
 {
     concut_key_and_property_type_clouser: F,
-    statement_convertor: RefCell<Vec<StatementConvertClouser<M>>>,
-    property_key_convertor: RefCell<Vec<PropertyKeyConvertClouser<M>>>,
-    property_type_convertor: RefCell<Vec<PropertyTypeConvertClouser<M>>>,
+    statement_convertor: Vec<StatementConvertClouser<M>>,
+    property_key_convertor: Vec<PropertyKeyConvertClouser<M>>,
+    property_type_convertor: Vec<PropertyTypeConvertClouser<M>>,
 }
 
 impl<F, M> CustomizablePropertyStatementGenerator<F, M>
@@ -34,19 +32,19 @@ where
     pub fn new(f: F) -> Self {
         Self {
             concut_key_and_property_type_clouser: f,
-            statement_convertor: RefCell::new(Vec::new()),
-            property_key_convertor: RefCell::new(Vec::new()),
-            property_type_convertor: RefCell::new(Vec::new()),
+            statement_convertor: Vec::new(),
+            property_key_convertor: Vec::new(),
+            property_type_convertor: Vec::new(),
         }
     }
-    pub fn add_statement_convertor(&self, convertor: StatementConvertClouser<M>) {
-        self.statement_convertor.borrow_mut().push(convertor);
+    pub fn add_statement_convertor(&mut self, convertor: StatementConvertClouser<M>) {
+        self.statement_convertor.push(convertor);
     }
-    pub fn add_property_type_convertor(&self, convertor: PropertyTypeConvertClouser<M>) {
-        self.property_type_convertor.borrow_mut().push(convertor);
+    pub fn add_property_type_convertor(&mut self, convertor: PropertyTypeConvertClouser<M>) {
+        self.property_type_convertor.push(convertor);
     }
-    pub fn add_property_key_convertor(&self, convertor: PropertyKeyConvertClouser<M>) {
-        self.property_key_convertor.borrow_mut().push(convertor);
+    pub fn add_property_key_convertor(&mut self, convertor: PropertyKeyConvertClouser<M>) {
+        self.property_key_convertor.push(convertor);
     }
     fn gen_key_str(
         &self,
@@ -57,8 +55,7 @@ where
     ) -> String {
         let mut key_str = property_key.as_str().to_string();
         self.property_key_convertor
-            .borrow_mut()
-            .iter_mut()
+            .iter()
             .for_each(|c| c.convert(&mut key_str, type_name, property_key, property_type, mapper));
         key_str
     }
@@ -70,18 +67,15 @@ where
         mapper: &M,
     ) -> String {
         let mut type_str = mapper.case_property_type(property_type);
-        self.property_type_convertor
-            .borrow_mut()
-            .iter_mut()
-            .for_each(|c| {
-                c.convert(
-                    &mut type_str,
-                    type_name,
-                    property_key,
-                    property_type,
-                    mapper,
-                );
-            });
+        self.property_type_convertor.iter().for_each(|c| {
+            c.convert(
+                &mut type_str,
+                type_name,
+                property_key,
+                property_type,
+                mapper,
+            );
+        });
         type_str
     }
 }
@@ -103,18 +97,15 @@ where
             self.gen_key_str(type_name, property_key, property_type, mapper),
             self.gen_type_str(type_name, property_key, property_type, mapper),
         );
-        self.statement_convertor
-            .borrow_mut()
-            .iter_mut()
-            .for_each(|c| {
-                c.convert(
-                    &mut concated_str,
-                    type_name,
-                    property_key,
-                    property_type,
-                    mapper,
-                );
-            });
+        self.statement_convertor.iter().for_each(|c| {
+            c.convert(
+                &mut concated_str,
+                type_name,
+                property_key,
+                property_type,
+                mapper,
+            );
+        });
         concated_str
     }
 }
@@ -131,9 +122,9 @@ where
         }
         Self {
             concut_key_and_property_type_clouser: default_concat_property_key_and_property_type,
-            statement_convertor: RefCell::new(Vec::new()),
-            property_key_convertor: RefCell::new(Vec::new()),
-            property_type_convertor: RefCell::new(Vec::new()),
+            statement_convertor: Vec::new(),
+            property_key_convertor: Vec::new(),
+            property_type_convertor: Vec::new(),
         }
     }
 }
@@ -186,7 +177,7 @@ mod test {
         let property_type: PropertyType = make_primitive_type(make_usize());
         let store = Store::new(vec!["id", "name"]);
         let tobe = format!("");
-        let generator = CustomizablePropertyStatementGenerator::default();
+        let mut generator = CustomizablePropertyStatementGenerator::default();
         generator.add_statement_convertor(Box::new(store));
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
@@ -200,7 +191,7 @@ mod test {
         let property_key: PropertyKey = "id".into();
         let property_type: PropertyType = make_primitive_type(make_usize());
         let tobe = format!("// this is comment1\n// this is comment2\n#[cfg(test)]\nid:usize");
-        let generator = CustomizablePropertyStatementGenerator::default();
+        let mut generator = CustomizablePropertyStatementGenerator::default();
         struct Clo1 {}
         impl ConvertorClouser<FakeLangTypeMapper> for Clo1 {
             fn convert(
