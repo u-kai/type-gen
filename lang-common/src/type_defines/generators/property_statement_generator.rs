@@ -11,11 +11,13 @@ type PropertyKeyConvertClouser<M: LangTypeMapper> = Box<
         &M,
     ) -> (),
 >;
+type PropertyTypeConvertClouser<M: LangTypeMapper> = PropertyKeyConvertClouser<M>;
 pub struct CustomizablePropertyStatementGenerator<M>
 where
     M: LangTypeMapper,
 {
-    property_type_convertor: RefCell<Vec<PropertyKeyConvertClouser<M>>>,
+    property_key_convertor: RefCell<Vec<PropertyKeyConvertClouser<M>>>,
+    property_type_convertor: RefCell<Vec<PropertyTypeConvertClouser<M>>>,
 }
 
 impl<M> CustomizablePropertyStatementGenerator<M>
@@ -24,19 +26,31 @@ where
 {
     pub fn new() -> Self {
         Self {
+            property_key_convertor: RefCell::new(Vec::new()),
             property_type_convertor: RefCell::new(Vec::new()),
         }
     }
-    pub fn add_property_type_convertor(&self, convertor: PropertyKeyConvertClouser<M>) {
+    pub fn add_property_type_convertor(&self, convertor: PropertyTypeConvertClouser<M>) {
         self.property_type_convertor.borrow_mut().push(convertor);
     }
-}
-
-impl<M> PropertyStatementGenerator<M> for CustomizablePropertyStatementGenerator<M>
-where
-    M: LangTypeMapper,
-{
-    fn generate(
+    pub fn add_property_key_convertor(&self, convertor: PropertyKeyConvertClouser<M>) {
+        self.property_key_convertor.borrow_mut().push(convertor);
+    }
+    fn gen_key_str(
+        &self,
+        type_name: &crate::types::type_name::TypeName,
+        property_key: &crate::types::property_key::PropertyKey,
+        property_type: &crate::types::property_type::PropertyType,
+        mapper: &M,
+    ) -> String {
+        let mut key_str = property_key.as_str().to_string();
+        self.property_key_convertor
+            .borrow_mut()
+            .iter_mut()
+            .for_each(|c| c(&mut key_str, type_name, property_key, property_type, mapper));
+        key_str
+    }
+    fn gen_type_str(
         &self,
         type_name: &crate::types::type_name::TypeName,
         property_key: &crate::types::property_key::PropertyKey,
@@ -56,8 +70,26 @@ where
                     mapper,
                 );
             });
-        let mut property_key_str = property_key.as_str();
-        format!("{}:{}", property_key_str, type_str)
+        type_str
+    }
+}
+
+impl<M> PropertyStatementGenerator<M> for CustomizablePropertyStatementGenerator<M>
+where
+    M: LangTypeMapper,
+{
+    fn generate(
+        &self,
+        type_name: &crate::types::type_name::TypeName,
+        property_key: &crate::types::property_key::PropertyKey,
+        property_type: &crate::types::property_type::PropertyType,
+        mapper: &M,
+    ) -> String {
+        format!(
+            "{}:{}",
+            self.gen_key_str(type_name, property_key, property_type, mapper),
+            self.gen_type_str(type_name, property_key, property_type, mapper)
+        )
     }
 }
 
@@ -168,6 +200,26 @@ mod test {
         let tobe = "id:Option<usize>";
         let generator = CustomizablePropertyStatementGenerator::new();
         generator.add_property_type_convertor(Box::new(optional_checker));
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper),
+            tobe.to_string()
+        );
+    }
+    #[test]
+    fn test_case_one_convertor_property_key() {
+        let mapper = FakeLangTypeMapper;
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type: PropertyType = make_primitive_type(make_usize());
+        let insert_space = |acc: &mut String,
+                            _: &TypeName,
+                            _: &PropertyKey,
+                            _: &PropertyType,
+                            _: &FakeLangTypeMapper|
+         -> () { *acc = format!("    {}", &acc) };
+        let tobe = "    id:usize";
+        let generator = CustomizablePropertyStatementGenerator::new();
+        generator.add_property_key_convertor(Box::new(insert_space));
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper),
             tobe.to_string()
