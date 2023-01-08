@@ -82,6 +82,8 @@ where
         result
     }
 }
+
+#[cfg(test)]
 pub(super) fn concat_fn(identify: &str, type_name: &TypeName, statement: String) -> String {
     format!("{} {} = {}", identify, type_name.as_str(), statement)
 }
