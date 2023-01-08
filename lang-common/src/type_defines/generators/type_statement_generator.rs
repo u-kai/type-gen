@@ -30,7 +30,6 @@ where
     F1: Fn(&str, &TypeName, String) -> String,
     F2: Fn(&str, &TypeName, String) -> String,
 {
-    //type Mapper = M;
     fn generate_case_alias<M: LangTypeMapper>(
         &self,
         alias_type: &crate::types::structures::AliasTypeStructure,
@@ -101,32 +100,6 @@ where
         f(self.type_identify, type_name, properties_statement)
     }
 }
-//impl<F, M> TypeStatementGenerator<M> for CustomizableCompositeTypeStatementGenerator<F>
-//where
-//    F: Fn(&str, &TypeName, String) -> String,
-//    M: LangTypeMapper,
-//{
-//    fn generate_case_composite(
-//        &self,
-//        type_name: &crate::types::type_name::TypeName,
-//        properties_statement: String,
-//    ) -> String {
-//        let f = &self.concat_fn;
-//        f(self.type_identify, type_name, properties_statement)
-//    }
-//    fn generate_case_alias(
-//        &self,
-//        primitive_type: &crate::types::structures::AliasTypeStructure,
-//        mapper: &M,
-//    ) -> String {
-//        String::new()
-//    }
-//}
-//impl<M:LangTypeMapper> Default for CustomizableTypeStatementGenerator<fn(&str,&TypeName,String)->String,M> {
-//    fn default() -> Self {
-//        CustomizableTypeStatementGenerator { type_identify: "class", concat_fn:  m: () }
-//    }
-//}
 #[cfg(test)]
 mod test {
     use super::*;
@@ -178,8 +151,10 @@ mod test {
 
         let type_name: TypeName = "Test".into();
         let alias_tobe = "type Test = String".to_string();
-        let alias_type_structure =
-            AliasTypeStructure::new(type_name, PropertyType::Primitive(PrimitiveType::String));
+        let alias_type_structure = AliasTypeStructure::new(
+            type_name.clone(),
+            PropertyType::Primitive(PrimitiveType::String),
+        );
         let mapper = FakeLangTypeMapper;
         assert_eq!(
             generator.generate_case_alias(&alias_type_structure, &mapper),
@@ -188,10 +163,10 @@ mod test {
 
         let property_statements = "id:usize".to_string();
         let composite_tobe = "struct Test {id:usize}";
-        //        assert_eq!(
-        //            generator.generate_case_composite(&type_name, property_statements),
-        //            composite_tobe.to_string()
-        //        );
+        assert_eq!(
+            generator.generate_case_composite(&type_name, property_statements),
+            composite_tobe.to_string()
+        );
     }
     #[test]
     fn test_case_alias_type_simple() {

@@ -11,7 +11,6 @@ use lang_common::{
 use super::{
     additional_statements::{RustComment, RustVisibility},
     attribute::RustAttribute,
-    mapper::RustLangMapper,
     reserved_words::replace_cannot_use_char,
 };
 
@@ -75,11 +74,6 @@ impl<'a> TypeStatementGenerator for RustTypeStatementGenerator {
         &self,
         type_name: &lang_common::types::type_name::TypeName,
         properties_statement: String,
-        //  additional_statement: &AdditionalStatementProvider<
-        //      RustVisibility,
-        //      RustComment,
-        //      RustAttribute,
-        //  >,
     ) -> String {
         let additional = self.make_additional_case_composite(type_name);
         format!(
