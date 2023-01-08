@@ -3,7 +3,7 @@ use crate::{
     types::{
         property_key::PropertyKey,
         property_type::PropertyType,
-        structures::{AliasTypeStructure, TypeStructure},
+        structures::{AliasTypeStructure, CompositeTypeStructure, TypeStructure},
         type_name::TypeName,
     },
 };
@@ -63,7 +63,7 @@ where
                             format!("{}{}", acc, property_statement)
                         });
                 self.type_statement_generator
-                    .generate_case_composite(&composite.type_name(), properties_statement)
+                    .generate_case_composite(&composite, properties_statement)
             }
             TypeStructure::Alias(primitive) => self
                 .type_statement_generator
@@ -75,14 +75,14 @@ where
 pub trait TypeStatementGenerator {
     const TYPE_PREFIX: &'static str = "class";
     type Mapper: LangTypeMapper;
-    fn generate_case_composite(&self, type_name: &TypeName, properties_statement: String)
-        -> String;
-
-    fn generate_case_alias(
+    fn generate_case_composite(
         &self,
-        primitive_type: &AliasTypeStructure,
-        mapper: &Self::Mapper,
+        composite_type: &CompositeTypeStructure,
+        properties_statement: String,
     ) -> String;
+
+    fn generate_case_alias(&self, alias_type: &AliasTypeStructure, mapper: &Self::Mapper)
+        -> String;
     //    fn generate_case_alias(&self, primitive_type: &AliasTypeStructure, mapper: &M) -> String;
 }
 pub trait PropertyStatementGenerator<M>
@@ -100,7 +100,9 @@ where
 #[cfg(test)]
 pub mod fakes {
     use crate::type_defines::generators::mapper::LangTypeMapper;
+    use crate::type_defines::generators::type_statement_generators::composite_type_statement_generator;
     use crate::types::property_type::PropertyType;
+    use crate::types::structures::CompositeTypeStructure;
     use crate::types::type_name::TypeName;
     use crate::{
         type_defines::generators::mapper::fake_mapper::FakeLangTypeMapper,
@@ -133,10 +135,14 @@ pub mod fakes {
         const TYPE_PREFIX: &'static str = "struct";
         fn generate_case_composite(
             &self,
-            type_name: &TypeName,
+            compsite_type: &CompositeTypeStructure,
             properties_statement: String,
         ) -> String {
-            format!("struct {} {{{}}}", type_name.as_str(), properties_statement)
+            format!(
+                "struct {} {{{}}}",
+                compsite_type.type_name().as_str(),
+                properties_statement
+            )
         }
         //fn generate_case_alias<M: LangTypeMapper>(
         fn generate_case_alias(

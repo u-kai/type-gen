@@ -5,7 +5,7 @@ use lang_common::{
         },
         generators::{mapper::LangTypeMapper, type_define_generator::TypeStatementGenerator},
     },
-    types::type_name::TypeName,
+    types::{structures::CompositeTypeStructure, type_name::TypeName},
 };
 
 use super::{
@@ -74,9 +74,11 @@ impl<'a> TypeStatementGenerator for RustTypeStatementGenerator {
     }
     fn generate_case_composite(
         &self,
-        type_name: &lang_common::types::type_name::TypeName,
+        //type_name: &lang_common::types::type_name::TypeName,
+        composite_type: &CompositeTypeStructure,
         properties_statement: String,
     ) -> String {
+        let type_name = composite_type.type_name();
         let additional = self.make_additional_case_composite(type_name);
         format!(
             "{}{} {} {{\n{}}}",
@@ -90,6 +92,8 @@ impl<'a> TypeStatementGenerator for RustTypeStatementGenerator {
 
 #[cfg(test)]
 mod test_rust_type_statement_generator {
+    use std::collections::BTreeMap;
+
     use lang_common::{
         type_defines::{
             additional_defines::additional_statement::AdditionalStatementProvider,
@@ -98,7 +102,8 @@ mod test_rust_type_statement_generator {
         types::{
             primitive_type::primitive_type_factories::make_string,
             property_type::property_type_factories::make_primitive_type,
-            structures::AliasTypeStructure, type_name::TypeName,
+            structures::{AliasTypeStructure, CompositeTypeStructure},
+            type_name::TypeName,
         },
     };
 
@@ -116,6 +121,7 @@ mod test_rust_type_statement_generator {
         let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);
 
         let mut type_comment = RustComment::new();
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
         let comment1 = "this is comment1";
         let comment2 = "this is comment2";
         type_comment.add_comment_line(comment1);
@@ -133,12 +139,13 @@ pub struct Test {
     id: usize,
 }"#;
         let expect =
-            generator.generate_case_composite(&type_name.into(), format!("    id: usize,\n"));
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"));
         assert_eq!(expect, tobe);
     }
     #[test]
     fn test_case_custum_with_all() {
         let type_name = "Test";
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
         let mut additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let mut comment = RustComment::new();
         let comment1 = "this is comment1";
@@ -158,7 +165,7 @@ pub struct Test {
     id: usize,
 }"#;
         assert_eq!(
-            generator.generate_case_composite(&type_name.into(), format!("    id: usize,\n"),),
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
             tobe
         );
     }
@@ -169,9 +176,10 @@ pub struct Test {
         let comment1 = "this is comment1";
         let comment2 = "this is comment2";
         let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
         comment.add_comment_line(comment1);
         comment.add_comment_line(comment2);
-        additional_provider.add_type_comment(type_name.clone(), comment);
+        additional_provider.add_type_comment(type_name, comment);
         let generator = RustTypeStatementGenerator::new(additional_provider);
         let tobe = r#"// this is comment1
 // this is comment2
@@ -179,7 +187,7 @@ struct Test {
     id: usize,
 }"#;
         assert_eq!(
-            generator.generate_case_composite(&type_name, format!("    id: usize,\n"),),
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
             tobe
         );
     }
@@ -187,12 +195,13 @@ struct Test {
     fn test_case_custum_all_none_additional() {
         let additional_provider = AdditionalStatementProvider::with_default_optional(false);
         let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
         let generator = RustTypeStatementGenerator::new(additional_provider);
         let tobe = r#"struct Test {
     id: usize,
 }"#;
         assert_eq!(
-            generator.generate_case_composite(&type_name, format!("    id: usize,\n"),),
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
             tobe
         );
     }
