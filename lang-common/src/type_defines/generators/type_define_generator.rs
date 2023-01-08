@@ -12,7 +12,7 @@ use super::mapper::LangTypeMapper;
 
 pub struct TypeDefineGenerator<T, P, M>
 where
-    T: TypeStatementGenerator<M>,
+    T: TypeStatementGenerator,
     P: PropertyStatementGenerator<M>,
     M: LangTypeMapper,
 {
@@ -22,7 +22,7 @@ where
 }
 impl<T, P, M> TypeDefineGenerator<T, P, M>
 where
-    T: TypeStatementGenerator<M>,
+    T: TypeStatementGenerator, //<Mapper = M>,
     P: PropertyStatementGenerator<M>,
     M: LangTypeMapper,
 {
@@ -70,14 +70,17 @@ where
     }
 }
 
-pub trait TypeStatementGenerator<M>
-where
-    M: LangTypeMapper,
-{
+pub trait TypeStatementGenerator {
     const TYPE_PREFIX: &'static str = "class";
+    //type Mapper: LangTypeMapper;
     fn generate_case_composite(&self, type_name: &TypeName, properties_statement: String)
         -> String;
-    fn generate_case_alias(&self, primitive_type: &AliasTypeStructure, mapper: &M) -> String;
+    fn generate_case_alias<Mapper: LangTypeMapper>(
+        &self,
+        primitive_type: &AliasTypeStructure,
+        mapper: &Mapper,
+        //mapper: &Self::Mapper,
+    ) -> String;
 }
 pub trait PropertyStatementGenerator<M>
 where
@@ -122,7 +125,8 @@ pub mod fakes {
         }
     }
     pub struct FakeTypeStatementGenerator;
-    impl TypeStatementGenerator<FakeLangTypeMapper> for FakeTypeStatementGenerator {
+    impl TypeStatementGenerator for FakeTypeStatementGenerator {
+        //type Mapper = FakeLangTypeMapper;
         const TYPE_PREFIX: &'static str = "struct";
         fn generate_case_composite(
             &self,
@@ -131,10 +135,11 @@ pub mod fakes {
         ) -> String {
             format!("struct {} {{{}}}", type_name.as_str(), properties_statement)
         }
-        fn generate_case_alias(
+        fn generate_case_alias<M: LangTypeMapper>(
             &self,
             primitive_type: &crate::types::structures::AliasTypeStructure,
-            mapper: &FakeLangTypeMapper,
+            mapper: &M,
+            //mapper: &Self::Mapper,
         ) -> String {
             format!(
                 "type {} = {};",

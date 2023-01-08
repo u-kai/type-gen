@@ -25,13 +25,13 @@ where
         }
     }
 }
-impl<M, F1, F2> TypeStatementGenerator<M> for CustomizableTypeStatementGenerator<F1, F2>
+impl<F1, F2> TypeStatementGenerator for CustomizableTypeStatementGenerator<F1, F2>
 where
-    M: LangTypeMapper,
     F1: Fn(&str, &TypeName, String) -> String,
     F2: Fn(&str, &TypeName, String) -> String,
 {
-    fn generate_case_alias(
+    //type Mapper = M;
+    fn generate_case_alias<M: LangTypeMapper>(
         &self,
         alias_type: &crate::types::structures::AliasTypeStructure,
         mapper: &M,

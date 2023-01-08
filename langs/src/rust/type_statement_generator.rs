@@ -50,17 +50,18 @@ impl<'a> RustTypeStatementGenerator {
         result
     }
 }
-impl<'a> TypeStatementGenerator<RustLangMapper> for RustTypeStatementGenerator {
+impl<'a> TypeStatementGenerator for RustTypeStatementGenerator {
+    //type Mapper = RustLangMapper;
     const TYPE_PREFIX: &'static str = "struct";
-    fn generate_case_alias(
+    fn generate_case_alias<M: LangTypeMapper>(
         &self,
         primitive_type: &lang_common::types::structures::AliasTypeStructure,
-        mapper: &RustLangMapper,
-        //        additional_statement: &AdditionalStatementProvider<
-        //            RustVisibility,
-        //            RustComment,
-        //            RustAttribute,
-        //        >,
+        mapper: &M, //RustLangMapper,
+                    //        additional_statement: &AdditionalStatementProvider<
+                    //            RustVisibility,
+                    //            RustComment,
+                    //            RustAttribute,
+                    //        >,
     ) -> String {
         let additional = self.make_additional_case_alias(&primitive_type.name);
         format!(
