@@ -100,7 +100,6 @@ where
 #[cfg(test)]
 pub mod fakes {
     use crate::type_defines::generators::mapper::LangTypeMapper;
-    use crate::type_defines::generators::type_statement_generators::composite_type_statement_generator;
     use crate::types::property_type::PropertyType;
     use crate::types::structures::CompositeTypeStructure;
     use crate::types::type_name::TypeName;

@@ -47,7 +47,6 @@ where
         alias_type: &crate::types::structures::AliasTypeStructure,
         mapper: &M,
     ) -> String {
-        let statement = mapper.case_property_type(&alias_type.property_type);
         self.alias_generator
             .generate_type_define(&alias_type, mapper)
     }
@@ -62,6 +61,8 @@ where
 }
 #[cfg(test)]
 mod test {
+    use std::collections::BTreeMap;
+
     use super::*;
     use crate::{
         type_defines::generators::{
@@ -84,7 +85,8 @@ mod test {
             CustomizableCompositeTypeStatementGenerator::new(type_identify, default_concat_fn);
 
         let alias_type_identify = "type";
-        let alias_generator = CustomizableAliasTypeStatementGenerator::new("type", concat_fn);
+        let alias_generator =
+            CustomizableAliasTypeStatementGenerator::new(alias_type_identify, concat_fn);
         let generator =
             CustomizableTypeStatementGenerator::new(alias_generator, composite_generator);
 
@@ -102,9 +104,10 @@ mod test {
 
         let property_statements = "id:usize".to_string();
         let composite_tobe = "struct Test {id:usize}";
-        // assert_eq!(
-        //     generator.generate_case_composite(&type_name, property_statements),
-        //     composite_tobe.to_string()
-        // );
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, property_statements),
+            composite_tobe.to_string()
+        );
     }
 }
