@@ -11,6 +11,7 @@ use lang_common::{
 use super::{
     additional_statements::{RustComment, RustVisibility},
     attribute::RustAttribute,
+    mapper::RustLangMapper,
     reserved_words::replace_cannot_use_char,
 };
 
@@ -50,17 +51,18 @@ impl<'a> RustTypeStatementGenerator {
     }
 }
 impl<'a> TypeStatementGenerator for RustTypeStatementGenerator {
-    //type Mapper = RustLangMapper;
+    type Mapper = RustLangMapper;
     const TYPE_PREFIX: &'static str = "struct";
-    fn generate_case_alias<M: LangTypeMapper>(
+    //fn generate_case_alias<M: LangTypeMapper>(
+    fn generate_case_alias(
         &self,
         primitive_type: &lang_common::types::structures::AliasTypeStructure,
-        mapper: &M, //RustLangMapper,
-                    //        additional_statement: &AdditionalStatementProvider<
-                    //            RustVisibility,
-                    //            RustComment,
-                    //            RustAttribute,
-                    //        >,
+        mapper: &Self::Mapper, //RustLangMapper,
+                               //        additional_statement: &AdditionalStatementProvider<
+                               //            RustVisibility,
+                               //            RustComment,
+                               //            RustAttribute,
+                               //        >,
     ) -> String {
         let additional = self.make_additional_case_alias(&primitive_type.name);
         format!(

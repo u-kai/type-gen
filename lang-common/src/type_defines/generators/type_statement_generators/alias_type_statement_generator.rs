@@ -82,6 +82,9 @@ where
         result
     }
 }
+pub(super) fn concat_fn(identify: &str, type_name: &TypeName, statement: String) -> String {
+    format!("{} {} = {}", identify, type_name.as_str(), statement)
+}
 #[cfg(test)]
 mod test {
     use crate::{
@@ -91,9 +94,6 @@ mod test {
             structures::AliasTypeStructure,
         },
     };
-    fn concat_fn(identify: &str, type_name: &TypeName, statement: String) -> String {
-        format!("{} {} = {}", identify, type_name.as_str(), statement)
-    }
 
     use super::*;
     #[test]

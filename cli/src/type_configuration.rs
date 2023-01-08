@@ -45,8 +45,9 @@ impl ConfigJson {
     ) -> TypeDefineGenerator<T, P, M>
     //, A>
     where
-        T: TypeStatementGenerator,        // A>,
-        P: PropertyStatementGenerator<M>, //, A>,
+        //T: TypeStatementGenerator,        // A>,
+        T: TypeStatementGenerator<Mapper = M>, // A>,
+        P: PropertyStatementGenerator<M>,      //, A>,
         M: LangTypeMapper,
         A: AdditionalStatement,
         V: Visibility,

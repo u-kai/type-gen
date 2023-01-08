@@ -47,7 +47,8 @@ impl<'a> TypeDefineDistFileWriter<'a> {
         type_define_generator: TypeDefineGenerator<T, P, M>,
         detail: D,
     ) where
-        T: TypeStatementGenerator,
+        //T: TypeStatementGenerator,
+        T: TypeStatementGenerator<Mapper = M>,
         P: PropertyStatementGenerator<M>,
         M: LangTypeMapper,
         A: AdditionalStatement,

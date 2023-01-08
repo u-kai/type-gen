@@ -15,7 +15,8 @@ use super::{
 
 pub trait TypeDefineBuilder<T, P, M, A, V, C, At>
 where
-    T: TypeStatementGenerator,
+    //T: TypeStatementGenerator,
+    T: TypeStatementGenerator<Mapper = M>,
     P: PropertyStatementGenerator<M>,
     M: LangTypeMapper,
     A: AdditionalStatement,
