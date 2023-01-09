@@ -1,4 +1,4 @@
-pub mod alias_type;
-pub mod composite_type;
+pub mod alias_type_structure;
+pub mod composite_type_structure;
 pub mod parts;
 pub mod type_structure;
