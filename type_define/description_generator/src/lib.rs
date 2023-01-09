@@ -1,3 +1,3 @@
 pub mod customizable;
-pub mod orchestorator;
+pub mod type_description_generator;
 pub mod type_mapper;
