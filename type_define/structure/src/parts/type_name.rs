@@ -25,3 +25,15 @@ impl From<&TypeName> for TypeName {
         ref_.as_str().into()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_from_str() {
+        let type_name = TypeName::from("test");
+        let tobe = TypeName::new("Test".to_string());
+        assert_eq!(type_name, tobe);
+        assert_eq!(type_name.as_str(), "Test");
+    }
+}
