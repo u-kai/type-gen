@@ -101,8 +101,7 @@ type-gen.type_define/structure.alias_type
 type-gen.type_define/structure.composite_type
 type-gen.type_define/structure.parts.type_name
 type-gen.type_define/structure.parts.property_key
-type-gen.type_define/structure.parts.property_type(primitive_type はこの中でもいいかもしれない)
-type-gen.type_define/structure.parts.primitive_type
+type-gen.type_define/structure.parts.property_type
 
 type-gen.type_define/description_generator.orchestrator
 type-gen.type_define/description_generator.customizable.type_part
