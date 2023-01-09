@@ -17,6 +17,9 @@ dependencies = [
 [[package]]
 name = "description_generator"
 version = "0.1.0"
+dependencies = [
+ "structure",
+]
 
 [[package]]
 name = "itoa"
