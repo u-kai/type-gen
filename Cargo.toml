@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "type_define/structure",
     "json",
     "lang-common",
     "langs",
