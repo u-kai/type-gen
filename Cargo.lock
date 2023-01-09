@@ -109,6 +109,9 @@ dependencies = [
 [[package]]
 name = "structure"
 version = "0.1.0"
+dependencies = [
+ "npc",
+]
 
 [[package]]
 name = "syn"
