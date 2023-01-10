@@ -22,7 +22,7 @@ where
     F: Fn(String, String) -> String,
     M: TypeMapper,
 {
-    concut_key_and_property_type_clouser: F,
+    concat_key_and_property_type_clouser: F,
     statement_convertor: Vec<DescriptionConvertor<M>>,
     property_key_convertor: Vec<PropertyKeyConvertor<M>>,
     property_type_convertor: Vec<PropertyTypeConvertor<M>>,
@@ -35,7 +35,7 @@ where
 {
     pub fn new(f: F) -> Self {
         Self {
-            concut_key_and_property_type_clouser: f,
+            concat_key_and_property_type_clouser: f,
             statement_convertor: Vec::new(),
             property_key_convertor: Vec::new(),
             property_type_convertor: Vec::new(),
@@ -96,7 +96,7 @@ where
         property_type: &PropertyType,
         mapper: &M,
     ) -> String {
-        let c = &self.concut_key_and_property_type_clouser;
+        let c = &self.concat_key_and_property_type_clouser;
         let mut concated_str = c(
             self.gen_key_str(type_name, property_key, property_type, mapper),
             self.gen_type_str(type_name, property_key, property_type, mapper),
@@ -125,7 +125,7 @@ where
             format!("{}:{}", key_statement, type_statement)
         }
         Self {
-            concut_key_and_property_type_clouser: default_concat_property_key_and_property_type,
+            concat_key_and_property_type_clouser: default_concat_property_key_and_property_type,
             statement_convertor: Vec::new(),
             property_key_convertor: Vec::new(),
             property_type_convertor: Vec::new(),
