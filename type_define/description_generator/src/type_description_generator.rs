@@ -7,7 +7,34 @@ use structure::{
 
 use crate::type_mapper::TypeMapper;
 
+/// TypeDescription is lang type define description string
+///
+/// like below
+/// ```ignore
+/// // composite type define description
+/// let composite_type:TypeDescription =
+/// r#"struct Human {
+///     pub name:HumanName,
+///     age:usize,
+/// }"#.to_string();
+///
+/// //alias type define description
+/// let alias_type:TypeDescription = r#"type HumanName = String;"#.to_string();
+/// ```
 pub type TypeDescription = String;
+/// made lang type define descriptions
+/// ```ignore
+///
+/// pub struct Test {
+///     id: usize,
+///     child: TestChild
+/// }
+/// struct TestChild {
+///     name: String
+///     age: Option<usize>
+/// }
+/// ```
+///
 pub struct TypeDescriptionGenerator<Declare, Property, Mapper>
 where
     Declare: DeclarePartGenerator<Mapper = Mapper>,
@@ -19,10 +46,10 @@ where
     mapper: Mapper,
 }
 
-// made case composite
-// ```
-// format!("struct TypeName {{ {} }}",properties_statement);
-// ```
+/// made case composite
+/// ```ignore
+/// "struct TypeName { $properties_statement }";
+/// ```
 pub trait DeclarePartGenerator {
     const TYPE_PREFIX: &'static str = "struct";
     type Mapper: TypeMapper;
@@ -36,14 +63,14 @@ pub trait DeclarePartGenerator {
         -> String;
 }
 
-// made case composite
-// ```
-// "id: usize"
-// ```
-// made case alias
-// ```
-// "type Alias = String;"
-// ```
+/// made case composite
+/// ```ignore
+/// "id: usize"
+/// ```
+/// made case alias
+/// ```ignore
+/// "type Alias = String;"
+/// ```
 pub trait PropertyPartGenerator<M>
 where
     M: TypeMapper,
@@ -150,12 +177,10 @@ pub mod fakes {
                 properties_statement
             )
         }
-        //fn generate_case_alias<M: TypeMapper>(
         fn generate_case_alias(
             &self,
             alias_type: &AliasTypeStructure,
             mapper: &Self::Mapper,
-            //mapper: &M,
         ) -> String {
             format!(
                 "type {} = {};",
