@@ -1,9 +1,42 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub trait ToDeclarePartConvertor: Sized {
     fn clone(&self) -> Self;
     fn to_declare_part(&self) -> Box<Self> {
         Box::new(self.clone())
+    }
+}
+struct ConvertorMapStore<'a> {
+    store: Rc<RefCell<HashMap<&'a str, String>>>,
+}
+impl<'a> ConvertorMapStore<'a> {
+    fn new() -> Self {
+        Self {
+            store: Rc::new(RefCell::new(HashMap::new())),
+        }
+    }
+    fn clone(&self) -> Self {
+        Self {
+            store: self.store.clone(),
+        }
+    }
+    fn add(&mut self, type_name: &'a str, value: impl Into<String>) {
+        self.store.borrow_mut().insert(type_name, value.into());
+    }
+}
+pub struct AddCommentConvertor<'a> {
+    comment_identify: &'a str,
+    store: ConvertorMapStore<'a>,
+}
+impl<'a> AddCommentConvertor<'a> {
+    pub fn new(comment_identify: &'a str) -> Self {
+        Self {
+            comment_identify,
+            store: ConvertorMapStore::new(),
+        }
+    }
+    fn add(&mut self, type_name: &'a str, value: impl Into<String>) {
+        self.store.add(type_name, value.into());
     }
 }
 struct ConvertorStore<'a> {
@@ -101,6 +134,17 @@ pub mod composite_type {
     use crate::customizable::declare_part_generator::{
         CompositeTypeDeclareConvertor, TypeIdentifyConvertor,
     };
+    impl<'a> TypeIdentifyConvertor for AddCommentConvertor<'a> {
+        fn convert(
+            &self,
+            acc: &mut String,
+            type_name: &structure::parts::type_name::TypeName,
+        ) -> () {
+            if let Some(value) = self.store.store.borrow().get(type_name.as_str()) {
+                *acc = format!("{}{}\n{}", self.comment_identify, value, acc);
+            }
+        }
+    }
     impl<'a> TypeIdentifyConvertor for AddHeaderConvertor<'a> {
         fn convert(
             &self,
@@ -212,6 +256,17 @@ mod composite_case_test {
     use super::*;
     use std::collections::BTreeMap;
     use structure::{composite_type_structure::CompositeTypeStructure, parts::type_name::TypeName};
+    #[test]
+    fn test_add_comment_convertor_case_containe() {
+        let name = "Test";
+        let mut acc = String::from("struct Test {id:usize}");
+        let comment = "this comment!";
+        let tobe = format!("// {}\n{}", comment, acc);
+        let mut add_comment = AddCommentConvertor::new("// ");
+        add_comment.add(name, comment);
+        add_comment.convert(&mut acc, &TypeName::from(name));
+        assert_eq!(acc, tobe);
+    }
     #[test]
     fn test_add_header_convertor_case_containe() {
         let name = "Test";
