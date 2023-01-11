@@ -42,6 +42,14 @@ impl<'a> AddHeaderConvertor<'a> {
         self.store.add(type_name.into());
     }
 }
+impl<'a> ToDeclarePartConvertor for AddHeaderConvertor<'a> {
+    fn clone(&self) -> Self {
+        Self {
+            header: self.header,
+            store: self.store.clone(),
+        }
+    }
+}
 
 pub struct BlackListConvertor<'a> {
     store: ConvertorStore<'a>,
@@ -88,8 +96,22 @@ impl<'a> WhiteListConvertor<'a> {
 }
 
 pub mod composite_type {
+
     use super::*;
-    use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
+    use crate::customizable::declare_part_generator::{
+        CompositeTypeDeclareConvertor, TypeIdentifyConvertor,
+    };
+    impl<'a> TypeIdentifyConvertor for AddHeaderConvertor<'a> {
+        fn convert(
+            &self,
+            acc: &mut String,
+            type_name: &structure::parts::type_name::TypeName,
+        ) -> () {
+            if self.store.containe_list(type_name.as_str()) {
+                *acc = format!("{}{}", self.header, acc)
+            }
+        }
+    }
 
     impl<'a> CompositeTypeDeclareConvertor for BlackListConvertor<'a> {
         fn convert(
@@ -166,25 +188,50 @@ mod integration_test {
     fn test_declare_part_generator() {
         let white_list = WhiteListConvertor::new();
         let black_list = BlackListConvertor::new();
+        let add_header = AddHeaderConvertor::new("pub ");
         let mut composite_type =
             CustomizableCompositeTypeDeclareGenerator::new_curly_bracket_lang("class");
         composite_type.add_description_convertor(white_list.to_declare_part());
         composite_type.add_description_convertor(black_list.to_declare_part());
+        composite_type.add_type_identify_convertor(add_header.to_declare_part());
         let mut alias_type: CustomizableAliasTypeDeclareGenerator<
             FakeTypeMapper,
             fn(&str, &structure::parts::type_name::TypeName, String) -> String,
         > = CustomizableAliasTypeDeclareGenerator::defalut("class");
         alias_type.add_description_convertor(white_list.to_declare_part());
         alias_type.add_description_convertor(black_list.to_declare_part());
+        alias_type.add_type_identify_convertor(add_header.to_declare_part());
     }
 }
 #[cfg(test)]
 mod composite_case_test {
-    use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
+    use crate::customizable::declare_part_generator::{
+        CompositeTypeDeclareConvertor, TypeIdentifyConvertor,
+    };
 
     use super::*;
     use std::collections::BTreeMap;
-    use structure::composite_type_structure::CompositeTypeStructure;
+    use structure::{composite_type_structure::CompositeTypeStructure, parts::type_name::TypeName};
+    #[test]
+    fn test_add_header_convertor_case_containe() {
+        let name = "Test";
+        let mut acc = String::from("struct Test {id:usize}");
+        let tobe = format!("pub {}", acc);
+        let mut add_header = AddHeaderConvertor::new("pub ");
+        add_header.add(name);
+        add_header.convert(&mut acc, &TypeName::from(name));
+        assert_eq!(acc, tobe);
+    }
+    #[test]
+    fn test_add_header_convertor_case_not_containe() {
+        let name = "Test";
+        let mut acc = String::from("struct Test {id:usize}");
+        let tobe = acc.clone();
+        let mut add_header = AddHeaderConvertor::new("pub ");
+        add_header.add(name);
+        add_header.convert(&mut acc, &TypeName::from("NotContaine"));
+        assert_eq!(acc, tobe);
+    }
     #[test]
     fn test_black_list_convertor_case_containe() {
         let name = "Test";
