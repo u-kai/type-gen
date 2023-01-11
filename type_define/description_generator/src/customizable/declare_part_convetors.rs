@@ -1,83 +1,89 @@
-use structure::parts::type_name::TypeName;
+use std::{cell::RefCell, rc::Rc};
 
-pub fn concat_composite_description_use_curly_bracket(
-    identify: &str,
-    type_name: &TypeName,
-    property_descriptions: String,
-) -> String {
-    format!(
-        "{} {} {{\n{}\n}}",
-        identify,
-        type_name.as_str(),
-        property_descriptions
-    )
+pub trait ToDeclarePartConvertor: Sized {
+    fn clone(&self) -> Self;
+    fn to_declare_part(&self) -> Box<Self> {
+        Box::new(self.clone())
+    }
 }
-pub fn concat_composite_description_indent(
-    identify: &str,
-    type_name: &TypeName,
-    property_descriptions: String,
-) -> String {
-    format!(
-        "{} {} :\n{}",
-        identify,
-        type_name.as_str(),
-        property_descriptions
-    )
+struct ConvertorStore<'a> {
+    store: Rc<RefCell<Vec<&'a str>>>,
 }
-pub fn concat_alias_description(
-    identify: &str,
-    type_name: &TypeName,
-    description: String,
-) -> String {
-    format!("{} {} = {}", identify, type_name.as_str(), description)
+impl<'a> ConvertorStore<'a> {
+    fn new() -> Self {
+        Self {
+            store: Rc::new(RefCell::new(Vec::new())),
+        }
+    }
+    fn clone(&self) -> Self {
+        ConvertorStore {
+            store: self.store.clone(),
+        }
+    }
+    fn add(&mut self, type_name: &'a str) {
+        self.store.borrow_mut().push(type_name)
+    }
+    fn containe_list(&self, type_name: &str) -> bool {
+        self.store.borrow().contains(&type_name)
+    }
 }
 pub struct AddHeaderConvertor<'a> {
     header: &'a str,
-    store: Vec<&'a str>,
+    store: ConvertorStore<'a>,
 }
 impl<'a> AddHeaderConvertor<'a> {
     pub fn new(header: &'a str) -> Self {
         Self {
             header,
-            store: Vec::new(),
+            store: ConvertorStore::new(),
         }
     }
     pub fn add(&mut self, type_name: impl Into<&'a str>) {
-        self.store.push(type_name.into());
-    }
-    fn containe_list(&self, type_name: &'a str) -> bool {
-        self.store.contains(&type_name)
+        self.store.add(type_name.into());
     }
 }
+
 pub struct BlackListConvertor<'a> {
-    store: Vec<&'a str>,
+    store: ConvertorStore<'a>,
 }
 
 impl<'a> BlackListConvertor<'a> {
     pub fn new() -> Self {
-        Self { store: Vec::new() }
+        Self {
+            store: ConvertorStore::new(),
+        }
     }
     pub fn add(&mut self, type_name: &'a str) {
-        self.store.push(type_name)
+        self.store.add(type_name);
     }
-    fn containe_list(&self, type_name: &'a str) -> bool {
-        self.store.contains(&type_name)
+}
+impl<'a> ToDeclarePartConvertor for BlackListConvertor<'a> {
+    fn clone(&self) -> Self {
+        BlackListConvertor {
+            store: self.store.clone(),
+        }
+    }
+}
+impl<'a> ToDeclarePartConvertor for WhiteListConvertor<'a> {
+    fn clone(&self) -> Self {
+        WhiteListConvertor {
+            store: self.store.clone(),
+        }
     }
 }
 
 pub struct WhiteListConvertor<'a> {
-    store: Vec<&'a str>,
+    store: ConvertorStore<'a>,
 }
 
 impl<'a> WhiteListConvertor<'a> {
     pub fn new() -> Self {
-        Self { store: Vec::new() }
+        Self {
+            store: ConvertorStore::new(),
+        }
     }
     pub fn add(&mut self, type_name: &'a str) {
-        self.store.push(type_name)
-    }
-    fn containe_list(&self, type_name: &'a str) -> bool {
-        self.store.contains(&type_name)
+        self.store.add(type_name)
     }
 }
 
@@ -91,7 +97,10 @@ pub mod composite_type {
             acc: &mut String,
             composite_type: &structure::composite_type_structure::CompositeTypeStructure,
         ) -> () {
-            if self.containe_list(composite_type.type_name().as_str()) {
+            if self
+                .store
+                .containe_list(composite_type.type_name().as_str())
+            {
                 *acc = String::new()
             }
         }
@@ -103,7 +112,10 @@ pub mod composite_type {
             acc: &mut String,
             composite_type: &structure::composite_type_structure::CompositeTypeStructure,
         ) -> () {
-            if !self.containe_list(composite_type.type_name().as_str()) {
+            if !self
+                .store
+                .containe_list(composite_type.type_name().as_str())
+            {
                 *acc = String::new()
             }
         }
@@ -118,14 +130,14 @@ pub mod alias_type {
 
     impl<'a> AliasTypeIdentifyConvertor for AddHeaderConvertor<'a> {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
-            if self.containe_list(alias_type.type_name().as_str()) {
+            if self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = format!("{}{}", self.header, acc)
             }
         }
     }
     impl<'a> AliasTypeDeclareConvertor for BlackListConvertor<'a> {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
-            if self.containe_list(alias_type.type_name().as_str()) {
+            if self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = String::new()
             }
         }
@@ -133,7 +145,7 @@ pub mod alias_type {
 
     impl<'a> AliasTypeDeclareConvertor for WhiteListConvertor<'a> {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
-            if !self.containe_list(alias_type.type_name().as_str()) {
+            if !self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = String::new()
             }
         }
@@ -141,12 +153,29 @@ pub mod alias_type {
 }
 #[cfg(test)]
 mod integration_test {
+    use crate::{
+        customizable::declare_part_generator::{
+            CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
+        },
+        type_mapper::fake_mapper::FakeTypeMapper,
+    };
+
     use super::*;
 
     #[test]
     fn test_declare_part_generator() {
         let white_list = WhiteListConvertor::new();
         let black_list = BlackListConvertor::new();
+        let mut composite_type =
+            CustomizableCompositeTypeDeclareGenerator::new_curly_bracket_lang("class");
+        composite_type.add_description_convertor(white_list.to_declare_part());
+        composite_type.add_description_convertor(black_list.to_declare_part());
+        let mut alias_type: CustomizableAliasTypeDeclareGenerator<
+            FakeTypeMapper,
+            fn(&str, &structure::parts::type_name::TypeName, String) -> String,
+        > = CustomizableAliasTypeDeclareGenerator::defalut("class");
+        alias_type.add_description_convertor(white_list.to_declare_part());
+        alias_type.add_description_convertor(black_list.to_declare_part());
     }
 }
 #[cfg(test)]
