@@ -188,7 +188,7 @@ mod composite_case_test {
     #[test]
     fn test_black_list_convertor_case_containe() {
         let name = "Test";
-        let mut acc = String::from("type Test = String;");
+        let mut acc = String::from("struct Test {id:usize}");
         let tobe = String::new();
         let mut black_list = BlackListConvertor::new();
         black_list.add(name);
@@ -199,7 +199,7 @@ mod composite_case_test {
     #[test]
     fn test_black_list_convertor_case_not_containe() {
         let name = "Test";
-        let mut acc = String::from("type Test = String;");
+        let mut acc = String::from("struct Test {id:usize}");
         let tobe = acc.clone();
         let black_list = BlackListConvertor::new();
         let dummy_composite_type = CompositeTypeStructure::new(name, BTreeMap::new());
@@ -209,7 +209,7 @@ mod composite_case_test {
     #[test]
     fn test_white_list_convertor_case_containe() {
         let name = "Test";
-        let mut acc = String::from("type Test = String;");
+        let mut acc = String::from("struct Test {id:usize}");
         let tobe = acc.clone();
         let mut white_list = WhiteListConvertor::new();
         white_list.add(name);
@@ -220,7 +220,7 @@ mod composite_case_test {
     #[test]
     fn test_white_list_convertor_case_not_containe() {
         let name = "Test";
-        let mut acc = String::from("type Test = String;");
+        let mut acc = String::from("struct Test {id:usize}");
         let tobe = String::new();
         let white_list = WhiteListConvertor::new();
         let dummy_composite_type = CompositeTypeStructure::new(name, BTreeMap::new());
