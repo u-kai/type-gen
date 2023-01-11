@@ -1,3 +1,36 @@
+use structure::parts::type_name::TypeName;
+
+pub fn concat_composite_description_use_curly_bracket(
+    identify: &str,
+    type_name: &TypeName,
+    property_descriptions: String,
+) -> String {
+    format!(
+        "{} {} {{\n{}\n}}",
+        identify,
+        type_name.as_str(),
+        property_descriptions
+    )
+}
+pub fn concat_composite_description_indent(
+    identify: &str,
+    type_name: &TypeName,
+    property_descriptions: String,
+) -> String {
+    format!(
+        "{} {} :\n{}",
+        identify,
+        type_name.as_str(),
+        property_descriptions
+    )
+}
+pub fn concat_alias_description(
+    identify: &str,
+    type_name: &TypeName,
+    description: String,
+) -> String {
+    format!("{} {} = {}", identify, type_name.as_str(), description)
+}
 pub struct AddHeaderConvertor<'a> {
     header: &'a str,
     store: Vec<&'a str>,
@@ -104,6 +137,16 @@ pub mod alias_type {
                 *acc = String::new()
             }
         }
+    }
+}
+#[cfg(test)]
+mod integration_test {
+    use super::*;
+
+    #[test]
+    fn test_declare_part_generator() {
+        let white_list = WhiteListConvertor::new();
+        let black_list = BlackListConvertor::new();
     }
 }
 #[cfg(test)]

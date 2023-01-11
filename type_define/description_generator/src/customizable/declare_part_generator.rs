@@ -235,6 +235,48 @@ where
         type_identify
     }
 }
+impl CustomizableCompositeTypeDeclareGenerator<fn(&str, &TypeName, String) -> String> {
+    pub fn new_curly_bracket_lang(type_identify: &'static str) -> Self {
+        CustomizableCompositeTypeDeclareGenerator {
+            type_identify,
+            concat_fn: Self::concat_composite_description_use_curly_bracket,
+            type_identify_convertors: Vec::new(),
+            description_convertors: Vec::new(),
+        }
+    }
+    pub fn new_indent_lang(type_identify: &'static str) -> Self {
+        CustomizableCompositeTypeDeclareGenerator {
+            type_identify,
+            concat_fn: Self::concat_composite_description_indent,
+            type_identify_convertors: Vec::new(),
+            description_convertors: Vec::new(),
+        }
+    }
+    fn concat_composite_description_use_curly_bracket(
+        identify: &str,
+        type_name: &TypeName,
+        property_descriptions: String,
+    ) -> String {
+        format!(
+            "{} {} {{\n{}\n}}",
+            identify,
+            type_name.as_str(),
+            property_descriptions
+        )
+    }
+    fn concat_composite_description_indent(
+        identify: &str,
+        type_name: &TypeName,
+        property_descriptions: String,
+    ) -> String {
+        format!(
+            "{} {} :\n{}",
+            identify,
+            type_name.as_str(),
+            property_descriptions
+        )
+    }
+}
 
 pub trait TypeIdentifyConvertor {
     fn convert(&self, acc: &mut String, type_name: &TypeName) -> ();
@@ -362,6 +404,27 @@ where
             .iter()
             .for_each(|c| c.convert(&mut result, alias_type));
         result
+    }
+}
+impl<M> CustomizableAliasTypeDeclareGenerator<M, fn(&str, &TypeName, String) -> String>
+where
+    M: TypeMapper,
+{
+    pub fn defalut(identify: &'static str) -> Self {
+        Self {
+            alias_type_identify: identify,
+            concat_fn: Self::concat_alias_description,
+            description_convertors: Vec::new(),
+            type_convertors: Vec::new(),
+            type_identify_convertors: Vec::new(),
+        }
+    }
+    fn concat_alias_description(
+        identify: &str,
+        type_name: &TypeName,
+        description: String,
+    ) -> String {
+        format!("{} {} = {}", identify, type_name.as_str(), description)
     }
 }
 
