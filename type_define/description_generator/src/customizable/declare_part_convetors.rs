@@ -1,32 +1,9 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use structure::parts::type_name::TypeName;
-
 pub trait ToDeclarePartConvertor: Sized {
     fn clone(&self) -> Self;
     fn to_declare_part(&self) -> Box<Self> {
         Box::new(self.clone())
-    }
-}
-#[derive(Clone, Hash, PartialEq, Eq)]
-pub enum MatchTypeName {
-    Particular(TypeName),
-    All,
-}
-impl<T> From<T> for MatchTypeName
-where
-    T: Into<TypeName>,
-{
-    fn from(type_name: T) -> Self {
-        MatchTypeName::Particular(type_name.into())
-    }
-}
-impl MatchTypeName {
-    fn is_match(&self, type_name: &str) -> bool {
-        match self {
-            Self::All => true,
-            Self::Particular(t) => t.as_str() == type_name,
-        }
     }
 }
 struct ConvertorMapStore<'a> {
@@ -82,24 +59,30 @@ impl<'a> ToDeclarePartConvertor for AddCommentConvertor<'a> {
     }
 }
 struct ConvertorStore<'a> {
+    is_all: bool,
     store: Rc<RefCell<Vec<&'a str>>>,
 }
 impl<'a> ConvertorStore<'a> {
     fn new() -> Self {
         Self {
+            is_all: false,
             store: Rc::new(RefCell::new(Vec::new())),
         }
     }
     fn clone(&self) -> Self {
         ConvertorStore {
+            is_all: self.is_all,
             store: self.store.clone(),
         }
+    }
+    fn all(&mut self) {
+        self.is_all = true
     }
     fn add(&mut self, type_name: &'a str) {
         self.store.borrow_mut().push(type_name)
     }
     fn containe_list(&self, type_name: &str) -> bool {
-        self.store.borrow().contains(&type_name)
+        self.is_all || self.store.borrow().contains(&type_name)
     }
 }
 pub struct AddHeaderConvertor<'a> {
@@ -115,6 +98,9 @@ impl<'a> AddHeaderConvertor<'a> {
     }
     pub fn add(&mut self, type_name: impl Into<&'a str>) {
         self.store.add(type_name.into());
+    }
+    pub fn all(&mut self) {
+        self.store.all();
     }
 }
 impl<'a> ToDeclarePartConvertor for AddHeaderConvertor<'a> {
@@ -321,6 +307,16 @@ mod composite_case_test {
         let mut add_comment = AddCommentConvertor::new("// ");
         add_comment.add(name, comment);
         add_comment.convert(&mut acc, &TypeName::from(name));
+        assert_eq!(acc, tobe);
+    }
+    #[test]
+    fn test_add_header_convertor_case_all() {
+        let name = "Test";
+        let mut acc = String::from("struct Test {id:usize}");
+        let tobe = format!("pub {}", acc);
+        let mut add_header = AddHeaderConvertor::new("pub ");
+        add_header.all();
+        add_header.convert(&mut acc, &TypeName::from(name));
         assert_eq!(acc, tobe);
     }
     #[test]
