@@ -1,27 +1,58 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+use structure::parts::type_name::TypeName;
+
 pub trait ToDeclarePartConvertor: Sized {
     fn clone(&self) -> Self;
     fn to_declare_part(&self) -> Box<Self> {
         Box::new(self.clone())
     }
 }
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub enum MatchTypeName {
+    Particular(TypeName),
+    All,
+}
+impl<T> From<T> for MatchTypeName
+where
+    T: Into<TypeName>,
+{
+    fn from(type_name: T) -> Self {
+        MatchTypeName::Particular(type_name.into())
+    }
+}
+impl MatchTypeName {
+    fn is_match(&self, type_name: &str) -> bool {
+        match self {
+            Self::All => true,
+            Self::Particular(t) => t.as_str() == type_name,
+        }
+    }
+}
 struct ConvertorMapStore<'a> {
     store: Rc<RefCell<HashMap<&'a str, String>>>,
+    all: Rc<RefCell<Vec<String>>>,
 }
 impl<'a> ConvertorMapStore<'a> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             store: Rc::new(RefCell::new(HashMap::new())),
+            all: Rc::new(RefCell::new(Vec::new())),
         }
     }
-    fn clone(&self) -> Self {
+    pub fn add(&mut self, match_type_name: &'a str, value: impl Into<String>) {
+        self.store
+            .borrow_mut()
+            .insert(match_type_name, value.into());
+    }
+    pub fn add_all(&mut self, value: impl Into<String>) {
+        self.all.borrow_mut().push(value.into());
+    }
+    pub fn clone(&self) -> Self {
         Self {
             store: self.store.clone(),
+            all: self.all.clone(),
         }
-    }
-    fn add(&mut self, type_name: &'a str, value: impl Into<String>) {
-        self.store.borrow_mut().insert(type_name, value.into());
     }
 }
 pub struct AddCommentConvertor<'a> {
@@ -35,8 +66,19 @@ impl<'a> AddCommentConvertor<'a> {
             store: ConvertorMapStore::new(),
         }
     }
-    fn add(&mut self, type_name: &'a str, value: impl Into<String>) {
-        self.store.add(type_name, value.into());
+    pub fn add(&mut self, match_type_name: &'a str, value: impl Into<String>) {
+        self.store.add(match_type_name, value.into());
+    }
+    pub fn add_all(&mut self, value: impl Into<String>) {
+        self.store.add_all(value.into());
+    }
+}
+impl<'a> ToDeclarePartConvertor for AddCommentConvertor<'a> {
+    fn clone(&self) -> Self {
+        Self {
+            comment_identify: self.comment_identify,
+            store: self.store.clone(),
+        }
     }
 }
 struct ConvertorStore<'a> {
@@ -140,6 +182,9 @@ pub mod composite_type {
             acc: &mut String,
             type_name: &structure::parts::type_name::TypeName,
         ) -> () {
+            self.store.all.borrow().iter().for_each(|comment| {
+                *acc = format!("{}{}\n{}", self.comment_identify, comment, acc)
+            });
             if let Some(value) = self.store.store.borrow().get(type_name.as_str()) {
                 *acc = format!("{}{}\n{}", self.comment_identify, value, acc);
             }
@@ -256,6 +301,17 @@ mod composite_case_test {
     use super::*;
     use std::collections::BTreeMap;
     use structure::{composite_type_structure::CompositeTypeStructure, parts::type_name::TypeName};
+    #[test]
+    fn test_add_comment_convertor_case_all() {
+        let name = "Test";
+        let mut acc = String::from("struct Test {id:usize}");
+        let comment = "this comment!";
+        let tobe = format!("// {}\n{}", comment, acc);
+        let mut add_comment = AddCommentConvertor::new("// ");
+        add_comment.add_all(comment);
+        add_comment.convert(&mut acc, &TypeName::from(name));
+        assert_eq!(acc, tobe);
+    }
     #[test]
     fn test_add_comment_convertor_case_containe() {
         let name = "Test";
