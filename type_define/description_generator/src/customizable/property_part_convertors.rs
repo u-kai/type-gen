@@ -1,21 +1,10 @@
-use std::{collections::HashMap, ops::Add};
-
-use structure::parts::{
-    property_key::PropertyKey,
-    type_name::{self, TypeName},
-};
+use structure::parts::{property_key::PropertyKey, type_name::TypeName};
 
 use crate::type_mapper::TypeMapper;
 
 use super::property_part_generator::Convertor;
 
-// 呼び出し方法は網羅的なtype_nameとproperty_key
-// type_name and property_key
-// type_name
-// property_key
-// all
-//
-pub struct PropertyPartMatchConditionStore<'a> {
+struct PropertyPartMatchConditionStore<'a> {
     is_all: bool,
     match_type_names: Vec<&'a str>,
     match_propety_keys: Vec<&'a str>,
@@ -52,6 +41,24 @@ impl<'a> PropertyPartMatchConditionStore<'a> {
                 .contains(&(type_name, property_key))
     }
 }
+macro_rules! impl_match_condition_store_methods {
+    ($($t:ident)*) => {
+        $(impl<'a> $t<'a> {
+            pub fn set_all(&mut self) {
+                self.store.set_all()
+            }
+            pub fn add_match_type_name(&mut self, type_name: &'a str) {
+                self.store.add_match_type_name(type_name);
+            }
+            pub fn add_match_property_key(&mut self, property_key: &'a str) {
+                self.store.add_match_property_key(property_key);
+            }
+            pub fn add_match_type_name_and_property_key(&mut self, type_name: &'a str, property_key: &'a str) {
+                self.store.add_match_type_name_and_property_key(type_name, property_key);
+            }
+        })*
+    };
+}
 pub struct AddHeaderConvertor<'a> {
     header: &'a str,
     store: PropertyPartMatchConditionStore<'a>,
@@ -63,10 +70,8 @@ impl<'a> AddHeaderConvertor<'a> {
             store: PropertyPartMatchConditionStore::new(),
         }
     }
-    pub fn add_match_property_key(&mut self, property_key: &'a str) {
-        self.store.add_match_property_key(property_key)
-    }
 }
+impl_match_condition_store_methods!(AddHeaderConvertor);
 
 impl<'a, M> Convertor<M> for AddHeaderConvertor<'a>
 where
@@ -97,6 +102,25 @@ mod test {
         type_name::TypeName,
     };
 
+    #[test]
+    fn test_add_header_case_all() {
+        let space = "    ";
+        let mut acc = String::from("id:usize");
+        let tobe = format!("{}{}", space, acc);
+        let mut add_header_convertor = AddHeaderConvertor::new(space);
+        add_header_convertor.set_all();
+        let dummy_type_name = TypeName::from("");
+        let type_key = PropertyKey::from("id");
+        let dummy_property_type = make_usize_type();
+        add_header_convertor.convert(
+            &mut acc,
+            &dummy_type_name,
+            &type_key,
+            &dummy_property_type,
+            &FakeTypeMapper,
+        );
+        assert_eq!(acc, tobe);
+    }
     #[test]
     fn test_add_header_case_containe() {
         let space = "    ";
