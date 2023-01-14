@@ -62,6 +62,16 @@ macro_rules! impl_match_condition_store_methods {
         impl_match_condition_store_methods!($($t),*);
     };
 }
+pub struct ToOptionalConvertor<'a> {
+    store: PropertyPartMatchConditionStore<'a>,
+}
+impl<'a> ToOptionalConvertor<'a> {
+    pub fn new() -> Self {
+        Self {
+            store: PropertyPartMatchConditionStore::new(),
+        }
+    }
+}
 pub struct AddHeaderConvertor<'a> {
     header: &'a str,
     store: PropertyPartMatchConditionStore<'a>,
@@ -86,8 +96,31 @@ impl<'a> AddLeftSideConvertor<'a> {
         }
     }
 }
-impl_match_condition_store_methods!(AddHeaderConvertor, AddLeftSideConvertor,);
-
+impl_match_condition_store_methods!(
+    AddHeaderConvertor,
+    AddLeftSideConvertor,
+    ToOptionalConvertor,
+);
+impl<'a, M> Convertor<M> for ToOptionalConvertor<'a>
+where
+    M: TypeMapper,
+{
+    fn convert(
+        &self,
+        acc: &mut String,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+        _: &structure::parts::property_type::PropertyType,
+        mapper: &M,
+    ) -> () {
+        if self
+            .store
+            .is_match(type_name.as_str(), property_key.as_str())
+        {
+            *acc = mapper.case_optional_type(acc.clone());
+        }
+    }
+}
 impl<'a, M> Convertor<M> for AddLeftSideConvertor<'a>
 where
     M: TypeMapper,
@@ -137,6 +170,24 @@ mod test {
         type_name::TypeName,
     };
 
+    #[test]
+    fn test_to_optional_case_all() {
+        let mut acc = String::from("usize");
+        let tobe = String::from("Option<usize>");
+        let mut to_optional_convertor = ToOptionalConvertor::new();
+        to_optional_convertor.set_all();
+        let dummy_type_name = TypeName::from("");
+        let type_key = PropertyKey::from("id");
+        let dummy_property_type = make_usize_type();
+        to_optional_convertor.convert(
+            &mut acc,
+            &dummy_type_name,
+            &type_key,
+            &dummy_property_type,
+            &FakeTypeMapper,
+        );
+        assert_eq!(acc, tobe);
+    }
     #[test]
     fn test_add_header_case_all() {
         let space = "// this comment";
