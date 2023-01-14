@@ -42,7 +42,7 @@ impl<'a> PropertyPartMatchConditionStore<'a> {
     }
 }
 macro_rules! impl_match_condition_store_methods {
-    ($($t:ident)*) => {
+    ($($t:ident),*) => {
         $(impl<'a> $t<'a> {
             pub fn set_all(&mut self) {
                 self.store.set_all()
@@ -58,6 +58,9 @@ macro_rules! impl_match_condition_store_methods {
             }
         })*
     };
+    ($($t:ident),*,) => {
+        impl_match_condition_store_methods!($($t),*);
+    };
 }
 pub struct AddHeaderConvertor<'a> {
     header: &'a str,
@@ -71,8 +74,40 @@ impl<'a> AddHeaderConvertor<'a> {
         }
     }
 }
-impl_match_condition_store_methods!(AddHeaderConvertor);
+pub struct AddLeftSideConvertor<'a> {
+    added: &'a str,
+    store: PropertyPartMatchConditionStore<'a>,
+}
+impl<'a> AddLeftSideConvertor<'a> {
+    pub fn new(added: &'a str) -> Self {
+        Self {
+            added,
+            store: PropertyPartMatchConditionStore::new(),
+        }
+    }
+}
+impl_match_condition_store_methods!(AddHeaderConvertor, AddLeftSideConvertor,);
 
+impl<'a, M> Convertor<M> for AddLeftSideConvertor<'a>
+where
+    M: TypeMapper,
+{
+    fn convert(
+        &self,
+        acc: &mut String,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+        _: &structure::parts::property_type::PropertyType,
+        _: &M,
+    ) -> () {
+        if self
+            .store
+            .is_match(type_name.as_str(), property_key.as_str())
+        {
+            *acc = format!("{}{}", self.added, acc)
+        }
+    }
+}
 impl<'a, M> Convertor<M> for AddHeaderConvertor<'a>
 where
     M: TypeMapper,
@@ -89,7 +124,7 @@ where
             .store
             .is_match(type_name.as_str(), property_key.as_str())
         {
-            *acc = format!("{}{}", self.header, acc)
+            *acc = format!("{}\n{}", self.header, acc)
         }
     }
 }
@@ -104,9 +139,9 @@ mod test {
 
     #[test]
     fn test_add_header_case_all() {
-        let space = "    ";
+        let space = "// this comment";
         let mut acc = String::from("id:usize");
-        let tobe = format!("{}{}", space, acc);
+        let tobe = format!("{}\n{}", space, acc);
         let mut add_header_convertor = AddHeaderConvertor::new(space);
         add_header_convertor.set_all();
         let dummy_type_name = TypeName::from("");
@@ -122,11 +157,49 @@ mod test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_add_header_case_containe() {
+    fn test_add_head_case_containe() {
+        let space = "// this is comment";
+        let mut acc = String::from("id:usize");
+        let tobe = format!("{}\n{}", space, acc);
+        let mut add_header_convertor = AddHeaderConvertor::new(space);
+        add_header_convertor.add_match_property_key("id");
+        let dummy_type_name = TypeName::from("");
+        let type_key = PropertyKey::from("id");
+        let dummy_property_type = make_usize_type();
+        add_header_convertor.convert(
+            &mut acc,
+            &dummy_type_name,
+            &type_key,
+            &dummy_property_type,
+            &FakeTypeMapper,
+        );
+        assert_eq!(acc, tobe);
+    }
+    #[test]
+    fn test_add_left_side_case_all() {
         let space = "    ";
         let mut acc = String::from("id:usize");
         let tobe = format!("{}{}", space, acc);
-        let mut add_header_convertor = AddHeaderConvertor::new(space);
+        let mut add_header_convertor = AddLeftSideConvertor::new(space);
+        add_header_convertor.set_all();
+        let dummy_type_name = TypeName::from("");
+        let type_key = PropertyKey::from("id");
+        let dummy_property_type = make_usize_type();
+        add_header_convertor.convert(
+            &mut acc,
+            &dummy_type_name,
+            &type_key,
+            &dummy_property_type,
+            &FakeTypeMapper,
+        );
+        assert_eq!(acc, tobe);
+    }
+    #[test]
+    fn test_add_left_side_case_containe() {
+        let space = "    ";
+        let mut acc = String::from("id:usize");
+        let tobe = format!("{}{}", space, acc);
+        let mut add_header_convertor = AddLeftSideConvertor::new(space);
         add_header_convertor.add_match_property_key("id");
         let dummy_type_name = TypeName::from("");
         let type_key = PropertyKey::from("id");
