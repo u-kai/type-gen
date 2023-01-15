@@ -1,6 +1,8 @@
 use description_generator::{
     customizable::{
-        property_part_convertors::{AddLastSideConvertor, AddLeftSideConvertor},
+        property_part_convertors::{
+            AddLastSideConvertor, AddLeftSideConvertor, ToOptionalConvertor,
+        },
         property_part_generator::{Convertor, CustomizablePropertyDescriptionGenerator},
     },
     type_description_generator::PropertyPartGenerator,
@@ -60,6 +62,17 @@ impl RustPropertyPartGeneratorBuilder {
             generator: RustPropertyPartGenerator::new(),
         }
     }
+    pub fn build(self) -> RustPropertyPartGenerator {
+        self.generator
+    }
+    pub fn all_optional(mut self) -> Self {
+        let mut convertor = ToOptionalConvertor::new();
+        convertor.set_all();
+        self.generator
+            .generator
+            .add_property_type_convertor(Box::new(convertor));
+        self
+    }
     pub fn all_visibility(mut self, visibility: RustVisibility) -> Self {
         let mut convertor = AddLeftSideConvertor::new(visibility.as_str());
         convertor.set_all();
@@ -67,9 +80,6 @@ impl RustPropertyPartGeneratorBuilder {
             .generator
             .add_property_key_convertor(Box::new(convertor));
         self
-    }
-    pub fn build(self) -> RustPropertyPartGenerator {
-        self.generator
     }
 }
 
@@ -131,6 +141,21 @@ mod tests {
         property_key::PropertyKey, property_type::property_type_factories::make_usize_type,
         type_name::TypeName,
     };
+    #[test]
+    fn test_case_optional() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .all_optional()
+            .build();
+        let tobe = format!("    id: Option<usize>,\n",);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
     #[test]
     fn test_case_pub() {
         let type_name: TypeName = "Test".into();
