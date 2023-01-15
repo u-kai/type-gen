@@ -1,7 +1,7 @@
 use description_generator::{
     customizable::{
         property_part_convertors::{
-            AddLastSideConvertor, AddLeftSideConvertor, ToOptionalConvertor,
+            AddHeaderConvertor, AddLastSideConvertor, AddLeftSideConvertor, ToOptionalConvertor,
         },
         property_part_generator::{Convertor, CustomizablePropertyDescriptionGenerator},
     },
@@ -63,7 +63,17 @@ impl RustPropertyPartGeneratorBuilder {
         }
     }
     pub fn build(self) -> RustPropertyPartGenerator {
+        let mut generator = self.generator;
+        generator.add_default_convertors();
+        generator
+    }
+    pub fn all_comment(mut self, comment: &'static str) -> Self {
+        let mut convertor = AddHeaderConvertor::new(format!("// {}", comment));
+        convertor.set_all();
         self.generator
+            .generator
+            .add_statement_convertor(Box::new(convertor));
+        self
     }
     pub fn all_optional(mut self) -> Self {
         let mut convertor = ToOptionalConvertor::new();
@@ -93,10 +103,9 @@ impl RustPropertyPartGenerator {
         fn rust_property_concat(key: String, type_: String) -> String {
             format!("{}: {}", key, type_)
         }
-        let mut result = Self {
+        let result = Self {
             generator: CustomizablePropertyDescriptionGenerator::new(rust_property_concat),
         };
-        result.add_default_convertors();
         result
     }
     fn add_default_convertors(&mut self) {
@@ -142,6 +151,22 @@ mod tests {
         type_name::TypeName,
     };
     #[test]
+    fn test_case_add_all_comment() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let comment = "this is comment";
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .all_comment(comment)
+            .build();
+        let tobe = format!("    // {}\n    id: usize,\n", comment);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
     fn test_case_optional() {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
@@ -177,7 +202,7 @@ mod tests {
         let property_key: PropertyKey = "id:value".into();
         let property_type = make_usize_type();
         let mapper = RustMapper;
-        let generator = RustPropertyPartGenerator::new();
+        let generator = RustPropertyPartGeneratorBuilder::new().build();
         let tobe = format!("    #[serde(rename = \"id:value\")]\n    idvalue: usize,\n",);
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper,),
@@ -190,7 +215,7 @@ mod tests {
         let property_key: PropertyKey = "id".into();
         let property_type = make_usize_type();
         let mapper = RustMapper;
-        let generator = RustPropertyPartGenerator::new();
+        let generator = RustPropertyPartGeneratorBuilder::new().build();
         let tobe = "    id: usize,\n".to_string();
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper,),
@@ -260,10 +285,7 @@ impl Convertor<RustMapper> for RustRenameConverotor {
             str.replace(cannot_use_char, "")
         }
         if self.judger.do_need_rename(property_key.as_str()) {
-            *acc = format!(
-                "{}",
-                to_snake(&replace_cannot_use_char(property_key.as_str()))
-            )
+            *acc = format!("{}", to_snake(&replace_cannot_use_char(acc)))
         }
     }
 }

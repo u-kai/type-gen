@@ -118,13 +118,13 @@ impl<'a> ToOptionalConvertor<'a> {
     }
 }
 pub struct AddHeaderConvertor<'a> {
-    header: &'a str,
+    header: String,
     store: PropertyPartMatchConditionStore<'a>,
 }
 impl<'a> AddHeaderConvertor<'a> {
-    pub fn new(header: &'a str) -> Self {
+    pub fn new(header: impl Into<String>) -> Self {
         Self {
-            header,
+            header: header.into(),
             store: PropertyPartMatchConditionStore::new(),
         }
     }
@@ -281,6 +281,7 @@ where
             *acc = acc.split("\n").fold(String::new(), |acc, line| {
                 format!("{}{}{}\n", acc, self.added, line)
             });
+            println!("{}", acc);
             acc.remove(acc.len() - 1);
             // * acc = format!("{}{}", self.added, acc.split("\n").)
         }
