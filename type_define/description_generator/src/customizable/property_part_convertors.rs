@@ -165,6 +165,40 @@ impl<'a> AddRightSideConvertor<'a> {
         }
     }
 }
+pub struct CannotUseCharConvertor {
+    removes: Vec<char>,
+    cannot_uses: Vec<char>,
+}
+impl<'a> CannotUseCharConvertor {
+    pub fn new() -> Self {
+        Self {
+            removes: Vec::new(),
+            cannot_uses: vec![
+                ':', ';', '#', '$', '%', '&', '~', '=', ',', '\"', '\'', '{', '}', '?', '!', '<',
+                '>', '[', ']', '*', '^', '-',
+            ],
+        }
+    }
+    fn replace_cannot_use_char(&self, str: &str) -> String {
+        str.chars().fold(String::new(), |mut acc, c| {
+            if self.containe_cannot_use_char(c) {
+                acc
+            } else {
+                acc.push(c);
+                acc
+            }
+        })
+    }
+    fn containe_cannot_use_char(&self, c: char) -> bool {
+        self.cannot_uses.contains(&c) && !self.removes.contains(&c)
+    }
+    pub fn add(&mut self, c: char) {
+        self.cannot_uses.push(c);
+    }
+    pub fn remove(&mut self, c: char) {
+        self.removes.push(c);
+    }
+}
 impl_match_condition_store_methods!(
     AddHeaderConvertor,
     AddLeftSideConvertor,
@@ -191,6 +225,21 @@ where
         {
             *acc = format!("{}{}", acc, self.added);
         }
+    }
+}
+impl<M> Convertor<M> for CannotUseCharConvertor
+where
+    M: TypeMapper,
+{
+    fn convert(
+        &self,
+        acc: &mut String,
+        _: &TypeName,
+        _: &PropertyKey,
+        _: &structure::parts::property_type::PropertyType,
+        _: &M,
+    ) -> () {
+        *acc = self.replace_cannot_use_char(&acc);
     }
 }
 impl<'a, M> Convertor<M> for ToOptionalConvertor<'a>
@@ -289,6 +338,23 @@ mod test {
         type_name::TypeName,
     };
 
+    #[test]
+    fn test_replace_cannot_use_char_convertor() {
+        let mut acc = String::from("id:value");
+        let tobe = String::from("idvalue");
+        let rename_convertor = CannotUseCharConvertor::new();
+        let dummy_type_name = TypeName::from("");
+        let type_key = PropertyKey::from("id:value");
+        let dummy_property_type = make_usize_type();
+        rename_convertor.convert(
+            &mut acc,
+            &dummy_type_name,
+            &type_key,
+            &dummy_property_type,
+            &FakeTypeMapper,
+        );
+        assert_eq!(acc, tobe);
+    }
     #[test]
     fn test_rename_convertor() {
         let mut acc = String::from("idValue");
