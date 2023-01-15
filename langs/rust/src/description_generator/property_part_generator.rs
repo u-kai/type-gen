@@ -67,6 +67,14 @@ impl RustPropertyPartGeneratorBuilder {
         generator.add_default_convertors();
         generator
     }
+    //    pub fn all_attr(mut self, attrs: Vec<impl Into<String>>) -> Self {
+    //        let mut convertor = AddHeaderConvertor::new(format!("// {}", comment));
+    //        convertor.set_all();
+    //        self.generator
+    //            .generator
+    //            .add_statement_convertor(Box::new(convertor));
+    //        self
+    //    }
     pub fn all_comment(mut self, comment: &'static str) -> Self {
         let mut convertor = AddHeaderConvertor::new(format!("// {}", comment));
         convertor.set_all();
@@ -223,6 +231,32 @@ mod tests {
         );
     }
     #[test]
+    fn test_case_reserved_words() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "type".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new().build();
+        let tobe = "    #[serde(rename = \"type\")]\n    r#type: usize,\n".to_string();
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_strict_reserved_words() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "self".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new().build();
+        let tobe = "    #[serde(rename = \"self\")]\n    self_: usize,\n".to_string();
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
     fn test_case_primitive_all_none_additional() {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
@@ -296,6 +330,22 @@ impl Convertor<RustMapper> for RustRenameConverotor {
         }
         fn replace_cannot_use_char(str: &str) -> String {
             str.replace(cannot_use_char, "")
+        }
+        if self
+            .judger
+            .reserved_words
+            .is_reserved_keywords(property_key.as_str())
+        {
+            *acc = format!("r#{}", acc);
+            return;
+        }
+        if self
+            .judger
+            .reserved_words
+            .is_strict_keywords(property_key.as_str())
+        {
+            *acc = format!("{}_", acc);
+            return;
         }
         if self.judger.do_need_rename(property_key.as_str()) {
             *acc = format!("{}", to_snake(&replace_cannot_use_char(acc)))
