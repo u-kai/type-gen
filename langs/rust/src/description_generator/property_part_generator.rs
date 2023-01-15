@@ -88,7 +88,7 @@ impl RustPropertyPartGeneratorBuilder {
         convertor.set_all();
         self.generator
             .generator
-            .add_property_key_convertor(Box::new(convertor));
+            .add_statement_convertor(Box::new(convertor));
         self
     }
 }
@@ -195,6 +195,19 @@ mod tests {
             generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
         );
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id:value".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .all_visibility(RustVisibility::PublicSuper)
+            .build();
+        let tobe =
+            format!("    #[serde(rename = \"id:value\")]\n    pub(super) idvalue: usize,\n",);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
     }
     #[test]
     fn test_case_not_use_str() {
@@ -277,7 +290,7 @@ impl Convertor<RustMapper> for RustRenameConverotor {
         fn cannot_use_char(c: char) -> bool {
             match c {
                 ':' | ';' | '#' | '$' | '%' | '&' | '~' | '=' | '|' | '\"' | '\'' | '{' | '}'
-                | '?' | '!' | '<' | '>' | '[' | ']' | '*' | '^' => true,
+                | '?' | '!' | '<' | '>' | '[' | ']' | '*' | '^' | '(' | ')' => true,
                 _ => false,
             }
         }
