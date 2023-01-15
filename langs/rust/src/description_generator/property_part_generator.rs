@@ -67,14 +67,19 @@ impl RustPropertyPartGeneratorBuilder {
         generator.add_default_convertors();
         generator
     }
-    //    pub fn all_attr(mut self, attrs: Vec<impl Into<String>>) -> Self {
-    //        let mut convertor = AddHeaderConvertor::new(format!("// {}", comment));
-    //        convertor.set_all();
-    //        self.generator
-    //            .generator
-    //            .add_statement_convertor(Box::new(convertor));
-    //        self
-    //    }
+    pub fn all_attrs(mut self, attrs: Vec<impl Into<String>>) -> Self {
+        let attrs = attrs
+            .into_iter()
+            .map(|s| s.into())
+            .reduce(|acc, cur| format!("{},{}", acc, cur))
+            .unwrap();
+        let mut convertor = AddHeaderConvertor::new(format!("#[{}]", attrs));
+        convertor.set_all();
+        self.generator
+            .generator
+            .add_statement_convertor(Box::new(convertor));
+        self
+    }
     pub fn all_comment(mut self, comment: &'static str) -> Self {
         let mut convertor = AddHeaderConvertor::new(format!("// {}", comment));
         convertor.set_all();
@@ -149,15 +154,29 @@ impl PropertyPartGenerator<RustMapper> for RustPropertyPartGenerator {
 mod tests {
     use crate::description_generator::{
         mapper::RustMapper,
-        property_part_generator::{
-            RustPropertyPartGenerator, RustPropertyPartGeneratorBuilder, RustVisibility,
-        },
+        property_part_generator::{RustPropertyPartGeneratorBuilder, RustVisibility},
     };
     use description_generator::type_description_generator::PropertyPartGenerator;
     use structure::parts::{
         property_key::PropertyKey, property_type::property_type_factories::make_usize_type,
         type_name::TypeName,
     };
+    #[test]
+    fn test_case_add_all_attrs() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let attrs = vec!["allow(notuse)", "target=(mac)"];
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .all_attrs(attrs)
+            .build();
+        let tobe = format!("    #[allow(notuse),target=(mac)]\n    id: usize,\n",);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
     #[test]
     fn test_case_add_all_comment() {
         let type_name: TypeName = "Test".into();
