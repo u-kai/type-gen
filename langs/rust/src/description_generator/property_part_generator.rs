@@ -8,6 +8,70 @@ use description_generator::{
 use npc::fns::{is_snake, to_snake};
 
 use super::mapper::RustMapper;
+pub enum RustVisibility {
+    Private,
+    Public,
+    PublicSuper,
+    PublicSelf,
+    PublicCrate,
+}
+impl RustVisibility {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Private => "",
+            Self::Public => "pub ",
+            Self::PublicSuper => "pub(super) ",
+            Self::PublicSelf => "pub(self) ",
+            Self::PublicCrate => "pub(crate) ",
+        }
+    }
+    fn from_str(str: &str) -> Result<Self, String> {
+        match str {
+            "pub" | "public" | "Pub" | "Public" | "export" => Ok(Self::Public),
+            "" | "private" | "Private" => Ok(Self::Private),
+            "pub(self)" | "pub (self)" | "pub self" => Ok(Self::PublicSelf),
+            "pub(super)" | "pub (super)" | "pub super" => Ok(Self::PublicSuper),
+            "pub(crate)" | "pub (crate)" | "pub crate" => Ok(Self::PublicCrate),
+            _ => Err(format!("{} is not define rust visibility", str)),
+        }
+    }
+}
+
+impl Default for RustVisibility {
+    fn default() -> Self {
+        Self::Private
+    }
+}
+impl<T> From<T> for RustVisibility
+where
+    T: Into<String>,
+{
+    fn from(str: T) -> Self {
+        let str: String = str.into();
+        RustVisibility::from_str(&str).unwrap()
+    }
+}
+pub struct RustPropertyPartGeneratorBuilder {
+    generator: RustPropertyPartGenerator,
+}
+impl RustPropertyPartGeneratorBuilder {
+    pub fn new() -> Self {
+        Self {
+            generator: RustPropertyPartGenerator::new(),
+        }
+    }
+    pub fn all_visibility(mut self, visibility: RustVisibility) -> Self {
+        let mut convertor = AddLeftSideConvertor::new(visibility.as_str());
+        convertor.set_all();
+        self.generator
+            .generator
+            .add_property_key_convertor(Box::new(convertor));
+        self
+    }
+    pub fn build(self) -> RustPropertyPartGenerator {
+        self.generator
+    }
+}
 
 pub struct RustPropertyPartGenerator {
     generator: CustomizablePropertyDescriptionGenerator<fn(String, String) -> String, RustMapper>,
@@ -57,13 +121,31 @@ impl PropertyPartGenerator<RustMapper> for RustPropertyPartGenerator {
 #[cfg(test)]
 mod tests {
     use crate::description_generator::{
-        mapper::RustMapper, property_part_generator::RustPropertyPartGenerator,
+        mapper::RustMapper,
+        property_part_generator::{
+            RustPropertyPartGenerator, RustPropertyPartGeneratorBuilder, RustVisibility,
+        },
     };
     use description_generator::type_description_generator::PropertyPartGenerator;
     use structure::parts::{
         property_key::PropertyKey, property_type::property_type_factories::make_usize_type,
         type_name::TypeName,
     };
+    #[test]
+    fn test_case_pub() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id:value".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .all_visibility(RustVisibility::Public)
+            .build();
+        let tobe = format!("    #[serde(rename = \"id:value\")]\n    pub idvalue: usize,\n",);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
     #[test]
     fn test_case_not_use_str() {
         let type_name: TypeName = "Test".into();
