@@ -7,17 +7,18 @@ name = "cli"
 version = "0.1.0"
 dependencies = [
  "json",
- "lang-common",
  "langs",
  "npc",
  "serde",
  "serde_json",
+ "structure",
 ]
 
 [[package]]
 name = "description_generator"
 version = "0.1.0"
 dependencies = [
+ "npc",
  "structure",
 ]
 
@@ -31,9 +32,9 @@ checksum = "4217ad341ebadf8d8e724e264f13e593e0648f5b3e94b3896a5df283be015ecc"
 name = "json"
 version = "0.1.0"
 dependencies = [
- "lang-common",
  "serde",
  "serde_json",
+ "structure",
  "utils",
 ]
 
@@ -56,7 +57,7 @@ dependencies = [
 [[package]]
 name = "npc"
 version = "0.1.0"
-source = "git+https://github.com/u-kai/npc.git?branch=main#f6ee99c39e08d33fe0694bfa29a7d1bc9b733ec4"
+source = "git+https://github.com/u-kai/npc.git?branch=main#b31e5273313c3d685004af1ad0a07708c3d9246e"
 
 [[package]]
 name = "proc-macro2"
@@ -74,6 +75,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbe448f377a7d6961e30f5955f9b8d106c3f5e449d493ee1b125c1d43c2b5179"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "rust"
+version = "0.1.0"
+dependencies = [
+ "description_generator",
+ "npc",
+ "structure",
 ]
 
 [[package]]

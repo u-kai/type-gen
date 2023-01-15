@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 json = {path="../json"}
-lang-common = {path="../lang-common"}
+structure = {path = "../type_define/structure"}
 langs = {path="../langs"}
 serde={version="1",features=["derive"]}
 serde_json="1"

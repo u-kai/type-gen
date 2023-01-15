@@ -1,3 +1,4 @@
+use npc::fns::{to_camel, to_constant, to_pascal, to_snake};
 use structure::parts::{property_key::PropertyKey, type_name::TypeName};
 
 use crate::type_mapper::TypeMapper;
@@ -62,6 +63,50 @@ macro_rules! impl_match_condition_store_methods {
         impl_match_condition_store_methods!($($t),*);
     };
 }
+
+pub struct RenameConvertor<'a> {
+    principal: Principal,
+    store: PropertyPartMatchConditionStore<'a>,
+}
+impl<'a> RenameConvertor<'a> {
+    pub fn new(principal: Principal) -> Self {
+        Self {
+            principal,
+            store: PropertyPartMatchConditionStore::new(),
+        }
+    }
+}
+impl<'a, M> Convertor<M> for RenameConvertor<'a>
+where
+    M: TypeMapper,
+{
+    fn convert(
+        &self,
+        acc: &mut String,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+        _: &structure::parts::property_type::PropertyType,
+        _: &M,
+    ) -> () {
+        if self
+            .store
+            .is_match(type_name.as_str(), property_key.as_str())
+        {
+            *acc = match self.principal {
+                Principal::Camel => to_camel(acc),
+                Principal::Snake => to_snake(acc),
+                Principal::Constant => to_constant(acc),
+                Principal::Pascal => to_pascal(acc),
+            };
+        }
+    }
+}
+pub enum Principal {
+    Snake,
+    Camel,
+    Pascal,
+    Constant,
+}
 pub struct ToOptionalConvertor<'a> {
     store: PropertyPartMatchConditionStore<'a>,
 }
@@ -84,6 +129,18 @@ impl<'a> AddHeaderConvertor<'a> {
         }
     }
 }
+pub struct AddLastSideConvertor<'a> {
+    added: &'a str,
+    store: PropertyPartMatchConditionStore<'a>,
+}
+impl<'a> AddLastSideConvertor<'a> {
+    pub fn new(added: &'a str) -> Self {
+        Self {
+            added,
+            store: PropertyPartMatchConditionStore::new(),
+        }
+    }
+}
 pub struct AddLeftSideConvertor<'a> {
     added: &'a str,
     store: PropertyPartMatchConditionStore<'a>,
@@ -96,11 +153,46 @@ impl<'a> AddLeftSideConvertor<'a> {
         }
     }
 }
+pub struct AddRightSideConvertor<'a> {
+    added: &'a str,
+    store: PropertyPartMatchConditionStore<'a>,
+}
+impl<'a> AddRightSideConvertor<'a> {
+    pub fn new(added: &'a str) -> Self {
+        Self {
+            added,
+            store: PropertyPartMatchConditionStore::new(),
+        }
+    }
+}
 impl_match_condition_store_methods!(
     AddHeaderConvertor,
     AddLeftSideConvertor,
     ToOptionalConvertor,
+    AddRightSideConvertor,
+    AddLastSideConvertor,
+    RenameConvertor
 );
+impl<'a, M> Convertor<M> for AddLastSideConvertor<'a>
+where
+    M: TypeMapper,
+{
+    fn convert(
+        &self,
+        acc: &mut String,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+        _: &structure::parts::property_type::PropertyType,
+        _: &M,
+    ) -> () {
+        if self
+            .store
+            .is_match(type_name.as_str(), property_key.as_str())
+        {
+            *acc = format!("{}{}", acc, self.added);
+        }
+    }
+}
 impl<'a, M> Convertor<M> for ToOptionalConvertor<'a>
 where
     M: TypeMapper,
@@ -137,7 +229,34 @@ where
             .store
             .is_match(type_name.as_str(), property_key.as_str())
         {
-            *acc = format!("{}{}", self.added, acc)
+            *acc = acc.split("\n").fold(String::new(), |acc, line| {
+                format!("{}{}{}\n", acc, self.added, line)
+            });
+            acc.remove(acc.len() - 1);
+            // * acc = format!("{}{}", self.added, acc.split("\n").)
+        }
+    }
+}
+impl<'a, M> Convertor<M> for AddRightSideConvertor<'a>
+where
+    M: TypeMapper,
+{
+    fn convert(
+        &self,
+        acc: &mut String,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+        _: &structure::parts::property_type::PropertyType,
+        _: &M,
+    ) -> () {
+        if self
+            .store
+            .is_match(type_name.as_str(), property_key.as_str())
+        {
+            *acc = acc.split("\n").fold(String::new(), |acc, line| {
+                format!("{}{}{}\n", acc, line, self.added)
+            });
+            acc.remove(acc.len() - 1);
         }
     }
 }
@@ -170,6 +289,24 @@ mod test {
         type_name::TypeName,
     };
 
+    #[test]
+    fn test_rename_convertor() {
+        let mut acc = String::from("idValue");
+        let tobe = String::from("id_value");
+        let mut rename_convertor = RenameConvertor::new(Principal::Snake);
+        rename_convertor.set_all();
+        let dummy_type_name = TypeName::from("");
+        let type_key = PropertyKey::from("idValue");
+        let dummy_property_type = make_usize_type();
+        rename_convertor.convert(
+            &mut acc,
+            &dummy_type_name,
+            &type_key,
+            &dummy_property_type,
+            &FakeTypeMapper,
+        );
+        assert_eq!(acc, tobe);
+    }
     #[test]
     fn test_to_optional_case_all() {
         let mut acc = String::from("usize");
@@ -214,6 +351,25 @@ mod test {
         let tobe = format!("{}\n{}", space, acc);
         let mut add_header_convertor = AddHeaderConvertor::new(space);
         add_header_convertor.add_match_property_key("id");
+        let dummy_type_name = TypeName::from("");
+        let type_key = PropertyKey::from("id");
+        let dummy_property_type = make_usize_type();
+        add_header_convertor.convert(
+            &mut acc,
+            &dummy_type_name,
+            &type_key,
+            &dummy_property_type,
+            &FakeTypeMapper,
+        );
+        assert_eq!(acc, tobe);
+    }
+    #[test]
+    fn test_add_right_side_case_all() {
+        let new_line = ",\n";
+        let mut acc = String::from("id:usize");
+        let tobe = format!("{}{}", acc, new_line);
+        let mut add_header_convertor = AddRightSideConvertor::new(new_line);
+        add_header_convertor.set_all();
         let dummy_type_name = TypeName::from("");
         let type_key = PropertyKey::from("id");
         let dummy_property_type = make_usize_type();

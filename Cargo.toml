@@ -3,8 +3,7 @@ members = [
     "type_define/structure",
     "type_define/description_generator",
     "json",
-    "lang-common",
-    "langs",
+    "langs/rust",
     "utils",
     "cli",
 ]

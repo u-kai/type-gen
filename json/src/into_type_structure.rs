@@ -1,18 +1,20 @@
 use std::collections::{BTreeMap, VecDeque};
 
-use lang_common::types::{
-    primitive_type::primitive_type_factories::{
-        make_bool, make_float, make_isize, make_string, make_usize,
-    },
-    property_key::PropertyKey,
-    property_type::{
-        property_type_factories::{
-            make_any, make_array_type, make_custom_type, make_primitive_type,
+use structure::{
+    alias_type_structure::AliasTypeStructure,
+    composite_type_structure::CompositeTypeStructure,
+    parts::{
+        property_key::PropertyKey,
+        property_type::{
+            property_type_factories::{
+                make_any, make_array_type, make_bool_type, make_custom_type, make_float_type,
+                make_isize_type, make_string_type, make_usize_type,
+            },
+            PropertyType,
         },
-        PropertyType,
+        type_name::TypeName,
     },
-    structures::{AliasTypeStructure, CompositeTypeStructure, TypeStructure},
-    type_name::TypeName,
+    type_structure::TypeStructure,
 };
 
 use crate::json::{Json, JsonType, Number};
@@ -104,19 +106,13 @@ impl Json {
             .collect::<VecDeque<_>>()
     }
     fn case_alias_string(root_name: impl Into<TypeName>) -> Vec<TypeStructure> {
-        vec![TypeStructure::make_alias(
-            root_name,
-            make_primitive_type(make_string()),
-        )]
+        vec![TypeStructure::make_alias(root_name, make_string_type())]
     }
     fn case_alias_null(root_name: impl Into<TypeName>) -> Vec<TypeStructure> {
         vec![TypeStructure::make_alias(root_name, make_any())]
     }
     fn case_alias_boolean(root_name: impl Into<TypeName>) -> Vec<TypeStructure> {
-        vec![TypeStructure::make_alias(
-            root_name,
-            make_primitive_type(make_bool()),
-        )]
+        vec![TypeStructure::make_alias(root_name, make_bool_type())]
     }
     fn case_alias_num(root_name: impl Into<TypeName>, num: Number) -> Vec<TypeStructure> {
         vec![TypeStructure::make_alias(
@@ -128,11 +124,11 @@ impl Json {
         let nest_num = Self::count_put_together_nest(put_together);
         let json_type = Self::put_together_content_type(put_together);
         let property_type = match json_type {
-            JsonType::Boolean => make_primitive_type(make_bool()),
-            JsonType::Float64 => make_primitive_type(make_float()),
-            JsonType::Usize64 => make_primitive_type(make_usize()),
-            JsonType::Isize64 => make_primitive_type(make_isize()),
-            JsonType::String => make_primitive_type(make_string()),
+            JsonType::Boolean => make_bool_type(),
+            JsonType::Float64 => make_float_type(),
+            JsonType::Usize64 => make_usize_type(),
+            JsonType::Isize64 => make_isize_type(),
+            JsonType::String => make_string_type(),
             JsonType::Object => make_custom_type(type_name),
             JsonType::Null => make_any(),
             JsonType::Array => panic!(),
@@ -144,32 +140,26 @@ impl Json {
     }
     fn into_primitive_property_type(&self) -> PropertyType {
         match self {
-            Json::String(_) => make_primitive_type(make_string()),
+            Json::String(_) => make_string_type(),
             Json::Number(num) => Self::json_num_to_property_type(num),
-            Json::Boolean(_) => make_primitive_type(make_bool()),
+            Json::Boolean(_) => make_bool_type(),
             Json::Null => make_any(),
             _ => panic!("not use not primitive type! json is {:#?}", self),
         }
     }
     fn json_num_to_property_type(num: &Number) -> PropertyType {
         if num.is_f64() {
-            return make_primitive_type(make_float());
+            return make_float_type();
         }
         if num.is_i64() {
-            return make_primitive_type(make_isize());
+            return make_isize_type();
         }
-        make_primitive_type(make_usize())
+        make_usize_type()
     }
 }
 
 #[cfg(test)]
 mod test_into_type_structures {
-    use lang_common::types::{
-        primitive_type::primitive_type_factories::make_string,
-        property_type::property_type_factories::{
-            make_array_type, make_custom_type, make_primitive_type,
-        },
-    };
 
     use super::*;
     #[test]
@@ -179,10 +169,7 @@ mod test_into_type_structures {
             json.into_type_structures("Test"),
             vec![
                 TypeStructure::make_alias("TestArray", make_array_type(make_custom_type("Test"))),
-                TypeStructure::make_composite(
-                    "Test",
-                    vec![("key", make_primitive_type(make_string()))]
-                )
+                TypeStructure::make_composite("Test", vec![("key", make_string_type())])
             ]
         );
     }
@@ -245,9 +232,9 @@ mod test_into_type_structures {
         let test_root = TypeStructure::make_composite(
             "TestRoot",
             vec![
-                ("id", make_primitive_type(make_usize())),
-                ("age", make_primitive_type(make_usize())),
-                ("name", make_primitive_type(make_string())),
+                ("id", make_usize_type()),
+                ("age", make_usize_type()),
+                ("name", make_string_type()),
                 ("data", make_custom_type("TestRootData")),
                 (
                     "details",
@@ -258,8 +245,8 @@ mod test_into_type_structures {
         let test_root_data = TypeStructure::make_composite(
             "TestRootData",
             vec![
-                ("age", make_primitive_type(make_usize())),
-                ("from", make_primitive_type(make_string())),
+                ("age", make_usize_type()),
+                ("from", make_string_type()),
                 (
                     "details",
                     make_array_type(make_custom_type("TestRootDataDetails")),
@@ -269,22 +256,19 @@ mod test_into_type_structures {
         let test_root_details = TypeStructure::make_composite(
             "TestRootDetails",
             vec![
-                ("likes", make_array_type(make_primitive_type(make_string()))),
-                ("hobby", make_primitive_type(make_string())),
-                ("userId", make_primitive_type(make_usize())),
+                ("likes", make_array_type(make_string_type())),
+                ("hobby", make_string_type()),
+                ("userId", make_usize_type()),
             ],
         );
         let test_root_data_details = TypeStructure::make_composite(
             "TestRootDataDetails",
             vec![
-                ("likes", make_array_type(make_primitive_type(make_string()))),
-                ("hobby", make_primitive_type(make_string())),
-                ("userId", make_primitive_type(make_usize())),
-                ("frendId", make_primitive_type(make_usize())),
-                (
-                    "frends",
-                    make_array_type(make_primitive_type(make_string())),
-                ),
+                ("likes", make_array_type(make_string_type())),
+                ("hobby", make_string_type()),
+                ("userId", make_usize_type()),
+                ("frendId", make_usize_type()),
+                ("frends", make_array_type(make_string_type())),
             ],
         );
         let tobe = vec![
@@ -307,16 +291,13 @@ mod test_into_type_structures {
             TypeStructure::make_composite(
                 name,
                 vec![
-                    ("name", make_primitive_type(make_string())),
+                    ("name", make_string_type()),
                     ("obj", make_custom_type("TestObj")),
                 ],
             ),
             TypeStructure::make_composite(
                 "TestObj",
-                vec![
-                    ("id", make_primitive_type(make_usize())),
-                    ("name", make_primitive_type(make_string())),
-                ],
+                vec![("id", make_usize_type()), ("name", make_string_type())],
             ),
         ];
         let expect = json.into_type_structures(name);
@@ -331,8 +312,8 @@ mod test_into_type_structures {
         let tobe = vec![TypeStructure::make_composite(
             name,
             vec![
-                ("key", make_primitive_type(make_string())),
-                ("arr", make_array_type(make_primitive_type(make_string()))),
+                ("key", make_string_type()),
+                ("arr", make_array_type(make_string_type())),
             ],
         )];
         assert_eq!(json.into_type_structures(name), tobe);
@@ -350,7 +331,7 @@ mod test_into_type_structures {
         let json = Json::from(r#"{"key":"value"}"#);
         let tobe = vec![TypeStructure::make_composite(
             name,
-            vec![("key", make_primitive_type(make_string()))],
+            vec![("key", make_string_type())],
         )];
         assert_eq!(json.into_type_structures(name), tobe);
     }

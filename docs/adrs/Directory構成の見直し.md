@@ -108,11 +108,11 @@ type-gen.type_define/description_generator.customizable.type_part
 type-gen.type_define/description_generator.customizable.property_part
 type-gen.type_define/description_generator.type_mapper
 
-type-gen.langs.rust/description_generator.type_mapper
-type-gen.langs.rust/description_generator.builder.orchestrator
-type-gen.langs.rust/description_generator.builder.type_part
-type-gen.langs.rust/description_generator.builder.property_part
-type-gen.langs.rust/into_type_structure
+type-gen.langs/rust.description_generator.type_mapper
+type-gen.langs/rust.description_generator.builder.orchestrator
+type-gen.langs/rust.description_generator.builder.type_part
+type-gen.langs/rust.description_generator.builder.property_part
+type-gen.langs/rust.into_type_structure
 type-gen.langs/shared.parser
 
 type-gen/json.json_structure
