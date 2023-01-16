@@ -31,10 +31,25 @@ impl RustDeclarePartGenerator {
         fn alias_concat(identify: &str, type_name: &TypeName, description: String) -> String {
             format!("{} {} = {};", identify, type_name.as_str(), description)
         }
+        fn concat_composite_description_use_curly_bracket(
+            identify: &str,
+            type_name: &TypeName,
+            property_descriptions: String,
+        ) -> String {
+            format!(
+                "{} {} {{\n{}}}",
+                identify,
+                type_name.as_str(),
+                property_descriptions
+            )
+        }
         RustDeclarePartGenerator {
             generator: CustomizableDeclarePartGenerator::new(
                 CustomizableAliasTypeDeclareGenerator::new("type", alias_concat),
-                CustomizableCompositeTypeDeclareGenerator::new_curly_bracket_lang("struct"),
+                CustomizableCompositeTypeDeclareGenerator::new(
+                    "struct",
+                    concat_composite_description_use_curly_bracket,
+                ),
             ),
         }
     }
@@ -60,8 +75,11 @@ impl DeclarePartGenerator for RustDeclarePartGenerator {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use structure::{
         alias_type_structure::AliasTypeStructure,
+        composite_type_structure::CompositeTypeStructure,
         parts::{property_type::property_type_factories::make_string_type, type_name::TypeName},
     };
 
@@ -77,6 +95,19 @@ mod tests {
         let tobe = format!("type Test = String;");
         assert_eq!(
             generator.generate_case_alias(&primitive_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_composite_all_none_additional() {
+        let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new().build();
+        let tobe = r#"struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
             tobe
         );
     }
