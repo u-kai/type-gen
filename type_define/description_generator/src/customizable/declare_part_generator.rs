@@ -11,8 +11,8 @@ where
     F1: Fn(&str, &TypeName, String) -> String,
     F2: Fn(&str, &TypeName, String) -> String,
 {
-    alias_generator: CustomizableAliasTypeDeclareGenerator<M, F1>,
-    composite_generator: CustomizableCompositeTypeDeclareGenerator<F2>,
+    pub alias_generator: CustomizableAliasTypeDeclareGenerator<M, F1>,
+    pub composite_generator: CustomizableCompositeTypeDeclareGenerator<F2>,
 }
 
 ///

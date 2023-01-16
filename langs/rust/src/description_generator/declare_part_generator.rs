@@ -1,7 +1,10 @@
 use description_generator::{
-    customizable::declare_part_generator::{
-        CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
-        CustomizableDeclarePartGenerator,
+    customizable::{
+        declare_part_convetors::{AddHeaderConvertor, ToDeclarePartConvertor},
+        declare_part_generator::{
+            CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
+            CustomizableDeclarePartGenerator,
+        },
     },
     type_description_generator::DeclarePartGenerator,
 };
@@ -9,14 +12,26 @@ use structure::parts::type_name::TypeName;
 
 use super::mapper::RustMapper;
 
-pub struct RustDeclarePartGeneratorBuilder {}
+pub struct RustDeclarePartGeneratorBuilder {
+    generator: RustDeclarePartGenerator,
+}
 impl RustDeclarePartGeneratorBuilder {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            generator: RustDeclarePartGenerator::new(),
+        }
+    }
+    pub fn pub_all_alias(mut self) -> Self {
+        let mut convertor = AddHeaderConvertor::new("pub ");
+        convertor.all();
+        self.generator
+            .generator
+            .alias_generator
+            .add_type_identify_convertor(convertor.to_declare_part());
+        self
     }
     pub fn build(self) -> RustDeclarePartGenerator {
-        let mut generator = RustDeclarePartGenerator::new();
-        generator
+        self.generator
     }
 }
 pub struct RustDeclarePartGenerator {
@@ -86,6 +101,20 @@ mod tests {
     use crate::description_generator::mapper::RustMapper;
 
     use super::*;
+    #[test]
+    fn test_case_alias_add_pub() {
+        let type_name: TypeName = "Test".into();
+        let mapper = RustMapper;
+        let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .pub_all_alias()
+            .build();
+        let tobe = format!("pub type Test = String;");
+        assert_eq!(
+            generator.generate_case_alias(&primitive_type, &mapper,),
+            tobe
+        );
+    }
     #[test]
     fn test_case_alias_all_none_additional() {
         let type_name: TypeName = "Test".into();
