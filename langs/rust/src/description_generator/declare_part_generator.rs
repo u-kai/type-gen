@@ -2,8 +2,9 @@ use description_generator::{
     customizable::{
         declare_part_convetors::{AddHeaderConvertor, ToDeclarePartConvertor},
         declare_part_generator::{
-            CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
-            CustomizableDeclarePartGenerator,
+            CompositeTypeDeclareConvertor, CustomizableAliasTypeDeclareGenerator,
+            CustomizableCompositeTypeDeclareGenerator, CustomizableDeclarePartGenerator,
+            TypeIdentifyConvertor,
         },
     },
     type_description_generator::DeclarePartGenerator,
@@ -28,45 +29,6 @@ impl DeclarePartGenerator for RustDeclarePartGenerator {
         self.generator
             .generate_case_composite(composite_type, properties_statement)
     }
-}
-
-pub struct RustDeclarePartGeneratorBuilder {
-    generator: RustDeclarePartGenerator,
-}
-impl RustDeclarePartGeneratorBuilder {
-    pub fn new() -> Self {
-        Self {
-            generator: RustDeclarePartGenerator::new(),
-        }
-    }
-    pub fn pub_all_alias(mut self) -> Self {
-        let mut convertor = AddHeaderConvertor::new("pub ");
-        convertor.all();
-        self.generator
-            .generator
-            .alias_generator
-            .add_type_identify_convertor(convertor.to_declare_part());
-        self
-    }
-    pub fn pub_all_composite(mut self) -> Self {
-        let mut convertor = AddHeaderConvertor::new("pub ");
-        convertor.all();
-        self.generator
-            .generator
-            .composite_generator
-            .add_type_identify_convertor(convertor.to_declare_part());
-        self
-    }
-    pub fn build(self) -> RustDeclarePartGenerator {
-        self.generator
-    }
-}
-pub struct RustDeclarePartGenerator {
-    generator: CustomizableDeclarePartGenerator<
-        RustMapper,
-        fn(&str, &TypeName, String) -> String,
-        fn(&str, &TypeName, String) -> String,
-    >,
 }
 impl RustDeclarePartGenerator {
     fn new() -> Self {
@@ -97,6 +59,69 @@ impl RustDeclarePartGenerator {
     }
 }
 
+pub struct RustDeclarePartGeneratorBuilder {
+    generator: RustDeclarePartGenerator,
+}
+impl RustDeclarePartGeneratorBuilder {
+    pub fn new() -> Self {
+        Self {
+            generator: RustDeclarePartGenerator::new(),
+        }
+    }
+    pub fn set_all_derive(mut self, derives: Vec<impl Into<String>>) -> Self {
+        let derive_description = format!(
+            "#[derive({})]",
+            derives
+                .into_iter()
+                .map(|s| {
+                    let s: String = s.into();
+                    s
+                })
+                .reduce(|acc, cur| { format!("{},{}", acc, cur) })
+                .unwrap_or_default()
+        );
+        let mut convertor = AddHeaderConvertor::new(derive_description);
+        convertor.all();
+        self.generator
+            .generator
+            .alias_generator
+            .add_description_convertor(convertor.to_declare_part());
+        self.generator
+            .generator
+            .composite_generator
+            .add_description_convertor(convertor.to_declare_part());
+        self
+    }
+    pub fn pub_all_alias(mut self) -> Self {
+        let mut convertor = AddHeaderConvertor::new("pub ");
+        convertor.all();
+        self.generator
+            .generator
+            .alias_generator
+            .add_type_identify_convertor(convertor.to_declare_part());
+        self
+    }
+    pub fn pub_all_composite(mut self) -> Self {
+        let mut convertor = AddHeaderConvertor::new("pub ");
+        convertor.all();
+        self.generator
+            .generator
+            .composite_generator
+            .add_type_identify_convertor(convertor.to_declare_part());
+        self
+    }
+    pub fn build(self) -> RustDeclarePartGenerator {
+        self.generator
+    }
+}
+pub struct RustDeclarePartGenerator {
+    generator: CustomizableDeclarePartGenerator<
+        RustMapper,
+        fn(&str, &TypeName, String) -> String,
+        fn(&str, &TypeName, String) -> String,
+    >,
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
@@ -110,6 +135,22 @@ mod tests {
     use crate::description_generator::mapper::RustMapper;
 
     use super::*;
+    #[test]
+    fn test_case_composite_add_derive() {
+        let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .set_all_derive(vec!["Debug", "Clone"])
+            .build();
+        let tobe = r#"#[derive(Debug,Clone)]
+struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            tobe
+        );
+    }
     #[test]
     fn test_case_composite_add_pub() {
         let type_name: TypeName = "Test".into();

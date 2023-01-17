@@ -86,13 +86,13 @@ impl<'a> ConvertorStore<'a> {
     }
 }
 pub struct AddHeaderConvertor<'a> {
-    header: &'a str,
+    header: String,
     store: ConvertorStore<'a>,
 }
 impl<'a> AddHeaderConvertor<'a> {
-    pub fn new(header: &'a str) -> Self {
+    pub fn new(header: impl Into<String>) -> Self {
         Self {
-            header,
+            header: header.into(),
             store: ConvertorStore::new(),
         }
     }
@@ -106,7 +106,7 @@ impl<'a> AddHeaderConvertor<'a> {
 impl<'a> ToDeclarePartConvertor for AddHeaderConvertor<'a> {
     fn clone(&self) -> Self {
         Self {
-            header: self.header,
+            header: self.header.clone(),
             store: self.store.clone(),
         }
     }
@@ -203,6 +203,20 @@ pub mod composite_type {
         }
     }
 
+    impl<'a> CompositeTypeDeclareConvertor for AddHeaderConvertor<'a> {
+        fn convert(
+            &self,
+            acc: &mut String,
+            composite_type: &structure::composite_type_structure::CompositeTypeStructure,
+        ) -> () {
+            if self
+                .store
+                .containe_list(composite_type.type_name().as_str())
+            {
+                *acc = format!("{}\n{}", self.header, acc)
+            }
+        }
+    }
     impl<'a> CompositeTypeDeclareConvertor for WhiteListConvertor<'a> {
         fn convert(
             &self,
@@ -236,6 +250,13 @@ pub mod alias_type {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
             if self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = String::new()
+            }
+        }
+    }
+    impl<'a> AliasTypeDeclareConvertor for AddHeaderConvertor<'a> {
+        fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
+            if self.store.containe_list(alias_type.type_name().as_str()) {
+                *acc = format!("{}{}", self.header, acc)
             }
         }
     }
@@ -280,15 +301,13 @@ mod integration_test {
 }
 #[cfg(test)]
 mod composite_case_test {
-    use crate::customizable::declare_part_generator::{
-        CompositeTypeDeclareConvertor, TypeIdentifyConvertor,
-    };
 
     use super::*;
     use std::collections::BTreeMap;
     use structure::{composite_type_structure::CompositeTypeStructure, parts::type_name::TypeName};
     #[test]
     fn test_add_comment_convertor_case_all() {
+        use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let comment = "this comment!";
@@ -300,6 +319,7 @@ mod composite_case_test {
     }
     #[test]
     fn test_add_comment_convertor_case_containe() {
+        use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let comment = "this comment!";
@@ -311,6 +331,7 @@ mod composite_case_test {
     }
     #[test]
     fn test_add_header_convertor_case_all() {
+        use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let tobe = format!("pub {}", acc);
@@ -321,6 +342,7 @@ mod composite_case_test {
     }
     #[test]
     fn test_add_header_convertor_case_containe() {
+        use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let tobe = format!("pub {}", acc);
@@ -331,6 +353,7 @@ mod composite_case_test {
     }
     #[test]
     fn test_add_header_convertor_case_not_containe() {
+        use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let tobe = acc.clone();
@@ -341,6 +364,7 @@ mod composite_case_test {
     }
     #[test]
     fn test_black_list_convertor_case_containe() {
+        use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let tobe = String::new();
@@ -352,6 +376,7 @@ mod composite_case_test {
     }
     #[test]
     fn test_black_list_convertor_case_not_containe() {
+        use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let tobe = acc.clone();
@@ -362,6 +387,7 @@ mod composite_case_test {
     }
     #[test]
     fn test_white_list_convertor_case_containe() {
+        use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let tobe = acc.clone();
@@ -373,6 +399,7 @@ mod composite_case_test {
     }
     #[test]
     fn test_white_list_convertor_case_not_containe() {
+        use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let tobe = String::new();
@@ -385,9 +412,7 @@ mod composite_case_test {
 
 #[cfg(test)]
 mod alias_case_test {
-    use crate::customizable::declare_part_generator::{
-        AliasTypeDeclareConvertor, AliasTypeIdentifyConvertor,
-    };
+    use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
 
     use super::*;
     use structure::{
