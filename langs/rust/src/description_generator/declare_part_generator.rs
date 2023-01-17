@@ -11,6 +11,24 @@ use description_generator::{
 use structure::parts::type_name::TypeName;
 
 use super::mapper::RustMapper;
+impl DeclarePartGenerator for RustDeclarePartGenerator {
+    type Mapper = RustMapper;
+    fn generate_case_alias(
+        &self,
+        alias_type: &structure::alias_type_structure::AliasTypeStructure,
+        mapper: &Self::Mapper,
+    ) -> String {
+        self.generator.generate_case_alias(alias_type, mapper)
+    }
+    fn generate_case_composite(
+        &self,
+        composite_type: &structure::composite_type_structure::CompositeTypeStructure,
+        properties_statement: String,
+    ) -> String {
+        self.generator
+            .generate_case_composite(composite_type, properties_statement)
+    }
+}
 
 pub struct RustDeclarePartGeneratorBuilder {
     generator: RustDeclarePartGenerator,
@@ -27,6 +45,15 @@ impl RustDeclarePartGeneratorBuilder {
         self.generator
             .generator
             .alias_generator
+            .add_type_identify_convertor(convertor.to_declare_part());
+        self
+    }
+    pub fn pub_all_composite(mut self) -> Self {
+        let mut convertor = AddHeaderConvertor::new("pub ");
+        convertor.all();
+        self.generator
+            .generator
+            .composite_generator
             .add_type_identify_convertor(convertor.to_declare_part());
         self
     }
@@ -69,24 +96,6 @@ impl RustDeclarePartGenerator {
         }
     }
 }
-impl DeclarePartGenerator for RustDeclarePartGenerator {
-    type Mapper = RustMapper;
-    fn generate_case_alias(
-        &self,
-        alias_type: &structure::alias_type_structure::AliasTypeStructure,
-        mapper: &Self::Mapper,
-    ) -> String {
-        self.generator.generate_case_alias(alias_type, mapper)
-    }
-    fn generate_case_composite(
-        &self,
-        composite_type: &structure::composite_type_structure::CompositeTypeStructure,
-        properties_statement: String,
-    ) -> String {
-        self.generator
-            .generate_case_composite(composite_type, properties_statement)
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -101,6 +110,21 @@ mod tests {
     use crate::description_generator::mapper::RustMapper;
 
     use super::*;
+    #[test]
+    fn test_case_composite_add_pub() {
+        let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .pub_all_composite()
+            .build();
+        let tobe = r#"pub struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            tobe
+        );
+    }
     #[test]
     fn test_case_alias_add_pub() {
         let type_name: TypeName = "Test".into();
