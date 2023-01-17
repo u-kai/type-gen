@@ -239,6 +239,13 @@ pub mod alias_type {
     };
     use structure::alias_type_structure::AliasTypeStructure;
 
+    impl<'a> AliasTypeDeclareConvertor for AddHeaderConvertor<'a> {
+        fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
+            if self.store.containe_list(alias_type.type_name().as_str()) {
+                *acc = format!("{}\n{}", self.header, acc)
+            }
+        }
+    }
     impl<'a> AliasTypeIdentifyConvertor for AddHeaderConvertor<'a> {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
             if self.store.containe_list(alias_type.type_name().as_str()) {
@@ -250,13 +257,6 @@ pub mod alias_type {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
             if self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = String::new()
-            }
-        }
-    }
-    impl<'a> AliasTypeDeclareConvertor for AddHeaderConvertor<'a> {
-        fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
-            if self.store.containe_list(alias_type.type_name().as_str()) {
-                *acc = format!("{}{}", self.header, acc)
             }
         }
     }
@@ -412,7 +412,6 @@ mod composite_case_test {
 
 #[cfg(test)]
 mod alias_case_test {
-    use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
 
     use super::*;
     use structure::{
@@ -421,6 +420,7 @@ mod alias_case_test {
     };
     #[test]
     fn test_add_header_case_containe() {
+        use crate::customizable::declare_part_generator::AliasTypeIdentifyConvertor;
         let mut acc = String::from("type Test = String;");
         let tobe = format!("pub {}", acc);
         let mut add_header_convertor = AddHeaderConvertor::new("pub ");
@@ -432,6 +432,7 @@ mod alias_case_test {
     }
     #[test]
     fn test_add_header_case_not_containe() {
+        use crate::customizable::declare_part_generator::AliasTypeIdentifyConvertor;
         let mut acc = String::from("type Test = String;");
         let tobe = acc.clone();
         let mut add_header_convertor = AddHeaderConvertor::new("pub ");
@@ -443,6 +444,7 @@ mod alias_case_test {
     }
     #[test]
     fn test_black_list_convertor_case_containe() {
+        use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("type Test = String;");
         let tobe = String::new();
@@ -454,6 +456,7 @@ mod alias_case_test {
     }
     #[test]
     fn test_black_list_convertor_case_not_containe() {
+        use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("type Test = String;");
         let tobe = acc.clone();
@@ -464,6 +467,7 @@ mod alias_case_test {
     }
     #[test]
     fn test_white_list_convertor_case_containe() {
+        use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("type Test = String;");
         let tobe = acc.clone();
@@ -475,6 +479,7 @@ mod alias_case_test {
     }
     #[test]
     fn test_white_list_convertor_case_not_containe() {
+        use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("type Test = String;");
         let tobe = String::new();

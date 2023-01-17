@@ -2,9 +2,8 @@ use description_generator::{
     customizable::{
         declare_part_convetors::{AddHeaderConvertor, ToDeclarePartConvertor},
         declare_part_generator::{
-            CompositeTypeDeclareConvertor, CustomizableAliasTypeDeclareGenerator,
-            CustomizableCompositeTypeDeclareGenerator, CustomizableDeclarePartGenerator,
-            TypeIdentifyConvertor,
+            CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
+            CustomizableDeclarePartGenerator,
         },
     },
     type_description_generator::DeclarePartGenerator,
@@ -136,6 +135,23 @@ mod tests {
 
     use super::*;
     #[test]
+    fn test_case_composite_add_derive_and_pub() {
+        let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .set_all_derive(vec!["Debug", "Clone"])
+            .pub_all_composite()
+            .build();
+        let tobe = r#"#[derive(Debug,Clone)]
+pub struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            tobe
+        );
+    }
+    #[test]
     fn test_case_composite_add_derive() {
         let type_name: TypeName = "Test".into();
         let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
@@ -148,6 +164,57 @@ struct Test {
 }"#;
         assert_eq!(
             generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_add_pub_and_derive() {
+        let type_name: TypeName = "Test".into();
+        let mapper = RustMapper;
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .pub_all_alias()
+            .pub_all_composite()
+            .set_all_derive(vec!["Debug", "Clone"])
+            .build();
+        let tobe = r#"#[derive(Debug,Clone)]
+pub struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            tobe
+        );
+        let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
+        let tobe = format!(
+            "#[derive(Debug,Clone)]
+pub type Test = String;"
+        );
+        assert_eq!(
+            generator.generate_case_alias(&primitive_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_add_pub() {
+        let type_name: TypeName = "Test".into();
+        let mapper = RustMapper;
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .pub_all_composite()
+            .pub_all_alias()
+            .build();
+        let tobe = r#"pub struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            tobe
+        );
+        let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
+        let tobe = format!("pub type Test = String;");
+        assert_eq!(
+            generator.generate_case_alias(&primitive_type, &mapper,),
             tobe
         );
     }
