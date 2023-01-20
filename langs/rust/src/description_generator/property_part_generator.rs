@@ -2,7 +2,7 @@ use description_generator::{
     customizable::{
         property_part_convertors::{
             AddHeaderConvertor, AddLastSideConvertor, AddLeftSideConvertor, BlackListConvertor,
-            ToOptionalConvertor,
+            ToOptionalConvertor, WhiteListConvertor,
         },
         property_part_generator::{
             Convertor, CustomizablePropertyDescriptionGenerator, DescriptionConvertor,
@@ -69,6 +69,15 @@ impl RustPropertyPartGeneratorBuilder {
         let mut generator = self.generator;
         generator.add_default_convertors();
         generator
+    }
+    pub fn set_whitelist_with_keys(mut self, list: Vec<impl Into<String>>) -> Self {
+        let mut white_list = WhiteListConvertor::new();
+        list.into_iter()
+            .for_each(|s| white_list.add_match_property_key(s));
+        self.generator
+            .generator
+            .add_statement_convertor(Box::new(white_list));
+        self
     }
     pub fn set_blacklist_with_keys(mut self, list: Vec<impl Into<String>>) -> Self {
         let mut black_list = BlackListConvertor::new();
@@ -174,7 +183,30 @@ mod tests {
         type_name::TypeName,
     };
     #[test]
-    fn test_case_add_blacklist() {
+    fn test_case_set_whitelist_with_key() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .set_whitelist_with_keys(vec!["test"])
+            .build();
+        let tobe = format!("");
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "test".into();
+        let property_type = make_usize_type();
+        let tobe = format!("    test: usize,\n");
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_set_blacklist_with_key() {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();
         let property_type = make_usize_type();
@@ -182,7 +214,15 @@ mod tests {
         let generator = RustPropertyPartGeneratorBuilder::new()
             .set_blacklist_with_keys(vec!["id"])
             .build();
-        let tobe = format!("",);
+        let tobe = format!("");
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "test".into();
+        let property_type = make_usize_type();
+        let tobe = format!("    test: usize,\n");
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe

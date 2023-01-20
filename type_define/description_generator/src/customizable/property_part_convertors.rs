@@ -180,6 +180,16 @@ impl BlackListConvertor {
         }
     }
 }
+pub struct WhiteListConvertor {
+    store: PropertyPartMatchConditionStore,
+}
+impl WhiteListConvertor {
+    pub fn new() -> Self {
+        Self {
+            store: PropertyPartMatchConditionStore::new(),
+        }
+    }
+}
 pub struct CannotUseCharConvertor {
     removes: Vec<char>,
     cannot_uses: Vec<char>,
@@ -221,13 +231,36 @@ impl_match_condition_store_methods!(
     AddRightSideConvertor,
     AddLastSideConvertor,
     RenameConvertor,
-    BlackListConvertor
+    BlackListConvertor,
+    WhiteListConvertor
 );
 pub mod description_convertors {
 
     use crate::customizable::property_part_generator::DescriptionConvertor;
 
     use super::*;
+    impl<M> DescriptionConvertor<M> for WhiteListConvertor
+    where
+        M: TypeMapper,
+    {
+        fn convert(
+            &self,
+            acc: Option<String>,
+            type_name: &TypeName,
+            property_key: &PropertyKey,
+            _: &structure::parts::property_type::PropertyType,
+            _: &M,
+        ) -> Option<String> {
+            if self
+                .store
+                .is_match(type_name.as_str(), property_key.as_str())
+            {
+                acc
+            } else {
+                None
+            }
+        }
+    }
     impl<M> DescriptionConvertor<M> for BlackListConvertor
     where
         M: TypeMapper,
