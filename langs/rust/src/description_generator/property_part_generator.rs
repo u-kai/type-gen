@@ -1,5 +1,6 @@
 use description_generator::{
     customizable::{
+        declare_part_convetors::BlackListConvertor,
         property_part_convertors::{
             AddHeaderConvertor, AddLastSideConvertor, AddLeftSideConvertor, ToOptionalConvertor,
         },
@@ -66,6 +67,11 @@ impl RustPropertyPartGeneratorBuilder {
         let mut generator = self.generator;
         generator.add_default_convertors();
         generator
+    }
+    pub fn set_blacklist(mut self, list: Vec<impl Into<String>>) -> Self {
+        // let mut black_list = BlackListConvertor::new();
+        // black_list.
+        self
     }
     pub fn all_attrs(mut self, attrs: Vec<impl Into<String>>) -> Self {
         let attrs = attrs
@@ -161,6 +167,21 @@ mod tests {
         property_key::PropertyKey, property_type::property_type_factories::make_usize_type,
         type_name::TypeName,
     };
+    // #[test]
+    // fn test_case_add_blacklist() {
+    //     let type_name: TypeName = "Test".into();
+    //     let property_key: PropertyKey = "id".into();
+    //     let property_type = make_usize_type();
+    //     let mapper = RustMapper;
+    //     let generator = RustPropertyPartGeneratorBuilder::new()
+    //         .add_blacklist(vec!["id"])
+    //         .build();
+    //     let tobe = format!("",);
+    //     assert_eq!(
+    //         generator.generate(&type_name, &property_key, &property_type, &mapper,),
+    //         tobe
+    //     );
+    // }
     #[test]
     fn test_case_add_all_attrs() {
         let type_name: TypeName = "Test".into();

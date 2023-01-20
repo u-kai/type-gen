@@ -6,21 +6,21 @@ pub trait ToDeclarePartConvertor: Sized {
         Box::new(self.clone())
     }
 }
-struct ConvertorMapStore<'a> {
-    store: Rc<RefCell<HashMap<&'a str, String>>>,
+struct ConvertorMapStore {
+    store: Rc<RefCell<HashMap<String, String>>>,
     all: Rc<RefCell<Vec<String>>>,
 }
-impl<'a> ConvertorMapStore<'a> {
+impl ConvertorMapStore {
     pub fn new() -> Self {
         Self {
             store: Rc::new(RefCell::new(HashMap::new())),
             all: Rc::new(RefCell::new(Vec::new())),
         }
     }
-    pub fn add(&mut self, match_type_name: &'a str, value: impl Into<String>) {
+    pub fn add(&mut self, match_type_name: impl Into<String>, value: impl Into<String>) {
         self.store
             .borrow_mut()
-            .insert(match_type_name, value.into());
+            .insert(match_type_name.into(), value.into());
     }
     pub fn add_all(&mut self, value: impl Into<String>) {
         self.all.borrow_mut().push(value.into());
@@ -32,37 +32,37 @@ impl<'a> ConvertorMapStore<'a> {
         }
     }
 }
-pub struct AddCommentConvertor<'a> {
-    comment_identify: &'a str,
-    store: ConvertorMapStore<'a>,
+pub struct AddCommentConvertor {
+    comment_identify: String,
+    store: ConvertorMapStore,
 }
-impl<'a> AddCommentConvertor<'a> {
-    pub fn new(comment_identify: &'a str) -> Self {
+impl AddCommentConvertor {
+    pub fn new(comment_identify: impl Into<String>) -> Self {
         Self {
-            comment_identify,
+            comment_identify: comment_identify.into(),
             store: ConvertorMapStore::new(),
         }
     }
-    pub fn add(&mut self, match_type_name: &'a str, value: impl Into<String>) {
+    pub fn add(&mut self, match_type_name: impl Into<String>, value: impl Into<String>) {
         self.store.add(match_type_name, value.into());
     }
     pub fn add_all(&mut self, value: impl Into<String>) {
         self.store.add_all(value.into());
     }
 }
-impl<'a> ToDeclarePartConvertor for AddCommentConvertor<'a> {
+impl ToDeclarePartConvertor for AddCommentConvertor {
     fn clone(&self) -> Self {
         Self {
-            comment_identify: self.comment_identify,
+            comment_identify: self.comment_identify.clone(),
             store: self.store.clone(),
         }
     }
 }
-struct ConvertorStore<'a> {
+struct ConvertorStore {
     is_all: bool,
-    store: Rc<RefCell<Vec<&'a str>>>,
+    store: Rc<RefCell<Vec<String>>>,
 }
-impl<'a> ConvertorStore<'a> {
+impl ConvertorStore {
     fn new() -> Self {
         Self {
             is_all: false,
@@ -78,32 +78,32 @@ impl<'a> ConvertorStore<'a> {
     fn all(&mut self) {
         self.is_all = true
     }
-    fn add(&mut self, type_name: &'a str) {
-        self.store.borrow_mut().push(type_name)
+    fn add(&mut self, type_name: impl Into<String>) {
+        self.store.borrow_mut().push(type_name.into())
     }
     fn containe_list(&self, type_name: &str) -> bool {
-        self.is_all || self.store.borrow().contains(&type_name)
+        self.is_all || self.store.borrow().iter().any(|name| name == type_name)
     }
 }
-pub struct AddHeaderConvertor<'a> {
+pub struct AddHeaderConvertor {
     header: String,
-    store: ConvertorStore<'a>,
+    store: ConvertorStore,
 }
-impl<'a> AddHeaderConvertor<'a> {
+impl AddHeaderConvertor {
     pub fn new(header: impl Into<String>) -> Self {
         Self {
             header: header.into(),
             store: ConvertorStore::new(),
         }
     }
-    pub fn add(&mut self, type_name: impl Into<&'a str>) {
+    pub fn add(&mut self, type_name: impl Into<String>) {
         self.store.add(type_name.into());
     }
     pub fn all(&mut self) {
         self.store.all();
     }
 }
-impl<'a> ToDeclarePartConvertor for AddHeaderConvertor<'a> {
+impl ToDeclarePartConvertor for AddHeaderConvertor {
     fn clone(&self) -> Self {
         Self {
             header: self.header.clone(),
@@ -112,28 +112,28 @@ impl<'a> ToDeclarePartConvertor for AddHeaderConvertor<'a> {
     }
 }
 
-pub struct BlackListConvertor<'a> {
-    store: ConvertorStore<'a>,
+pub struct BlackListConvertor {
+    store: ConvertorStore,
 }
 
-impl<'a> BlackListConvertor<'a> {
+impl BlackListConvertor {
     pub fn new() -> Self {
         Self {
             store: ConvertorStore::new(),
         }
     }
-    pub fn add(&mut self, type_name: &'a str) {
+    pub fn add(&mut self, type_name: impl Into<String>) {
         self.store.add(type_name);
     }
 }
-impl<'a> ToDeclarePartConvertor for BlackListConvertor<'a> {
+impl ToDeclarePartConvertor for BlackListConvertor {
     fn clone(&self) -> Self {
         BlackListConvertor {
             store: self.store.clone(),
         }
     }
 }
-impl<'a> ToDeclarePartConvertor for WhiteListConvertor<'a> {
+impl ToDeclarePartConvertor for WhiteListConvertor {
     fn clone(&self) -> Self {
         WhiteListConvertor {
             store: self.store.clone(),
@@ -141,17 +141,17 @@ impl<'a> ToDeclarePartConvertor for WhiteListConvertor<'a> {
     }
 }
 
-pub struct WhiteListConvertor<'a> {
-    store: ConvertorStore<'a>,
+pub struct WhiteListConvertor {
+    store: ConvertorStore,
 }
 
-impl<'a> WhiteListConvertor<'a> {
+impl WhiteListConvertor {
     pub fn new() -> Self {
         Self {
             store: ConvertorStore::new(),
         }
     }
-    pub fn add(&mut self, type_name: &'a str) {
+    pub fn add(&mut self, type_name: impl Into<String>) {
         self.store.add(type_name)
     }
 }
@@ -162,7 +162,7 @@ pub mod composite_type {
     use crate::customizable::declare_part_generator::{
         CompositeTypeDeclareConvertor, TypeIdentifyConvertor,
     };
-    impl<'a> TypeIdentifyConvertor for AddCommentConvertor<'a> {
+    impl TypeIdentifyConvertor for AddCommentConvertor {
         fn convert(
             &self,
             acc: &mut String,
@@ -176,7 +176,7 @@ pub mod composite_type {
             }
         }
     }
-    impl<'a> TypeIdentifyConvertor for AddHeaderConvertor<'a> {
+    impl TypeIdentifyConvertor for AddHeaderConvertor {
         fn convert(
             &self,
             acc: &mut String,
@@ -188,7 +188,7 @@ pub mod composite_type {
         }
     }
 
-    impl<'a> CompositeTypeDeclareConvertor for BlackListConvertor<'a> {
+    impl CompositeTypeDeclareConvertor for BlackListConvertor {
         fn convert(
             &self,
             acc: &mut String,
@@ -203,7 +203,7 @@ pub mod composite_type {
         }
     }
 
-    impl<'a> CompositeTypeDeclareConvertor for AddHeaderConvertor<'a> {
+    impl CompositeTypeDeclareConvertor for AddHeaderConvertor {
         fn convert(
             &self,
             acc: &mut String,
@@ -217,7 +217,7 @@ pub mod composite_type {
             }
         }
     }
-    impl<'a> CompositeTypeDeclareConvertor for WhiteListConvertor<'a> {
+    impl CompositeTypeDeclareConvertor for WhiteListConvertor {
         fn convert(
             &self,
             acc: &mut String,
@@ -239,21 +239,21 @@ pub mod alias_type {
     };
     use structure::alias_type_structure::AliasTypeStructure;
 
-    impl<'a> AliasTypeDeclareConvertor for AddHeaderConvertor<'a> {
+    impl AliasTypeDeclareConvertor for AddHeaderConvertor {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
             if self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = format!("{}\n{}", self.header, acc)
             }
         }
     }
-    impl<'a> AliasTypeIdentifyConvertor for AddHeaderConvertor<'a> {
+    impl AliasTypeIdentifyConvertor for AddHeaderConvertor {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
             if self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = format!("{}{}", self.header, acc)
             }
         }
     }
-    impl<'a> AliasTypeDeclareConvertor for BlackListConvertor<'a> {
+    impl AliasTypeDeclareConvertor for BlackListConvertor {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
             if self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = String::new()
@@ -261,7 +261,7 @@ pub mod alias_type {
         }
     }
 
-    impl<'a> AliasTypeDeclareConvertor for WhiteListConvertor<'a> {
+    impl AliasTypeDeclareConvertor for WhiteListConvertor {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
             if !self.store.containe_list(alias_type.type_name().as_str()) {
                 *acc = String::new()
