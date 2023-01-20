@@ -5,13 +5,13 @@ use crate::type_mapper::TypeMapper;
 
 use super::property_part_generator::Convertor;
 
-struct PropertyPartMatchConditionStore<'a> {
+struct PropertyPartMatchConditionStore {
     is_all: bool,
-    match_type_names: Vec<&'a str>,
-    match_propety_keys: Vec<&'a str>,
-    match_type_name_and_propety_keys: Vec<(&'a str, &'a str)>,
+    match_type_names: Vec<String>,
+    match_propety_keys: Vec<String>,
+    match_type_name_and_propety_keys: Vec<(String, String)>,
 }
-impl<'a> PropertyPartMatchConditionStore<'a> {
+impl PropertyPartMatchConditionStore {
     fn new() -> Self {
         Self {
             is_all: false,
@@ -23,38 +23,43 @@ impl<'a> PropertyPartMatchConditionStore<'a> {
     fn set_all(&mut self) {
         self.is_all = true
     }
-    fn add_match_type_name(&mut self, type_name: &'a str) {
-        self.match_type_names.push(type_name);
+    fn add_match_type_name(&mut self, type_name: impl Into<String>) {
+        self.match_type_names.push(type_name.into());
     }
-    fn add_match_property_key(&mut self, property_key: &'a str) {
-        self.match_propety_keys.push(property_key);
+    fn add_match_property_key(&mut self, property_key: impl Into<String>) {
+        self.match_propety_keys.push(property_key.into());
     }
-    fn add_match_type_name_and_property_key(&mut self, type_name: &'a str, property_key: &'a str) {
+    fn add_match_type_name_and_property_key(
+        &mut self,
+        type_name: impl Into<String>,
+        property_key: impl Into<String>,
+    ) {
         self.match_type_name_and_propety_keys
-            .push((type_name, property_key));
+            .push((type_name.into(), property_key.into()));
     }
-    fn is_match(&self, type_name: &'a str, property_key: &'a str) -> bool {
+    fn is_match(&self, type_name: &str, property_key: &str) -> bool {
         self.is_all
-            || self.match_type_names.contains(&type_name)
-            || self.match_propety_keys.contains(&property_key)
+            || self.match_type_names.iter().any(|s| s == type_name)
+            || self.match_propety_keys.iter().any(|s| s == &property_key)
             || self
                 .match_type_name_and_propety_keys
-                .contains(&(type_name, property_key))
+                .iter()
+                .any(|s| (s.0.as_str(), s.1.as_str()) == (type_name, property_key))
     }
 }
 macro_rules! impl_match_condition_store_methods {
     ($($t:ident),*) => {
-        $(impl<'a> $t<'a> {
+        $(impl $t {
             pub fn set_all(&mut self) {
                 self.store.set_all()
             }
-            pub fn add_match_type_name(&mut self, type_name: &'a str) {
+            pub fn add_match_type_name(&mut self, type_name: impl Into<String>) {
                 self.store.add_match_type_name(type_name);
             }
-            pub fn add_match_property_key(&mut self, property_key: &'a str) {
+            pub fn add_match_property_key(&mut self, property_key: impl Into<String>) {
                 self.store.add_match_property_key(property_key);
             }
-            pub fn add_match_type_name_and_property_key(&mut self, type_name: &'a str, property_key: &'a str) {
+            pub fn add_match_type_name_and_property_key(&mut self, type_name: String, property_key: impl Into<String>) {
                 self.store.add_match_type_name_and_property_key(type_name, property_key);
             }
         })*
@@ -64,11 +69,11 @@ macro_rules! impl_match_condition_store_methods {
     };
 }
 
-pub struct RenameConvertor<'a> {
+pub struct RenameConvertor {
     principal: Principal,
-    store: PropertyPartMatchConditionStore<'a>,
+    store: PropertyPartMatchConditionStore,
 }
-impl<'a> RenameConvertor<'a> {
+impl RenameConvertor {
     pub fn new(principal: Principal) -> Self {
         Self {
             principal,
@@ -76,7 +81,7 @@ impl<'a> RenameConvertor<'a> {
         }
     }
 }
-impl<'a, M> Convertor<M> for RenameConvertor<'a>
+impl<M> Convertor<M> for RenameConvertor
 where
     M: TypeMapper,
 {
@@ -107,21 +112,21 @@ pub enum Principal {
     Pascal,
     Constant,
 }
-pub struct ToOptionalConvertor<'a> {
-    store: PropertyPartMatchConditionStore<'a>,
+pub struct ToOptionalConvertor {
+    store: PropertyPartMatchConditionStore,
 }
-impl<'a> ToOptionalConvertor<'a> {
+impl ToOptionalConvertor {
     pub fn new() -> Self {
         Self {
             store: PropertyPartMatchConditionStore::new(),
         }
     }
 }
-pub struct AddHeaderConvertor<'a> {
+pub struct AddHeaderConvertor {
     header: String,
-    store: PropertyPartMatchConditionStore<'a>,
+    store: PropertyPartMatchConditionStore,
 }
-impl<'a> AddHeaderConvertor<'a> {
+impl AddHeaderConvertor {
     pub fn new(header: impl Into<String>) -> Self {
         Self {
             header: header.into(),
@@ -129,38 +134,38 @@ impl<'a> AddHeaderConvertor<'a> {
         }
     }
 }
-pub struct AddLastSideConvertor<'a> {
-    added: &'a str,
-    store: PropertyPartMatchConditionStore<'a>,
+pub struct AddLastSideConvertor {
+    added: String,
+    store: PropertyPartMatchConditionStore,
 }
-impl<'a> AddLastSideConvertor<'a> {
-    pub fn new(added: &'a str) -> Self {
+impl AddLastSideConvertor {
+    pub fn new(added: impl Into<String>) -> Self {
         Self {
-            added,
+            added: added.into(),
             store: PropertyPartMatchConditionStore::new(),
         }
     }
 }
-pub struct AddLeftSideConvertor<'a> {
-    added: &'a str,
-    store: PropertyPartMatchConditionStore<'a>,
+pub struct AddLeftSideConvertor {
+    added: String,
+    store: PropertyPartMatchConditionStore,
 }
-impl<'a> AddLeftSideConvertor<'a> {
-    pub fn new(added: &'a str) -> Self {
+impl AddLeftSideConvertor {
+    pub fn new(added: impl Into<String>) -> Self {
         Self {
-            added,
+            added: added.into(),
             store: PropertyPartMatchConditionStore::new(),
         }
     }
 }
-pub struct AddRightSideConvertor<'a> {
-    added: &'a str,
-    store: PropertyPartMatchConditionStore<'a>,
+pub struct AddRightSideConvertor {
+    added: String,
+    store: PropertyPartMatchConditionStore,
 }
-impl<'a> AddRightSideConvertor<'a> {
-    pub fn new(added: &'a str) -> Self {
+impl AddRightSideConvertor {
+    pub fn new(added: impl Into<String>) -> Self {
         Self {
-            added,
+            added: added.into(),
             store: PropertyPartMatchConditionStore::new(),
         }
     }
@@ -169,7 +174,7 @@ pub struct CannotUseCharConvertor {
     removes: Vec<char>,
     cannot_uses: Vec<char>,
 }
-impl<'a> CannotUseCharConvertor {
+impl CannotUseCharConvertor {
     pub fn new() -> Self {
         Self {
             removes: Vec::new(),
@@ -207,7 +212,7 @@ impl_match_condition_store_methods!(
     AddLastSideConvertor,
     RenameConvertor
 );
-impl<'a, M> Convertor<M> for AddLastSideConvertor<'a>
+impl<M> Convertor<M> for AddLastSideConvertor
 where
     M: TypeMapper,
 {
@@ -242,7 +247,7 @@ where
         *acc = self.replace_cannot_use_char(&acc);
     }
 }
-impl<'a, M> Convertor<M> for ToOptionalConvertor<'a>
+impl<M> Convertor<M> for ToOptionalConvertor
 where
     M: TypeMapper,
 {
@@ -262,7 +267,7 @@ where
         }
     }
 }
-impl<'a, M> Convertor<M> for AddLeftSideConvertor<'a>
+impl<M> Convertor<M> for AddLeftSideConvertor
 where
     M: TypeMapper,
 {
@@ -287,7 +292,7 @@ where
         }
     }
 }
-impl<'a, M> Convertor<M> for AddRightSideConvertor<'a>
+impl<M> Convertor<M> for AddRightSideConvertor
 where
     M: TypeMapper,
 {
@@ -310,7 +315,7 @@ where
         }
     }
 }
-impl<'a, M> Convertor<M> for AddHeaderConvertor<'a>
+impl<M> Convertor<M> for AddHeaderConvertor
 where
     M: TypeMapper,
 {
