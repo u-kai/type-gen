@@ -51,14 +51,6 @@ impl<'a> Comment for RustComment {
     }
 }
 
-//pub struct RustDocsComment<'a>(&'a str);
-
-//impl<'a> Comment for RustDocsComment<'a> {
-//fn to_define(&self) -> String {
-//format!("/// {}", self.0)
-//}
-//}
-
 #[derive(Debug, Clone, Copy)]
 pub enum RustVisibility {
     Private,

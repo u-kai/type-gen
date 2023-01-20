@@ -1,10 +1,12 @@
 use description_generator::{
     customizable::{
-        declare_part_convetors::BlackListConvertor,
         property_part_convertors::{
-            AddHeaderConvertor, AddLastSideConvertor, AddLeftSideConvertor, ToOptionalConvertor,
+            AddHeaderConvertor, AddLastSideConvertor, AddLeftSideConvertor, BlackListConvertor,
+            ToOptionalConvertor,
         },
-        property_part_generator::{Convertor, CustomizablePropertyDescriptionGenerator},
+        property_part_generator::{
+            Convertor, CustomizablePropertyDescriptionGenerator, DescriptionConvertor,
+        },
     },
     type_description_generator::PropertyPartGenerator,
 };
@@ -68,9 +70,13 @@ impl RustPropertyPartGeneratorBuilder {
         generator.add_default_convertors();
         generator
     }
-    pub fn set_blacklist(mut self, list: Vec<impl Into<String>>) -> Self {
-        // let mut black_list = BlackListConvertor::new();
-        // black_list.
+    pub fn set_blacklist_with_keys(mut self, list: Vec<impl Into<String>>) -> Self {
+        let mut black_list = BlackListConvertor::new();
+        list.into_iter()
+            .for_each(|s| black_list.add_match_property_key(s));
+        self.generator
+            .generator
+            .add_statement_convertor(Box::new(black_list));
         self
     }
     pub fn all_attrs(mut self, attrs: Vec<impl Into<String>>) -> Self {
@@ -167,21 +173,21 @@ mod tests {
         property_key::PropertyKey, property_type::property_type_factories::make_usize_type,
         type_name::TypeName,
     };
-    // #[test]
-    // fn test_case_add_blacklist() {
-    //     let type_name: TypeName = "Test".into();
-    //     let property_key: PropertyKey = "id".into();
-    //     let property_type = make_usize_type();
-    //     let mapper = RustMapper;
-    //     let generator = RustPropertyPartGeneratorBuilder::new()
-    //         .add_blacklist(vec!["id"])
-    //         .build();
-    //     let tobe = format!("",);
-    //     assert_eq!(
-    //         generator.generate(&type_name, &property_key, &property_type, &mapper,),
-    //         tobe
-    //     );
-    // }
+    #[test]
+    fn test_case_add_blacklist() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .set_blacklist_with_keys(vec!["id"])
+            .build();
+        let tobe = format!("",);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
     #[test]
     fn test_case_add_all_attrs() {
         let type_name: TypeName = "Test".into();
@@ -400,6 +406,27 @@ impl RustAddSerdeRenameConverotor {
         Self {
             judger: RustRenameJudger::new(),
         }
+    }
+}
+impl DescriptionConvertor<RustMapper> for RustAddSerdeRenameConverotor {
+    fn convert(
+        &self,
+        acc: Option<String>,
+        _: &structure::parts::type_name::TypeName,
+        property_key: &structure::parts::property_key::PropertyKey,
+        _: &structure::parts::property_type::PropertyType,
+        _: &RustMapper,
+    ) -> Option<String> {
+        if self.judger.do_need_rename(property_key.as_str()) {
+            if let Some(acc) = acc {
+                return Some(format!(
+                    "#[serde(rename = \"{}\")]\n{}",
+                    property_key.as_str(),
+                    acc
+                ));
+            }
+        }
+        acc
     }
 }
 impl Convertor<RustMapper> for RustAddSerdeRenameConverotor {

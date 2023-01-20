@@ -170,6 +170,16 @@ impl AddRightSideConvertor {
         }
     }
 }
+pub struct BlackListConvertor {
+    store: PropertyPartMatchConditionStore,
+}
+impl BlackListConvertor {
+    pub fn new() -> Self {
+        Self {
+            store: PropertyPartMatchConditionStore::new(),
+        }
+    }
+}
 pub struct CannotUseCharConvertor {
     removes: Vec<char>,
     cannot_uses: Vec<char>,
@@ -210,8 +220,188 @@ impl_match_condition_store_methods!(
     ToOptionalConvertor,
     AddRightSideConvertor,
     AddLastSideConvertor,
-    RenameConvertor
+    RenameConvertor,
+    BlackListConvertor
 );
+pub mod description_convertors {
+
+    use crate::customizable::property_part_generator::DescriptionConvertor;
+
+    use super::*;
+    impl<M> DescriptionConvertor<M> for BlackListConvertor
+    where
+        M: TypeMapper,
+    {
+        fn convert(
+            &self,
+            acc: Option<String>,
+            type_name: &TypeName,
+            property_key: &PropertyKey,
+            _: &structure::parts::property_type::PropertyType,
+            _: &M,
+        ) -> Option<String> {
+            if self
+                .store
+                .is_match(type_name.as_str(), property_key.as_str())
+            {
+                None
+            } else {
+                acc
+            }
+        }
+    }
+    impl<M> DescriptionConvertor<M> for AddHeaderConvertor
+    where
+        M: TypeMapper,
+    {
+        fn convert(
+            &self,
+            acc: Option<String>,
+            type_name: &TypeName,
+            property_key: &PropertyKey,
+            _: &structure::parts::property_type::PropertyType,
+            _: &M,
+        ) -> Option<String> {
+            if self
+                .store
+                .is_match(type_name.as_str(), property_key.as_str())
+            {
+                if let Some(acc) = acc {
+                    return Some(format!("{}\n{}", self.header, acc));
+                }
+            }
+            acc
+        }
+    }
+    impl<M> DescriptionConvertor<M> for AddLeftSideConvertor
+    where
+        M: TypeMapper,
+    {
+        fn convert(
+            &self,
+            acc: Option<String>,
+            type_name: &TypeName,
+            property_key: &PropertyKey,
+            _: &structure::parts::property_type::PropertyType,
+            _: &M,
+        ) -> Option<String> {
+            if self
+                .store
+                .is_match(type_name.as_str(), property_key.as_str())
+            {
+                if let Some(acc) = acc {
+                    let mut result = acc.split("\n").fold(String::new(), |acc, line| {
+                        format!("{}{}{}\n", acc, self.added, line)
+                    });
+                    result.remove(result.len() - 1);
+                    return Some(result);
+                }
+            }
+            acc
+        }
+    }
+    impl<M> DescriptionConvertor<M> for ToOptionalConvertor
+    where
+        M: TypeMapper,
+    {
+        fn convert(
+            &self,
+            acc: Option<String>,
+            type_name: &TypeName,
+            property_key: &PropertyKey,
+            _: &structure::parts::property_type::PropertyType,
+            mapper: &M,
+        ) -> Option<String> {
+            if self
+                .store
+                .is_match(type_name.as_str(), property_key.as_str())
+            {
+                if let Some(acc) = acc {
+                    return Some(mapper.case_optional_type(acc.clone()));
+                }
+            }
+            acc
+        }
+    }
+    impl<M> DescriptionConvertor<M> for AddRightSideConvertor
+    where
+        M: TypeMapper,
+    {
+        fn convert(
+            &self,
+            acc: Option<String>,
+            type_name: &TypeName,
+            property_key: &PropertyKey,
+            _: &structure::parts::property_type::PropertyType,
+            _: &M,
+        ) -> Option<String> {
+            if self
+                .store
+                .is_match(type_name.as_str(), property_key.as_str())
+            {
+                if let Some(mut acc) = acc {
+                    acc.split("\n").fold(String::new(), |acc, line| {
+                        format!("{}{}{}\n", acc, line, self.added)
+                    });
+                    acc.remove(acc.len() - 1);
+                    return Some(acc);
+                }
+            }
+            acc
+        }
+    }
+    impl<M> DescriptionConvertor<M> for AddLastSideConvertor
+    where
+        M: TypeMapper,
+    {
+        fn convert(
+            &self,
+            acc: Option<String>,
+            type_name: &TypeName,
+            property_key: &PropertyKey,
+            _: &structure::parts::property_type::PropertyType,
+            _: &M,
+        ) -> Option<String> {
+            if self
+                .store
+                .is_match(type_name.as_str(), property_key.as_str())
+            {
+                if let Some(acc) = acc {
+                    return Some(format!("{}{}", acc, self.added));
+                }
+            }
+            acc
+        }
+    }
+    impl<M> DescriptionConvertor<M> for RenameConvertor
+    where
+        M: TypeMapper,
+    {
+        fn convert(
+            &self,
+            acc: Option<String>,
+            type_name: &TypeName,
+            property_key: &PropertyKey,
+            _: &structure::parts::property_type::PropertyType,
+            _: &M,
+        ) -> Option<String> {
+            if self
+                .store
+                .is_match(type_name.as_str(), property_key.as_str())
+            {
+                if let Some(acc) = acc {
+                    return Some(match self.principal {
+                        Principal::Camel => to_camel(&acc),
+                        Principal::Snake => to_snake(&acc),
+                        Principal::Constant => to_constant(&acc),
+                        Principal::Pascal => to_pascal(&acc),
+                    });
+                }
+            }
+            acc
+        }
+    }
+}
 impl<M> Convertor<M> for AddLastSideConvertor
 where
     M: TypeMapper,
@@ -264,6 +454,26 @@ where
             .is_match(type_name.as_str(), property_key.as_str())
         {
             *acc = mapper.case_optional_type(acc.clone());
+        }
+    }
+}
+impl<M> Convertor<M> for BlackListConvertor
+where
+    M: TypeMapper,
+{
+    fn convert(
+        &self,
+        acc: &mut String,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+        _: &structure::parts::property_type::PropertyType,
+        _: &M,
+    ) -> () {
+        if self
+            .store
+            .is_match(type_name.as_str(), property_key.as_str())
+        {
+            *acc = String::new()
         }
     }
 }
@@ -337,15 +547,39 @@ where
 }
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::type_mapper::fake_mapper::FakeTypeMapper;
+    use crate::{
+        customizable::property_part_convertors::{
+            AddHeaderConvertor, AddLeftSideConvertor, AddRightSideConvertor, BlackListConvertor,
+            CannotUseCharConvertor, Principal, RenameConvertor, ToOptionalConvertor,
+        },
+        type_mapper::fake_mapper::FakeTypeMapper,
+    };
     use structure::parts::{
         property_key::PropertyKey, property_type::property_type_factories::make_usize_type,
         type_name::TypeName,
     };
 
     #[test]
+    fn test_black_list_convertor() {
+        use crate::customizable::property_part_generator::DescriptionConvertor;
+        let acc = String::from("id:usize");
+        let mut black_list = BlackListConvertor::new();
+        black_list.add_match_property_key("id");
+        let dummy_type_name = TypeName::from("");
+        let type_key = PropertyKey::from("id");
+        let dummy_property_type = make_usize_type();
+        let result = black_list.convert(
+            Some(acc),
+            &dummy_type_name,
+            &type_key,
+            &dummy_property_type,
+            &FakeTypeMapper,
+        );
+        assert_eq!(result, None);
+    }
+    #[test]
     fn test_replace_cannot_use_char_convertor() {
+        use crate::customizable::property_part_generator::Convertor;
         let mut acc = String::from("id:value");
         let tobe = String::from("idvalue");
         let rename_convertor = CannotUseCharConvertor::new();
@@ -363,6 +597,7 @@ mod test {
     }
     #[test]
     fn test_rename_convertor() {
+        use crate::customizable::property_part_generator::Convertor;
         let mut acc = String::from("idValue");
         let tobe = String::from("id_value");
         let mut rename_convertor = RenameConvertor::new(Principal::Snake);
@@ -381,6 +616,7 @@ mod test {
     }
     #[test]
     fn test_to_optional_case_all() {
+        use crate::customizable::property_part_generator::Convertor;
         let mut acc = String::from("usize");
         let tobe = String::from("Option<usize>");
         let mut to_optional_convertor = ToOptionalConvertor::new();
@@ -399,6 +635,7 @@ mod test {
     }
     #[test]
     fn test_add_header_case_all() {
+        use crate::customizable::property_part_generator::Convertor;
         let space = "// this comment";
         let mut acc = String::from("id:usize");
         let tobe = format!("{}\n{}", space, acc);
@@ -418,6 +655,7 @@ mod test {
     }
     #[test]
     fn test_add_head_case_containe() {
+        use crate::customizable::property_part_generator::Convertor;
         let space = "// this is comment";
         let mut acc = String::from("id:usize");
         let tobe = format!("{}\n{}", space, acc);
@@ -437,6 +675,7 @@ mod test {
     }
     #[test]
     fn test_add_right_side_case_all() {
+        use crate::customizable::property_part_generator::Convertor;
         let new_line = ",\n";
         let mut acc = String::from("id:usize");
         let tobe = format!("{}{}", acc, new_line);
@@ -456,6 +695,7 @@ mod test {
     }
     #[test]
     fn test_add_left_side_case_all() {
+        use crate::customizable::property_part_generator::Convertor;
         let space = "    ";
         let mut acc = String::from("id:usize");
         let tobe = format!("{}{}", space, acc);
@@ -475,6 +715,7 @@ mod test {
     }
     #[test]
     fn test_add_left_side_case_containe() {
+        use crate::customizable::property_part_generator::Convertor;
         let space = "    ";
         let mut acc = String::from("id:usize");
         let tobe = format!("{}{}", space, acc);

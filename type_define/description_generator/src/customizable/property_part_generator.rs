@@ -14,16 +14,25 @@ pub trait Convertor<M: TypeMapper> {
         mapper: &M,
     ) -> ();
 }
+pub trait DescriptionConvertor<M: TypeMapper> {
+    fn convert(
+        &self,
+        acc: Option<String>,
+        type_name: &TypeName,
+        property_key: &PropertyKey,
+        property_type: &PropertyType,
+        mapper: &M,
+    ) -> Option<String>;
+}
 type PropertyKeyConvertor<M> = Box<dyn Convertor<M>>;
 type PropertyTypeConvertor<M> = PropertyKeyConvertor<M>;
-type DescriptionConvertor<M> = PropertyKeyConvertor<M>;
 pub struct CustomizablePropertyDescriptionGenerator<F, M>
 where
     F: Fn(String, String) -> String,
     M: TypeMapper,
 {
     concat_key_and_property_type_clouser: F,
-    statement_convertor: Vec<DescriptionConvertor<M>>,
+    statement_convertor: Vec<Box<dyn DescriptionConvertor<M>>>,
     property_key_convertor: Vec<PropertyKeyConvertor<M>>,
     property_type_convertor: Vec<PropertyTypeConvertor<M>>,
 }
@@ -41,7 +50,7 @@ where
             property_type_convertor: Vec::new(),
         }
     }
-    pub fn add_statement_convertor(&mut self, convertor: DescriptionConvertor<M>) {
+    pub fn add_statement_convertor(&mut self, convertor: Box<dyn DescriptionConvertor<M>>) {
         self.statement_convertor.push(convertor);
     }
     pub fn add_property_type_convertor(&mut self, convertor: PropertyTypeConvertor<M>) {
@@ -97,20 +106,16 @@ where
         mapper: &M,
     ) -> String {
         let c = &self.concat_key_and_property_type_clouser;
-        let mut concated_str = c(
+        let concated_str = c(
             self.gen_key_str(type_name, property_key, property_type, mapper),
             self.gen_type_str(type_name, property_key, property_type, mapper),
         );
-        self.statement_convertor.iter().for_each(|c| {
-            c.convert(
-                &mut concated_str,
-                type_name,
-                property_key,
-                property_type,
-                mapper,
-            );
-        });
-        concated_str
+        self.statement_convertor
+            .iter()
+            .fold(Some(concated_str), |acc, cur| {
+                cur.convert(acc, type_name, property_key, property_type, mapper)
+            })
+            .unwrap_or_default()
     }
 }
 impl<M> Default for CustomizablePropertyDescriptionGenerator<fn(String, String) -> String, M>
@@ -148,17 +153,19 @@ mod test {
         struct Store<'a> {
             filter: Vec<&'a str>,
         }
-        impl<'a> Convertor<FakeTypeMapper> for Store<'a> {
+        impl<'a> DescriptionConvertor<FakeTypeMapper> for Store<'a> {
             fn convert(
                 &self,
-                acc: &mut String,
+                acc: Option<String>,
                 _: &TypeName,
                 property_key: &PropertyKey,
                 _: &PropertyType,
                 _mapper: &FakeTypeMapper,
-            ) -> () {
+            ) -> Option<String> {
                 if self.filter.contains(&property_key.as_str()) {
-                    *acc = "".to_string();
+                    None
+                } else {
+                    acc
                 }
             }
         }
@@ -189,45 +196,57 @@ mod test {
         let tobe = format!("// this is comment1\n// this is comment2\n#[cfg(test)]\nid:usize");
         let mut generator = CustomizablePropertyDescriptionGenerator::default();
         struct Clo1 {}
-        impl Convertor<FakeTypeMapper> for Clo1 {
+        impl DescriptionConvertor<FakeTypeMapper> for Clo1 {
             fn convert(
                 &self,
-                acc: &mut String,
+                acc: Option<String>,
                 _: &TypeName,
                 _: &PropertyKey,
                 _: &PropertyType,
                 _: &FakeTypeMapper,
-            ) -> () {
+            ) -> Option<String> {
                 let add_comment = "// this is comment1\n";
-                *acc = format!("{}{}", add_comment, acc);
+                if let Some(acc) = acc {
+                    Some(format!("{}{}", add_comment, acc))
+                } else {
+                    None
+                }
             }
         }
         struct Clo2 {}
-        impl Convertor<FakeTypeMapper> for Clo2 {
+        impl DescriptionConvertor<FakeTypeMapper> for Clo2 {
             fn convert(
                 &self,
-                acc: &mut String,
+                acc: Option<String>,
                 _: &TypeName,
                 _: &PropertyKey,
                 _: &PropertyType,
                 _: &FakeTypeMapper,
-            ) -> () {
+            ) -> Option<String> {
                 let add_comment = "// this is comment2\n";
-                *acc = format!("{}{}", add_comment, acc);
+                if let Some(acc) = acc {
+                    Some(format!("{}{}", add_comment, acc))
+                } else {
+                    None
+                }
             }
         }
         struct Clo3 {}
-        impl Convertor<FakeTypeMapper> for Clo3 {
+        impl DescriptionConvertor<FakeTypeMapper> for Clo3 {
             fn convert(
                 &self,
-                acc: &mut String,
+                acc: Option<String>,
                 _: &TypeName,
                 _: &PropertyKey,
                 _: &PropertyType,
                 _: &FakeTypeMapper,
-            ) -> () {
+            ) -> Option<String> {
                 let add_comment = "#[cfg(test)]\n";
-                *acc = format!("{}{}", add_comment, acc);
+                if let Some(acc) = acc {
+                    Some(format!("{}{}", add_comment, acc))
+                } else {
+                    None
+                }
             }
         }
         generator.add_statement_convertor(Box::new(Clo3 {}));
