@@ -91,6 +91,9 @@ impl RustDeclarePartGeneratorBuilder {
             .add_description_convertor(convertor.to_declare_part());
         self
     }
+    pub fn pub_all(self) -> Self {
+        self.pub_all_alias().pub_all_composite()
+    }
     pub fn pub_all_alias(mut self) -> Self {
         let mut convertor = AddHeaderConvertor::new("pub ");
         convertor.all();
@@ -190,6 +193,26 @@ pub struct Test {
             "#[derive(Debug,Clone)]
 pub type Test = String;"
         );
+        assert_eq!(
+            generator.generate_case_alias(&primitive_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_add_all_pub() {
+        let type_name: TypeName = "Test".into();
+        let mapper = RustMapper;
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new().pub_all().build();
+        let tobe = r#"pub struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            tobe
+        );
+        let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
+        let tobe = format!("pub type Test = String;");
         assert_eq!(
             generator.generate_case_alias(&primitive_type, &mapper,),
             tobe
