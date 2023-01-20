@@ -67,6 +67,19 @@ impl RustDeclarePartGeneratorBuilder {
             generator: RustDeclarePartGenerator::new(),
         }
     }
+    pub fn all_comment(mut self, comment: impl Into<String>) -> Self {
+        let mut convertor = AddHeaderConvertor::new(format!("// {}", comment.into()));
+        convertor.all();
+        self.generator
+            .generator
+            .composite_generator
+            .add_description_convertor(convertor.to_declare_part());
+        self.generator
+            .generator
+            .alias_generator
+            .add_description_convertor(Box::new(convertor));
+        self
+    }
     pub fn set_all_derive(mut self, derives: Vec<impl Into<String>>) -> Self {
         let derive_description = format!(
             "#[derive({})]",
@@ -137,6 +150,32 @@ mod tests {
     use crate::description_generator::mapper::RustMapper;
 
     use super::*;
+    #[test]
+    fn test_case_add_comment() {
+        let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .all_comment("this is comment")
+            .build();
+        let tobe = r#"// this is comment
+struct Test {
+    id: usize,
+}"#;
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            tobe
+        );
+        let mapper = RustMapper;
+        let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
+        let tobe = format!(
+            "// this is comment
+type Test = String;"
+        );
+        assert_eq!(
+            generator.generate_case_alias(&primitive_type, &mapper,),
+            tobe
+        );
+    }
     #[test]
     fn test_case_composite_add_derive_and_pub() {
         let type_name: TypeName = "Test".into();
