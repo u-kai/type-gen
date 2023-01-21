@@ -69,14 +69,14 @@ mod declare_part_test {
         let dummy_composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
         struct AddAttr {}
         impl CompositeTypeDeclareConvertor for AddAttr {
-            fn convert(&self, acc: &mut String, _: &CompositeTypeStructure) {
-                *acc = format!("#[derive(Debug)]\n{}", acc);
+            fn convert(&self, acc: Option<String>, _: &CompositeTypeStructure) -> Option<String> {
+                Some(format!("#[derive(Debug)]\n{}", acc.unwrap()))
             }
         }
         struct AddComment {}
         impl CompositeTypeDeclareConvertor for AddComment {
-            fn convert(&self, acc: &mut String, _: &CompositeTypeStructure) {
-                *acc = format!("// this is comment\n{}", acc);
+            fn convert(&self, acc: Option<String>, _: &CompositeTypeStructure) -> Option<String> {
+                Some(format!("// this is comment\n{}", acc.unwrap()))
             }
         }
         let add_attr = Box::new(AddAttr {});
@@ -221,12 +221,16 @@ where
         let f = &self.concat_fn;
         let type_name = composite_type.type_name();
         let type_identify = self.gen_type_identify(type_name);
-        let mut description = f(&type_identify, type_name, properties_description);
-        self.description_convertors
+        let description = f(&type_identify, type_name, properties_description);
+        let result = self
+            .description_convertors
             .iter()
-            .for_each(|c| c.convert(&mut description, composite_type));
-        description
+            .fold(Some(description), |acc, cur| {
+                cur.convert(acc, composite_type)
+            });
+        result.unwrap_or_default()
     }
+
     fn gen_type_identify(&self, type_name: &TypeName) -> String {
         let mut type_identify = self.type_identify.to_string();
         self.type_identify_convertors
@@ -282,7 +286,11 @@ pub trait TypeIdentifyConvertor {
     fn convert(&self, acc: &mut String, type_name: &TypeName) -> ();
 }
 pub trait CompositeTypeDeclareConvertor {
-    fn convert(&self, acc: &mut String, composite_type: &CompositeTypeStructure) -> ();
+    fn convert(
+        &self,
+        acc: Option<String>,
+        composite_type: &CompositeTypeStructure,
+    ) -> Option<String>;
 }
 #[cfg(test)]
 mod composite_type_test {

@@ -191,14 +191,16 @@ pub mod composite_type {
     impl CompositeTypeDeclareConvertor for BlackListConvertor {
         fn convert(
             &self,
-            acc: &mut String,
+            acc: Option<String>,
             composite_type: &structure::composite_type_structure::CompositeTypeStructure,
-        ) -> () {
+        ) -> Option<String> {
             if self
                 .store
                 .containe_list(composite_type.type_name().as_str())
             {
-                *acc = String::new()
+                None
+            } else {
+                acc
             }
         }
     }
@@ -206,28 +208,33 @@ pub mod composite_type {
     impl CompositeTypeDeclareConvertor for AddHeaderConvertor {
         fn convert(
             &self,
-            acc: &mut String,
+            acc: Option<String>,
             composite_type: &structure::composite_type_structure::CompositeTypeStructure,
-        ) -> () {
+        ) -> Option<String> {
             if self
                 .store
                 .containe_list(composite_type.type_name().as_str())
             {
-                *acc = format!("{}\n{}", self.header, acc)
+                if let Some(acc) = acc {
+                    return Some(format!("{}\n{}", self.header, acc));
+                }
             }
+            acc
         }
     }
     impl CompositeTypeDeclareConvertor for WhiteListConvertor {
         fn convert(
             &self,
-            acc: &mut String,
+            acc: Option<String>,
             composite_type: &structure::composite_type_structure::CompositeTypeStructure,
-        ) -> () {
+        ) -> Option<String> {
             if !self
                 .store
                 .containe_list(composite_type.type_name().as_str())
             {
-                *acc = String::new()
+                None
+            } else {
+                acc
             }
         }
     }
@@ -366,47 +373,45 @@ mod composite_case_test {
     fn test_black_list_convertor_case_containe() {
         use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
-        let mut acc = String::from("struct Test {id:usize}");
-        let tobe = String::new();
+        let acc = String::from("struct Test {id:usize}");
         let mut black_list = BlackListConvertor::new();
         black_list.add(name);
         let dummy_composite_type = CompositeTypeStructure::new(name, BTreeMap::new());
-        black_list.convert(&mut acc, &dummy_composite_type);
-        assert_eq!(acc, tobe);
+        let result = black_list.convert(Some(acc), &dummy_composite_type);
+        assert_eq!(result, None);
     }
     #[test]
     fn test_black_list_convertor_case_not_containe() {
         use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
-        let mut acc = String::from("struct Test {id:usize}");
+        let acc = String::from("struct Test {id:usize}");
         let tobe = acc.clone();
         let black_list = BlackListConvertor::new();
         let dummy_composite_type = CompositeTypeStructure::new(name, BTreeMap::new());
-        black_list.convert(&mut acc, &dummy_composite_type);
-        assert_eq!(acc, tobe);
+        let result = black_list.convert(Some(acc), &dummy_composite_type);
+        assert_eq!(result.unwrap(), tobe);
     }
     #[test]
     fn test_white_list_convertor_case_containe() {
         use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
-        let mut acc = String::from("struct Test {id:usize}");
+        let acc = String::from("struct Test {id:usize}");
         let tobe = acc.clone();
         let mut white_list = WhiteListConvertor::new();
         white_list.add(name);
         let dummy_composite_type = CompositeTypeStructure::new(name, BTreeMap::new());
-        white_list.convert(&mut acc, &dummy_composite_type);
-        assert_eq!(acc, tobe);
+        let result = white_list.convert(Some(acc), &dummy_composite_type);
+        assert_eq!(result.unwrap(), tobe);
     }
     #[test]
     fn test_white_list_convertor_case_not_containe() {
         use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
-        let mut acc = String::from("struct Test {id:usize}");
-        let tobe = String::new();
+        let acc = String::from("struct Test {id:usize}");
         let white_list = WhiteListConvertor::new();
         let dummy_composite_type = CompositeTypeStructure::new(name, BTreeMap::new());
-        white_list.convert(&mut acc, &dummy_composite_type);
-        assert_eq!(acc, tobe);
+        let result = white_list.convert(Some(acc), &dummy_composite_type);
+        assert_eq!(result, None);
     }
 }
 
