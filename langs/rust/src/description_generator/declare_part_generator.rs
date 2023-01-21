@@ -80,6 +80,12 @@ impl RustDeclarePartGeneratorBuilder {
             generator: RustDeclarePartGenerator::new(),
         }
     }
+    pub fn all_attrs_with_serde(self, attrs: Vec<impl Into<String>>) -> Self {
+        let mut attrs = attrs.into_iter().map(|s| s.into()).collect::<Vec<_>>();
+        attrs.push("serde::Deserialize".to_string());
+        attrs.push("serde::Serialize".to_string());
+        self.all_attrs(attrs)
+    }
     pub fn all_comment(mut self, comment: impl Into<String>) -> Self {
         let mut convertor = AddHeaderConvertor::new(format!("// {}", comment.into()));
         convertor.all();
