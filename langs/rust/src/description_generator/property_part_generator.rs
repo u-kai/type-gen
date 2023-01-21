@@ -70,6 +70,14 @@ impl RustPropertyPartGeneratorBuilder {
         generator.add_default_convertors();
         generator
     }
+
+    pub fn change_property_generator(
+        &mut self,
+    ) -> &mut CustomizablePropertyDescriptionGenerator<fn(String, String) -> String, RustMapper>
+    {
+        self.generator.change_property_generator()
+    }
+
     pub fn set_whitelist_with_keys(mut self, list: Vec<impl Into<String>>) -> Self {
         let mut white_list = WhiteListConvertor::new();
         list.into_iter()
@@ -141,6 +149,12 @@ impl RustPropertyPartGenerator {
             generator: CustomizablePropertyDescriptionGenerator::new(rust_property_concat),
         };
         result
+    }
+    fn change_property_generator(
+        &mut self,
+    ) -> &mut CustomizablePropertyDescriptionGenerator<fn(String, String) -> String, RustMapper>
+    {
+        &mut self.generator
     }
     fn add_default_convertors(&mut self) {
         let mut add_space_convertor = AddLeftSideConvertor::new(Self::INDENT);

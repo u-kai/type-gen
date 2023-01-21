@@ -154,6 +154,17 @@ impl RustDeclarePartGeneratorBuilder {
             .add_description_convertor(convertor.to_declare_part());
         self
     }
+    pub fn change_alias_generator(
+        &mut self,
+    ) -> &mut CustomizableAliasTypeDeclareGenerator<RustMapper, fn(&str, &TypeName, String) -> String>
+    {
+        self.generator.change_alias_generator()
+    }
+    pub fn change_composite_generator(
+        &mut self,
+    ) -> &mut CustomizableCompositeTypeDeclareGenerator<fn(&str, &TypeName, String) -> String> {
+        self.generator.change_composite_generator()
+    }
     pub fn build(self) -> RustDeclarePartGenerator {
         self.generator
     }
