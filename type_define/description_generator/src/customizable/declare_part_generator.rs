@@ -31,6 +31,9 @@ where
             composite_generator,
         }
     }
+    pub fn change_alias_generator(&mut self) -> &mut CustomizableAliasTypeDeclareGenerator<M, F1> {
+        &mut self.alias_generator
+    }
 }
 
 ///

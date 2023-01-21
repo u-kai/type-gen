@@ -1,6 +1,6 @@
 use description_generator::{
     customizable::{
-        declare_part_convetors::{AddHeaderConvertor, ToDeclarePartConvertor},
+        declare_part_convetors::{AddHeaderConvertor, BlackListConvertor, ToDeclarePartConvertor},
         declare_part_generator::{
             CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
             CustomizableDeclarePartGenerator,
@@ -18,14 +18,14 @@ impl DeclarePartGenerator for RustDeclarePartGenerator {
         alias_type: &structure::alias_type_structure::AliasTypeStructure,
         mapper: &Self::Mapper,
     ) -> String {
-        self.generator.generate_case_alias(alias_type, mapper)
+        self.inner.generate_case_alias(alias_type, mapper)
     }
     fn generate_case_composite(
         &self,
         composite_type: &structure::composite_type_structure::CompositeTypeStructure,
         properties_statement: String,
     ) -> String {
-        self.generator
+        self.inner
             .generate_case_composite(composite_type, properties_statement)
     }
 }
@@ -47,7 +47,7 @@ impl RustDeclarePartGenerator {
             )
         }
         RustDeclarePartGenerator {
-            generator: CustomizableDeclarePartGenerator::new(
+            inner: CustomizableDeclarePartGenerator::new(
                 CustomizableAliasTypeDeclareGenerator::new("type", alias_concat),
                 CustomizableCompositeTypeDeclareGenerator::new(
                     "struct",
@@ -55,6 +55,12 @@ impl RustDeclarePartGenerator {
                 ),
             ),
         }
+    }
+    fn change_alias_generator(
+        &mut self,
+    ) -> &mut CustomizableAliasTypeDeclareGenerator<RustMapper, fn(&str, &TypeName, String) -> String>
+    {
+        self.inner.change_alias_generator()
     }
 }
 
@@ -71,12 +77,11 @@ impl RustDeclarePartGeneratorBuilder {
         let mut convertor = AddHeaderConvertor::new(format!("// {}", comment.into()));
         convertor.all();
         self.generator
-            .generator
+            .inner
             .composite_generator
             .add_description_convertor(convertor.to_declare_part());
         self.generator
-            .generator
-            .alias_generator
+            .change_alias_generator()
             .add_description_convertor(Box::new(convertor));
         self
     }
@@ -95,11 +100,10 @@ impl RustDeclarePartGeneratorBuilder {
         let mut convertor = AddHeaderConvertor::new(derive_description);
         convertor.all();
         self.generator
-            .generator
-            .alias_generator
+            .change_alias_generator()
             .add_description_convertor(convertor.to_declare_part());
         self.generator
-            .generator
+            .inner
             .composite_generator
             .add_description_convertor(convertor.to_declare_part());
         self
@@ -111,8 +115,7 @@ impl RustDeclarePartGeneratorBuilder {
         let mut convertor = AddHeaderConvertor::new("pub ");
         convertor.all();
         self.generator
-            .generator
-            .alias_generator
+            .change_alias_generator()
             .add_type_identify_convertor(convertor.to_declare_part());
         self
     }
@@ -120,9 +123,22 @@ impl RustDeclarePartGeneratorBuilder {
         let mut convertor = AddHeaderConvertor::new("pub ");
         convertor.all();
         self.generator
-            .generator
+            .inner
             .composite_generator
             .add_type_identify_convertor(convertor.to_declare_part());
+        self
+    }
+    pub fn set_blacklist(mut self, list: Vec<impl Into<String>>) -> Self {
+        let mut convertor = BlackListConvertor::new();
+        list.into_iter().for_each(|v| convertor.add(v));
+        self.generator
+            .inner
+            .composite_generator
+            .add_description_convertor(convertor.to_declare_part());
+        self.generator
+            .inner
+            .change_alias_generator()
+            .add_description_convertor(convertor.to_declare_part());
         self
     }
     pub fn build(self) -> RustDeclarePartGenerator {
@@ -130,7 +146,7 @@ impl RustDeclarePartGeneratorBuilder {
     }
 }
 pub struct RustDeclarePartGenerator {
-    generator: CustomizableDeclarePartGenerator<
+    inner: CustomizableDeclarePartGenerator<
         RustMapper,
         fn(&str, &TypeName, String) -> String,
         fn(&str, &TypeName, String) -> String,
@@ -150,6 +166,21 @@ mod tests {
     use crate::description_generator::mapper::RustMapper;
 
     use super::*;
+    #[test]
+    fn test_case_set_blacklist() {
+        let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .set_blacklist(vec!["Test"])
+            .build();
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            ""
+        );
+        let mapper = RustMapper;
+        let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
+        assert_eq!(generator.generate_case_alias(&primitive_type, &mapper,), "");
+    }
     #[test]
     fn test_case_add_comment() {
         let type_name: TypeName = "Test".into();
