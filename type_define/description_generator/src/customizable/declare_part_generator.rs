@@ -34,6 +34,11 @@ where
     pub fn change_alias_generator(&mut self) -> &mut CustomizableAliasTypeDeclareGenerator<M, F1> {
         &mut self.alias_generator
     }
+    pub fn change_composite_generator(
+        &mut self,
+    ) -> &mut CustomizableCompositeTypeDeclareGenerator<F2> {
+        &mut self.composite_generator
+    }
 }
 
 ///

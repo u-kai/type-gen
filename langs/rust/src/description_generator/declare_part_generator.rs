@@ -62,6 +62,11 @@ impl RustDeclarePartGenerator {
     {
         self.inner.change_alias_generator()
     }
+    fn change_composite_generator(
+        &mut self,
+    ) -> &mut CustomizableCompositeTypeDeclareGenerator<fn(&str, &TypeName, String) -> String> {
+        self.inner.change_composite_generator()
+    }
 }
 
 pub struct RustDeclarePartGeneratorBuilder {
@@ -77,8 +82,7 @@ impl RustDeclarePartGeneratorBuilder {
         let mut convertor = AddHeaderConvertor::new(format!("// {}", comment.into()));
         convertor.all();
         self.generator
-            .inner
-            .composite_generator
+            .change_composite_generator()
             .add_description_convertor(convertor.to_declare_part());
         self.generator
             .change_alias_generator()
@@ -103,8 +107,7 @@ impl RustDeclarePartGeneratorBuilder {
             .change_alias_generator()
             .add_description_convertor(convertor.to_declare_part());
         self.generator
-            .inner
-            .composite_generator
+            .change_composite_generator()
             .add_description_convertor(convertor.to_declare_part());
         self
     }
@@ -123,8 +126,7 @@ impl RustDeclarePartGeneratorBuilder {
         let mut convertor = AddHeaderConvertor::new("pub ");
         convertor.all();
         self.generator
-            .inner
-            .composite_generator
+            .change_composite_generator()
             .add_type_identify_convertor(convertor.to_declare_part());
         self
     }
@@ -132,8 +134,7 @@ impl RustDeclarePartGeneratorBuilder {
         let mut convertor = BlackListConvertor::new();
         list.into_iter().for_each(|v| convertor.add(v));
         self.generator
-            .inner
-            .composite_generator
+            .change_composite_generator()
             .add_description_convertor(convertor.to_declare_part());
         self.generator
             .inner
