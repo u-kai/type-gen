@@ -132,6 +132,22 @@ impl RustDeclarePartGeneratorBuilder {
             .add_type_identify_convertor(convertor.to_declare_part());
         self
     }
+    pub fn all_attrs(mut self, attrs: Vec<impl Into<String>>) -> Self {
+        let mut attrs = attrs
+            .into_iter()
+            .map(|s| s.into())
+            .fold(String::new(), |acc, cur| format!("{}#[{}]\n", acc, cur));
+        attrs.pop();
+        let mut convertor = AddHeaderConvertor::new(attrs);
+        convertor.all();
+        self.generator
+            .change_composite_generator()
+            .add_description_convertor(convertor.to_declare_part());
+        self.generator
+            .change_alias_generator()
+            .add_description_convertor(convertor.to_declare_part());
+        self
+    }
     pub fn set_whitelist(mut self, list: Vec<impl Into<String>>) -> Self {
         let mut convertor = WhiteListConvertor::new();
         list.into_iter().for_each(|v| convertor.add(v));
@@ -190,6 +206,22 @@ mod tests {
     use crate::description_generator::mapper::RustMapper;
 
     use super::*;
+    #[test]
+    fn test_case_all_attrs() {
+        let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .all_attrs(vec!["allow(notuse)", "target=win"])
+            .build();
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n")),
+            "#[allow(notuse)]
+#[target=win]
+struct Test {
+    id: usize,
+}"
+        );
+    }
     #[test]
     fn test_case_set_whitelist() {
         let type_name: TypeName = "Test".into();

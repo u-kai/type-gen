@@ -19,6 +19,18 @@ pub struct RustTypeDescriptionGeneratorBuilder {
     pub declare_part: RustDeclarePartGeneratorBuilder,
     pub property_part: RustPropertyPartGeneratorBuilder,
 }
+macro_rules! impl_property_part_methods {
+    ($({$method:ident, $(($key:ident, $type_:ty)),*}),*) => {
+        $(
+            impl RustTypeDescriptionGeneratorBuilder {
+                pub fn $method(mut self,$($key: $type_),*)-> Self {
+                    self.proerty_part =  self.proerty_part.$method($($key),*);
+                    self
+                }
+            }
+        )*
+    };
+}
 macro_rules! impl_declare_part_methods {
     ($({$method:ident, $(($key:ident, $type_:ty)),*}),*) => {
         $(
@@ -31,7 +43,20 @@ macro_rules! impl_declare_part_methods {
         )*
     };
 }
-impl_declare_part_methods!({all_comment, (comment, &str)});
+// impl_property_part_methods!(
+//     {all_comment, (comment, &str)}
+//     ,{pub_all,}
+//     ,{set_all_derive,(derives,Vec<impl Into<String>>)}
+//     ,{set_whitelist,(list,Vec<impl Into<String>>)}
+//     ,{set_blacklist,(list,Vec<impl Into<String>>)}
+// );
+impl_declare_part_methods!(
+    {all_comment, (comment, &str)}
+    ,{pub_all,}
+    ,{set_all_derive,(derives,Vec<impl Into<String>>)}
+    ,{set_whitelist,(list,Vec<impl Into<String>>)}
+    ,{set_blacklist,(list,Vec<impl Into<String>>)}
+);
 impl RustTypeDescriptionGeneratorBuilder {
     pub fn new() -> Self {
         Self {
@@ -45,10 +70,6 @@ impl RustTypeDescriptionGeneratorBuilder {
     {
         let (d, p) = (self.declare_part.build(), self.property_part.build());
         TypeDescriptionGenerator::new(d, p, RustMapper)
-    }
-    pub fn a(mut self, comment: &str) -> Self {
-        self.declare_part = self.declare_part.all_comment(comment);
-        self
     }
     pub fn change_property_generator(
         &mut self,
