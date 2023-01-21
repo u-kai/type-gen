@@ -117,6 +117,28 @@ impl RustPropertyPartGeneratorBuilder {
             .add_statement_convertor(Box::new(convertor));
         self
     }
+    pub fn set_optional_with_type_and_keys(
+        mut self,
+        type_and_keys: Vec<(impl Into<String>, impl Into<String>)>,
+    ) -> Self {
+        let mut convertor = ToOptionalConvertor::new();
+        type_and_keys.into_iter().for_each(|(type_name, key)| {
+            convertor.add_match_type_name_and_property_key(type_name, key)
+        });
+        self.generator
+            .generator
+            .add_property_type_convertor(Box::new(convertor));
+        self
+    }
+    pub fn set_optional_with_keys(mut self, keys: Vec<impl Into<String>>) -> Self {
+        let mut convertor = ToOptionalConvertor::new();
+        keys.into_iter()
+            .for_each(|key| convertor.add_match_property_key(key));
+        self.generator
+            .generator
+            .add_property_type_convertor(Box::new(convertor));
+        self
+    }
     pub fn all_optional(mut self) -> Self {
         let mut convertor = ToOptionalConvertor::new();
         convertor.set_all();
@@ -209,6 +231,52 @@ mod tests {
             .set_whitelist_with_keys(vec!["test"])
             .build();
         let tobe = format!("");
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "test".into();
+        let property_type = make_usize_type();
+        let tobe = format!("    test: usize,\n");
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_set_optional_with_keys_and_type() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .set_optional_with_type_and_keys(vec![("Test", "id")])
+            .build();
+        let tobe = "    id: Option<usize>,\n";
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+        let type_name: TypeName = "TestId".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let tobe = format!("    id: usize,\n");
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
+    fn test_case_set_optional_with_keys() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = RustMapper;
+        let generator = RustPropertyPartGeneratorBuilder::new()
+            .set_optional_with_keys(vec!["id"])
+            .build();
+        let tobe = "    id: Option<usize>,\n";
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe

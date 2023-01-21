@@ -59,7 +59,7 @@ macro_rules! impl_match_condition_store_methods {
             pub fn add_match_property_key(&mut self, property_key: impl Into<String>) {
                 self.store.add_match_property_key(property_key);
             }
-            pub fn add_match_type_name_and_property_key(&mut self, type_name: String, property_key: impl Into<String>) {
+            pub fn add_match_type_name_and_property_key(&mut self, type_name:impl Into<String>, property_key: impl Into<String>) {
                 self.store.add_match_type_name_and_property_key(type_name, property_key);
             }
         })*
