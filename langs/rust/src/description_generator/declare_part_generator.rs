@@ -137,7 +137,6 @@ impl RustDeclarePartGeneratorBuilder {
             .change_composite_generator()
             .add_description_convertor(convertor.to_declare_part());
         self.generator
-            .inner
             .change_alias_generator()
             .add_description_convertor(convertor.to_declare_part());
         self
