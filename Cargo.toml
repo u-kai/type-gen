@@ -5,5 +5,5 @@ members = [
     "json",
     "langs/rust",
     "utils",
-    "cli",
+    "cli/sf-df",
 ]

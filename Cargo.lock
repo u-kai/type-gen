@@ -3,18 +3,6 @@
 version = 3
 
 [[package]]
-name = "cli"
-version = "0.1.0"
-dependencies = [
- "json",
- "npc",
- "rust",
- "serde",
- "serde_json",
- "structure",
-]
-
-[[package]]
 name = "description_generator"
 version = "0.1.0"
 dependencies = [
@@ -113,6 +101,10 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "sf-df"
+version = "0.1.0"
 
 [[package]]
 name = "structure"
