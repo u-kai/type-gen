@@ -7,8 +7,8 @@ name = "cli"
 version = "0.1.0"
 dependencies = [
  "json",
- "langs",
  "npc",
+ "rust",
  "serde",
  "serde_json",
  "structure",
@@ -36,22 +36,6 @@ dependencies = [
  "serde_json",
  "structure",
  "utils",
-]
-
-[[package]]
-name = "lang-common"
-version = "0.1.0"
-dependencies = [
- "npc",
- "utils",
-]
-
-[[package]]
-name = "langs"
-version = "0.1.0"
-dependencies = [
- "lang-common",
- "npc",
 ]
 
 [[package]]
