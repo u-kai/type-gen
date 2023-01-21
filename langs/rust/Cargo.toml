@@ -9,3 +9,4 @@ edition = "2021"
 structure = {path = "../../type_define/structure"}
 description_generator = {path = "../../type_define/description_generator"}
 npc ={ git = "https://github.com/u-kai/npc.git",branch = "main"}
+paste="*"

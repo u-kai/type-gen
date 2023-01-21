@@ -23,9 +23,11 @@ macro_rules! impl_property_part_methods {
     ($({$method:ident, $(($key:ident, $type_:ty)),*}),*) => {
         $(
             impl RustTypeDescriptionGeneratorBuilder {
-                pub fn $method(mut self,$($key: $type_),*)-> Self {
-                    self.proerty_part =  self.proerty_part.$method($($key),*);
-                    self
+                paste::item! {
+                    pub fn [<property_part_ $method>](mut self,$($key: $type_),*)-> Self {
+                        self.property_part =  self.property_part.$method($($key),*);
+                        self
+                    }
                 }
             }
         )*
@@ -35,24 +37,28 @@ macro_rules! impl_declare_part_methods {
     ($({$method:ident, $(($key:ident, $type_:ty)),*}),*) => {
         $(
             impl RustTypeDescriptionGeneratorBuilder {
-                pub fn $method(mut self,$($key: $type_),*)-> Self {
-                    self.declare_part =  self.declare_part.$method($($key),*);
-                    self
+                paste::item! {
+                    pub fn [<declare_part_ $method>](mut self,$($key: $type_),*)-> Self {
+                        self.declare_part =  self.declare_part.$method($($key),*);
+                        self
+                    }
                 }
             }
         )*
     };
 }
-// impl_property_part_methods!(
-//     {all_comment, (comment, &str)}
-//     ,{pub_all,}
-//     ,{set_all_derive,(derives,Vec<impl Into<String>>)}
-//     ,{set_whitelist,(list,Vec<impl Into<String>>)}
-//     ,{set_blacklist,(list,Vec<impl Into<String>>)}
-// );
+impl_property_part_methods!(
+    {all_comment, (comment, &str)}
+    ,{pub_all,}
+    ,{all_attrs,(attrs,Vec<impl Into<String>>)}
+    ,{set_whitelist_with_keys,(list,Vec<impl Into<String>>)}
+    ,{set_blacklist_with_keys,(list,Vec<impl Into<String>>)}
+    ,{all_optional,}
+);
 impl_declare_part_methods!(
     {all_comment, (comment, &str)}
     ,{pub_all,}
+    ,{all_attrs,(attrs,Vec<impl Into<String>>)}
     ,{set_all_derive,(derives,Vec<impl Into<String>>)}
     ,{set_whitelist,(list,Vec<impl Into<String>>)}
     ,{set_blacklist,(list,Vec<impl Into<String>>)}
@@ -123,13 +129,54 @@ mod tests {
                 ("accountId", make_string_type()),
             ],
         );
-        let mut builder = RustTypeDescriptionGeneratorBuilder::new();
-        //builder.all_comment("this is type").
-        //     let builder = builder
-        //         .declare_part
-        //         .all_comment("this is type")
-        //         .set_all_derive(vec!["Clone", "Debug"])
-        //         .pub_all();
-        // }
+        let builder = RustTypeDescriptionGeneratorBuilder::new();
+        let generator = builder
+            .declare_part_set_all_derive(vec!["Clone", "Debug"])
+            .declare_part_all_comment("this is type")
+            .declare_part_pub_all()
+            .property_part_pub_all()
+            .property_part_all_attrs(vec!["allow(unuse)"])
+            .property_part_all_comment("this is property")
+            .property_part_all_optional()
+            .build();
+
+        let tobe = vec![
+            r#"// this is type
+#[derive(Clone,Debug)]
+pub struct Root {
+    // this is property
+    #[allow(unuse)]
+    pub data: Option<Vec<RootData>>,
+    // this is property
+    #[allow(unuse)]
+    pub id: Option<usize>,
+}"#,
+            r#"// this is type
+#[derive(Clone,Debug)]
+pub struct RootData {
+    // this is property
+    #[allow(unuse)]
+    pub results: Option<Vec<RootDataResults>>,
+}"#,
+            r#"// this is type
+#[derive(Clone,Debug)]
+pub struct RootDataResults {
+    #[serde(rename = "accountId")]
+    // this is property
+    #[allow(unuse)]
+    pub account_id: Option<String>,
+    // this is property
+    #[allow(unuse)]
+    pub age: Option<usize>,
+    // this is property
+    #[allow(unuse)]
+    pub name: Option<String>,
+}"#,
+        ];
+        let expect = generator.generate(vec![root, root_data, root_data_results]);
+        for e in &expect {
+            println!("{}", e);
+        }
+        assert_eq!(expect, tobe)
     }
 }

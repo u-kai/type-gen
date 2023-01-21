@@ -109,8 +109,8 @@ impl RustPropertyPartGeneratorBuilder {
             .add_statement_convertor(Box::new(convertor));
         self
     }
-    pub fn all_comment(mut self, comment: &'static str) -> Self {
-        let mut convertor = AddHeaderConvertor::new(format!("// {}", comment));
+    pub fn all_comment(mut self, comment: impl Into<String>) -> Self {
+        let mut convertor = AddHeaderConvertor::new(format!("// {}", comment.into()));
         convertor.set_all();
         self.generator
             .generator
@@ -124,6 +124,9 @@ impl RustPropertyPartGeneratorBuilder {
             .generator
             .add_property_type_convertor(Box::new(convertor));
         self
+    }
+    pub fn pub_all(self) -> Self {
+        self.all_visibility(RustVisibility::Public)
     }
     pub fn all_visibility(mut self, visibility: RustVisibility) -> Self {
         let mut convertor = AddLeftSideConvertor::new(visibility.as_str());
