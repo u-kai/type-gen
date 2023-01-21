@@ -54,6 +54,8 @@ impl_property_part_methods!(
     ,{set_whitelist_with_keys,(list,Vec<impl Into<String>>)}
     ,{set_blacklist_with_keys,(list,Vec<impl Into<String>>)}
     ,{all_optional,}
+    ,{set_optional_with_keys,(keys,Vec<impl Into<String>>)}
+    ,{set_optional_with_type_and_keys,(type_and_keys,Vec<(impl Into<String>,impl Into<String>)>)}
 );
 impl_declare_part_methods!(
     {all_comment, (comment, &str)}
