@@ -1,6 +1,8 @@
 use description_generator::{
     customizable::{
-        declare_part_convetors::{AddHeaderConvertor, BlackListConvertor, ToDeclarePartConvertor},
+        declare_part_convetors::{
+            AddHeaderConvertor, BlackListConvertor, ToDeclarePartConvertor, WhiteListConvertor,
+        },
         declare_part_generator::{
             CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
             CustomizableDeclarePartGenerator,
@@ -130,6 +132,17 @@ impl RustDeclarePartGeneratorBuilder {
             .add_type_identify_convertor(convertor.to_declare_part());
         self
     }
+    pub fn set_whitelist(mut self, list: Vec<impl Into<String>>) -> Self {
+        let mut convertor = WhiteListConvertor::new();
+        list.into_iter().for_each(|v| convertor.add(v));
+        self.generator
+            .change_composite_generator()
+            .add_description_convertor(convertor.to_declare_part());
+        self.generator
+            .change_alias_generator()
+            .add_description_convertor(convertor.to_declare_part());
+        self
+    }
     pub fn set_blacklist(mut self, list: Vec<impl Into<String>>) -> Self {
         let mut convertor = BlackListConvertor::new();
         list.into_iter().for_each(|v| convertor.add(v));
@@ -167,11 +180,12 @@ mod tests {
 
     use super::*;
     #[test]
-    fn test_case_set_blacklist() {
+    fn test_case_set_whitelist() {
         let type_name: TypeName = "Test".into();
         let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
         let generator = RustDeclarePartGeneratorBuilder::new()
-            .set_blacklist(vec!["Test"])
+            .set_whitelist(vec!["User"])
+            .pub_all()
             .build();
         assert_eq!(
             generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
@@ -180,6 +194,38 @@ mod tests {
         let mapper = RustMapper;
         let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
         assert_eq!(generator.generate_case_alias(&primitive_type, &mapper,), "");
+        let type_name: TypeName = "User".into();
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n")),
+            "pub struct User {
+    id: usize,
+}"
+        );
+    }
+    #[test]
+    fn test_case_set_blacklist() {
+        let type_name: TypeName = "Test".into();
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .set_blacklist(vec!["Test"])
+            .pub_all()
+            .build();
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n"),),
+            ""
+        );
+        let mapper = RustMapper;
+        let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
+        assert_eq!(generator.generate_case_alias(&primitive_type, &mapper,), "");
+        let type_name: TypeName = "User".into();
+        let composite_type = CompositeTypeStructure::new(type_name.clone(), BTreeMap::new());
+        assert_eq!(
+            generator.generate_case_composite(&composite_type, format!("    id: usize,\n")),
+            "pub struct User {
+    id: usize,
+}"
+        );
     }
     #[test]
     fn test_case_add_comment() {
@@ -198,10 +244,8 @@ struct Test {
         );
         let mapper = RustMapper;
         let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
-        let tobe = format!(
-            "// this is comment
-type Test = String;"
-        );
+        let tobe = "// this is comment
+type Test = String;";
         assert_eq!(
             generator.generate_case_alias(&primitive_type, &mapper,),
             tobe
