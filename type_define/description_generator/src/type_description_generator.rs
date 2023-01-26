@@ -50,6 +50,10 @@ where
 /// ```ignore
 /// "struct TypeName { $properties_statement }";
 /// ```
+/// made case alias
+/// ```ignore
+/// "type Alias = String;"
+/// ```
 pub trait DeclarePartGenerator {
     const TYPE_PREFIX: &'static str = "struct";
     type Mapper: TypeMapper;
@@ -66,10 +70,6 @@ pub trait DeclarePartGenerator {
 /// made case composite
 /// ```ignore
 /// "id: usize"
-/// ```
-/// made case alias
-/// ```ignore
-/// "type Alias = String;"
 /// ```
 pub trait PropertyPartGenerator<M>
 where
@@ -224,9 +224,9 @@ mod test_type_define_statement_generator {
     fn test_case_primitive() {
         let simple_statement = TypeStructure::make_alias("Test", make_string_type());
         let tobe = "type Test = String;".to_string();
-        let generator = TypeDescriptionGenerator::fake_new();
-        let statements = generator.generate_one(simple_statement);
-        assert_eq!(statements, tobe);
+        let sut = TypeDescriptionGenerator::fake_new();
+        let result = sut.generate_one(simple_statement);
+        assert_eq!(result, tobe);
     }
     #[test]
     fn test_optional_case() {

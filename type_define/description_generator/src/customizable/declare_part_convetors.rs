@@ -307,6 +307,34 @@ mod integration_test {
     }
 }
 #[cfg(test)]
+mod composite_convetor_tests {
+    #[allow(non_snake_case)]
+    mod case_where_the_name_of_type_is_Test_and_the_property_has_an_id_property_of_type_usize {
+        fn factory() -> String {
+            String::from("struct Test {id:usize}")
+        }
+        use structure::parts::type_name::TypeName;
+
+        use crate::customizable::declare_part_convetors::AddCommentConvertor;
+        #[test]
+        #[allow(non_snake_case)]
+        fn using_AddCommentConvertor_add_all_will_add_comments_to_all_type_definition_descriptions()
+        {
+            use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
+            let mut description = factory();
+            let comment = "this comment!";
+            let mut sut = AddCommentConvertor::new("// ");
+            sut.add_all(comment);
+            let tobe = format!("// {}\n{}", comment, description);
+
+            sut.convert(&mut description, &TypeName::from("Test"));
+
+            assert_eq!(tobe, description);
+        }
+    }
+}
+
+#[cfg(test)]
 mod composite_case_test {
 
     use super::*;
