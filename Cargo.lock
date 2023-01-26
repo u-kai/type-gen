@@ -27,6 +27,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "lang-parser"
+version = "0.1.0"
+
+[[package]]
 name = "npc"
 version = "0.1.0"
 source = "git+https://github.com/u-kai/npc.git?branch=main#b31e5273313c3d685004af1ad0a07708c3d9246e"
