@@ -72,6 +72,39 @@ impl Surround {
     }
 }
 
+pub fn read_after_match<'a>(source: &'a str, match_str: &str) -> &'a str {
+    if let Some(match_index) = source.find(match_str) {
+        &source[match_index..]
+    } else {
+        source
+    }
+}
+
+pub fn read_after_empty(source: &str) -> &str {
+    if let Some(index) = source.find(|c: char| !c.is_whitespace()) {
+        &source[index..]
+    } else {
+        source
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn 空白以外の文字まで読み飛ばす() {
+    let tobe = r#"let data = "data";"#;
+    let source = format!(r#"      {}"#, tobe);
+
+    let result = read_after_empty(&source);
+
+    assert_eq!(tobe, result);
+}
+#[cfg(test)]
+#[test]
+fn マッチする値まで文字列を読み飛ばす() {
+    let source = r#"let data = "data"; fn {hello world};"#;
+    let result = read_after_match(source, "fn ");
+    assert_eq!("fn {hello world};", result);
+}
 #[cfg(test)]
 #[test]
 fn 対応するbracketまで文字列を読み取る() {
