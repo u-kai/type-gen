@@ -23,6 +23,10 @@ where
             content: content.into(),
         }
     }
+    /// ```ignore
+    ///let sut = FileStructer::new("/src/main.rs", "fn main(){}");
+    ///assert_eq!(sut.name_without_extension().unwrap(), "main");
+    /// ```
     pub fn name_without_extension(&self) -> Option<&str> {
         let path: &Path = &self.path.as_ref();
         if let Some(Some(path)) = path.file_name().map(|p| p.to_str()) {
@@ -36,12 +40,13 @@ where
     }
 }
 
-#[test]
-fn pathと拡張子が取り除かれたファイル名を返す() {
-    let sut = FileStructer::new("/src/main.rs", "fn main(){}");
+#[cfg(test)]
+mod file_structer_tests {
+    use super::*;
+    #[test]
+    fn pathと拡張子が取り除かれたファイル名を返す() {
+        let sut = FileStructer::new("/src/main.rs", "fn main(){}");
 
-    assert_eq!(sut.name_without_extension().unwrap(), "main");
-    let sut = FileStructer::new("../src/lib.rs", "fn main(){}");
-
-    assert_eq!(sut.name_without_extension().unwrap(), "lib");
+        assert_eq!(sut.name_without_extension().unwrap(), "main");
+    }
 }

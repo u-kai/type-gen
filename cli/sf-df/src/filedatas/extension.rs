@@ -8,6 +8,11 @@ pub enum Extension {
     Py,
     Json,
 }
+impl Extension {
+    pub fn to_str(&self) -> &'static str {
+        self.clone().into()
+    }
+}
 impl From<&str> for Extension {
     fn from(s: &str) -> Self {
         match s {
