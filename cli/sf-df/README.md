@@ -1,5 +1,20 @@
 # sf-df
 
+1. 対象ディレクトリの対象拡張子のファイルを全て読み込む
+
+- filepath,content の構造体を配列で作成する
+
+- 最終的には dist の filepath,type_defines やその他出力したいファイルがあれば良い
+
+- 受け取った filestructure を異なる filestructure に変換するだけ
+
+1. filepath の dist 版の配列を作成する
+
+   - convert_files
+
+1. convert_files と
+1. 上の配列を読み込んで，型定義，
+
 ## 設計/機能
 
 - 対象のディレクトリにある対象の拡張子を読み込んでいく

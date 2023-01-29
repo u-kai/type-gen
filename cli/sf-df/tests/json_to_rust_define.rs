@@ -10,7 +10,54 @@
 //     mains::json_to_rust_define,
 // };
 
+#[cfg(test)]
+mod intergration_tests {
+    use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
+    use sf_df::{
+        fileconvertor::{FileConvetor, FileStructer},
+        filedatas::extension::Extension,
+        langs::JsonToRustConvertor,
+    };
+
+    #[test]
+    fn jsonのファイルをrustの型定義に変換する() {
+        let source = vec![
+            FileStructer::new("json", r#"{"id":0}"#, "json/test.json"),
+            FileStructer::new("json", r#"{"arr":[{"id":0}]}"#, "json/arr.json"),
+        ];
+        let sut = FileConvetor::new(source);
+        let generator = RustTypeDescriptionGeneratorBuilder::new().build();
+        let convertor = JsonToRustConvertor::new(generator);
+        let result = sut.convert(Extension::Rs, convertor);
+
+        assert_eq!(
+            result,
+            vec![
+                FileStructer::new(
+                    "rs",
+                    r#"struct Test {
+    id: usize,
+}"#,
+                    "json/test.rs"
+                ),
+                FileStructer::new(
+                    "rs",
+                    r#"struct Arr {
+    arr: Vec<ArrArr>,
+}
+struct ArrArr {
+    id: usize,
+}
+"#,
+                    "json/arr.rs"
+                ),
+            ]
+        )
+    }
+}
+
 // #[test]
+//
 // #[ignore]
 // fn test_json_to_rust_define_gen_dist_dirs_and_dist_files() {
 //     //set up config

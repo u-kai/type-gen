@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, mem::replace, path::Path};
+use std::{collections::BTreeSet, path::Path};
 
 use crate::filedatas::extension::Extension;
 

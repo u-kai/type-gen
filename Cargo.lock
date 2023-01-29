@@ -109,6 +109,12 @@ dependencies = [
 [[package]]
 name = "sf-df"
 version = "0.1.0"
+dependencies = [
+ "description_generator",
+ "json",
+ "npc",
+ "rust",
+]
 
 [[package]]
 name = "structure"
