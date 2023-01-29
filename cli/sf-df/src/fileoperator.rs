@@ -93,18 +93,18 @@ mod test_util_fns_win {
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
     fn 存在しない指定されたディレクトリを再起的に生成する() {
-        let path = "src/from_src_files/mkdir/mkdir_rec/mkdir_rec_child";
+        let path = "./mkdir/mkdir_rec/mkdir_rec_child";
         let _sut = mkdir_rec(path).unwrap();
         let results = all_file_path("src");
         println!("{:#?}", results);
-        assert!(Path::new("src/from_src_files/mkdir/").exists());
-        assert!(Path::new("src/from_src_files/mkdir/mkdir_rec/").exists(),);
-        assert!(Path::new("src/from_src_files/mkdir/mkdir_rec/mkdir_rec_child").exists(),);
+        assert!(Path::new("mkdir/").exists());
+        assert!(Path::new("mkdir/mkdir_rec/").exists(),);
+        assert!(Path::new("mkdir/mkdir_rec/mkdir_rec_child").exists(),);
 
         // clean up not use watch test
         // if you use above code under cargo watch test context
         // cause infinite loop
-        std::fs::remove_dir_all("src/from_src_files/mkdir").unwrap()
+        std::fs::remove_dir_all("mkdir").unwrap()
     }
     // #[test]
     // fn test_split_dirs() {

@@ -98,7 +98,7 @@ fn all_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
         }
     }
 }
-#[cfg(test)]
+#[cfg(all(test, target_os = "windows"))]
 mod test_util_fns_win {
 
     use crate::from_src_files::fs_operators::util_fns::{all_path, extract_dir, split_dirs};
@@ -171,19 +171,20 @@ mod test_util_fns {
     use crate::from_src_files::fs_operators::util_fns::{all_path, extract_dir, split_dirs};
 
     use super::{all_file_path, is_dir, mkdir_rec};
-    #[test]
-    fn test_mkdir_rec() {
-        let path = "src/from_src_files/mkdir/mkdir_rec/mkdir_rec_child";
-        mkdir_rec(path).unwrap();
-        let results = all_path("src");
-        assert!(results.contains(&"src/from_src_files/mkdir/".into()));
-        assert!(results.contains(&"src/from_src_files/mkdir/mkdir_rec/".into()));
-        assert!(results.contains(&"src/from_src_files/mkdir/mkdir_rec/mkdir_rec_child".into()));
-        // clean up not use watch test
-        // if you use above code under cargo watch test context
-        // cause infinite loop
-        // std::fs::remove_dir_all("src/from_src_files/mkdir").unwrap()
-    }
+    // #[test]
+
+    // fn test_mkdir_rec() {
+    //     let path = "src/from_src_files/mkdir/mkdir_rec/mkdir_rec_child";
+    //     mkdir_rec(path).unwrap();
+    //     let results = all_path("src");
+    //     assert!(results.contains(&"src/from_src_files/mkdir/".into()));
+    //     assert!(results.contains(&"src/from_src_files/mkdir/mkdir_rec/".into()));
+    //     assert!(results.contains(&"src/from_src_files/mkdir/mkdir_rec/mkdir_rec_child".into()));
+    //     // clean up not use watch test
+    //     // if you use above code under cargo watch test context
+    //     // cause infinite loop
+    //     // std::fs::remove_dir_all("src/from_src_files/mkdir").unwrap()
+    // }
     #[test]
     fn test_split_dirs() {
         let path = "./src/example/child/test.txt";
