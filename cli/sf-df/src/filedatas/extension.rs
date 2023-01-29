@@ -12,6 +12,12 @@ impl Extension {
     pub fn to_str(&self) -> &'static str {
         self.clone().into()
     }
+    pub fn repalace(path: &str, source: &Extension, dist: &Extension) -> String {
+        path.replace(
+            &format!(".{}", source.to_str()),
+            &format!(".{}", dist.to_str()),
+        )
+    }
 }
 impl From<&str> for Extension {
     fn from(s: &str) -> Self {
