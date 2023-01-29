@@ -1,5 +1,6 @@
 use std::{
-    fs,
+    fs::{self, File},
+    io::{BufWriter, Write},
     path::{Path, PathBuf},
 };
 
@@ -31,6 +32,28 @@ pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
     }
 }
 
+pub fn create_file(path: impl AsRef<Path>, content: impl Into<String>) {
+    let content: String = content.into();
+    if path.as_ref().exists() {
+        let mut writer = BufWriter::new(File::create(path).unwrap());
+        writer.write_all(content.as_bytes()).unwrap();
+        return;
+    }
+    let filename = path
+        .as_ref()
+        .file_name()
+        .map(|f| f.to_str())
+        .unwrap_or_default()
+        .unwrap_or_default();
+    let dirs = path
+        .as_ref()
+        .to_str()
+        .unwrap_or_default()
+        .replacen(filename, "", 1);
+    mkdir_rec(dirs).unwrap();
+    let mut writer = BufWriter::new(File::create(path).unwrap());
+    writer.write_all(content.as_bytes()).unwrap();
+}
 pub fn is_dir<P: AsRef<Path>>(path: P) -> bool {
     path.as_ref().is_dir() || path.as_ref().extension().is_none()
 }
@@ -71,7 +94,9 @@ pub fn extract_dir<P: AsRef<Path>>(path: P) -> Option<String> {
 }
 #[cfg(test)]
 mod test_util_fns_win {
-    use std::path::Path;
+    use std::{fs::read_to_string, path::Path};
+
+    use crate::fileoperator::create_file;
 
     use super::{all_file_path, is_dir, mkdir_rec};
     #[test]
@@ -95,32 +120,33 @@ mod test_util_fns_win {
     fn 存在しない指定されたディレクトリを再起的に生成する() {
         let path = "./mkdir/mkdir_rec/mkdir_rec_child";
         let _sut = mkdir_rec(path).unwrap();
-        let results = all_file_path("src");
-        println!("{:#?}", results);
+
         assert!(Path::new("mkdir/").exists());
         assert!(Path::new("mkdir/mkdir_rec/").exists(),);
         assert!(Path::new("mkdir/mkdir_rec/mkdir_rec_child").exists(),);
 
-        // clean up not use watch test
-        // if you use above code under cargo watch test context
-        // cause infinite loop
+        //crean up
         std::fs::remove_dir_all("mkdir").unwrap()
     }
-    // #[test]
-    // fn test_split_dirs() {
-    //     let path = "./src/example/child/test.txt";
-    //     let mut splited = split_dirs(path).unwrap();
-    //     assert_eq!(splited.next().unwrap(), "src/");
-    //     assert_eq!(splited.next().unwrap(), "src/example/");
-    //     assert_eq!(splited.next().unwrap(), "src/example/child/");
-    //     assert_eq!(splited.next(), None);
-    //     let path = "./src/example/child/";
-    //     let mut splited = split_dirs(path).unwrap();
-    //     assert_eq!(splited.next().unwrap(), "src/");
-    //     assert_eq!(splited.next().unwrap(), "src/example/");
-    //     assert_eq!(splited.next().unwrap(), "src/example/child/");
-    //     assert_eq!(splited.next(), None);
-    // }
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn 指定されたファイルパスを存在しないディレクトリも含めて作成する() {
+        let new_path = "not-exist/non-exist/new-file.txt";
+        let content = "test hello world";
+
+        create_file(new_path, content);
+
+        assert!(Path::new("not-exist").exists());
+        assert!(Path::new("not-exist/non-exist").exists());
+        assert!(Path::new("not-exist/non-exist/new-file.txt").exists());
+        assert_eq!(
+            read_to_string("not-exist/non-exist/new-file.txt").unwrap(),
+            content
+        );
+
+        //crean up
+        std::fs::remove_dir_all("not-exist").unwrap()
+    }
     // #[test]
     // fn test_extract_dir() {
     //     let path = "src/dist/test.txt";
