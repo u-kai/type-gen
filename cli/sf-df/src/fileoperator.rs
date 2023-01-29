@@ -5,8 +5,8 @@ use std::{
 };
 
 use crate::{
+    extension::Extension,
     fileconvertor::{FileStructer, PathStructure},
-    filedatas::extension::{self, Extension},
 };
 
 #[cfg(not(target_os = "windows"))]
@@ -124,7 +124,6 @@ mod test_util_fns_win {
     #[test]
     fn for_testディレクトリ内の全てのファイルから指定した拡張子だけfilestructureとして生成する() {
         // this test context is exist test directory
-        // let
         let tobe = vec![
             FileStructer::new(
                 read_to_string("./for-test/rust.rs").unwrap(),

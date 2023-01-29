@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::filedatas::extension::Extension;
+use crate::extension::Extension;
 
 pub trait FileStructerConvertor {
     fn convert(&self, file: &FileStructer, extension: Extension) -> FileStructer;

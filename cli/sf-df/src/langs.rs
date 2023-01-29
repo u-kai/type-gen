@@ -12,8 +12,8 @@ use rust::description_generator::{
 };
 
 use crate::{
+    extension::Extension,
     fileconvertor::{FileStructer, FileStructerConvertor},
-    filedatas::extension::Extension,
 };
 
 pub type JsonToRustConvertor =

@@ -14,8 +14,8 @@
 mod intergration_tests {
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
+        extension::Extension,
         fileconvertor::{FileConvetor, FileStructer, PathStructure},
-        filedatas::extension::Extension,
         langs::JsonToRustConvertor,
     };
 
