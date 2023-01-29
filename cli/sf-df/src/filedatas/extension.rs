@@ -1,3 +1,5 @@
+use std::path::Path;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Extension {
     Rs,
@@ -17,6 +19,12 @@ impl Extension {
             &format!(".{}", source.to_str()),
             &format!(".{}", dist.to_str()),
         )
+    }
+    pub fn is_this_extension(&self, path: impl AsRef<Path>) -> bool {
+        path.as_ref()
+            .extension()
+            .map(|ex| Some(self.to_str()) == ex.to_str())
+            .unwrap_or(false)
     }
 }
 impl From<&str> for Extension {

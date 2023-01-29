@@ -1,7 +1,12 @@
 use std::{
-    fs::{self, File},
+    fs::{self, read_to_string, File},
     io::{BufWriter, Write},
     path::{Path, PathBuf},
+};
+
+use crate::{
+    fileconvertor::{FileStructer, PathStructure},
+    filedatas::extension::{self, Extension},
 };
 
 #[cfg(not(target_os = "windows"))]
@@ -54,7 +59,7 @@ pub fn create_file(path: impl AsRef<Path>, content: impl Into<String>) {
     let mut writer = BufWriter::new(File::create(path).unwrap());
     writer.write_all(content.as_bytes()).unwrap();
 }
-pub fn is_dir<P: AsRef<Path>>(path: P) -> bool {
+fn is_dir<P: AsRef<Path>>(path: P) -> bool {
     path.as_ref().is_dir() || path.as_ref().extension().is_none()
 }
 
@@ -64,7 +69,7 @@ pub fn mkdir_rec(path: impl AsRef<Path>) -> Result<(), String> {
     };
     Ok(path.for_each(|dir| mkdir(dir)))
 }
-pub fn mkdir(path: impl AsRef<Path>) {
+fn mkdir(path: impl AsRef<Path>) {
     if !path.as_ref().exists() {
         fs::create_dir(path.as_ref()).expect(&format!("{:#?} is not create dir", path.as_ref()));
     }
@@ -85,27 +90,62 @@ fn split_dirs(path: impl AsRef<Path>) -> Option<impl Iterator<Item = String>> {
             .into_iter(),
     )
 }
-pub fn extract_dir<P: AsRef<Path>>(path: P) -> Option<String> {
+fn extract_dir<P: AsRef<Path>>(path: P) -> Option<String> {
     if is_dir(path.as_ref()) {
         return path.as_ref().to_str().map(|s| s.to_string());
     }
     let filename = path.as_ref().file_name()?.to_str()?;
     path.as_ref().to_str().map(|s| s.replace(filename, ""))
 }
+pub fn all_file_structure(root: &str, extension: impl Into<Extension>) -> Vec<FileStructer> {
+    let extension: Extension = extension.into();
+    all_file_path(root)
+        .iter()
+        .filter(move |p| extension.is_this_extension(p))
+        .map(|p| {
+            let path = p.to_str().unwrap_or_default();
+            FileStructer::new(
+                read_to_string(p).unwrap(),
+                PathStructure::new(root, path, extension),
+            )
+        })
+        .collect()
+}
 #[cfg(test)]
 mod test_util_fns_win {
     use std::{fs::read_to_string, path::Path};
 
-    use crate::fileoperator::create_file;
+    use crate::{
+        fileconvertor::{FileStructer, PathStructure},
+        fileoperator::{all_file_structure, create_file},
+    };
 
-    use super::{all_file_path, is_dir, mkdir_rec};
+    use super::{all_file_path, mkdir_rec};
+    #[test]
+    fn for_testディレクトリ内の全てのファイルから指定した拡張子だけfilestructureとして生成する() {
+        // this test context is exist test directory
+        // let
+        let tobe = vec![
+            FileStructer::new(
+                read_to_string("./for-test/rust.rs").unwrap(),
+                PathStructure::new("./for-test", "./for-test/rust.rs", "rs"),
+            ),
+            FileStructer::new(
+                read_to_string("./for-test/child/rust_child.rs").unwrap(),
+                PathStructure::new("./for-test", "./for-test/child/rust_child.rs", "rs"),
+            ),
+        ];
+        assert_eq!(all_file_structure("./for-test", "rs"), tobe);
+    }
     #[test]
     fn for_testディレクトリ内の全てのファイルのパスを取得する() {
         // this test context is exist test directory
         let tobe = vec![
             "./for-test/parent.txt".to_string(),
+            "./for-test/rust.rs".to_string(),
             "./for-test/child/child.txt".to_string(),
             "./for-test/child/grand_child/grand_child.txt".to_string(),
+            "./for-test/child/rust_child.rs".to_string(),
         ];
         assert_eq!(
             all_file_path("./for-test")
@@ -147,18 +187,4 @@ mod test_util_fns_win {
         //crean up
         std::fs::remove_dir_all("not-exist").unwrap()
     }
-    // #[test]
-    // fn test_extract_dir() {
-    //     let path = "src/dist/test.txt";
-    //     assert_eq!(extract_dir(&path).unwrap(), "src/dist/".to_string());
-    //     let path = "src/dist/";
-    //     assert_eq!(extract_dir(&path).unwrap(), "src/dist/".to_string());
-    // }
-    // #[test]
-    // fn test_is_dir() {
-    //     let dir = "src/dist/";
-    //     assert!(is_dir(dir));
-    //     let file = "src/dist/test.txt";
-    //     assert!(!is_dir(file));
-    // }
 }
