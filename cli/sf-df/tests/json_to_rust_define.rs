@@ -14,7 +14,7 @@
 mod intergration_tests {
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
-        fileconvertor::{FileConvetor, FileStructer},
+        fileconvertor::{FileConvetor, FileStructer, PathStructure},
         filedatas::extension::Extension,
         langs::JsonToRustConvertor,
     };
@@ -22,26 +22,30 @@ mod intergration_tests {
     #[test]
     fn jsonのファイルをrustの型定義に変換する() {
         let source = vec![
-            FileStructer::new("json", r#"{"id":0}"#, "json/test.json"),
-            FileStructer::new("json", r#"{"arr":[{"id":0}]}"#, "json/arr.json"),
+            FileStructer::new(
+                r#"{"id":0}"#,
+                PathStructure::new("json", "json/test.json", "json"),
+            ),
+            FileStructer::new(
+                r#"{"arr":[{"id":0}]}"#,
+                PathStructure::new("json", "json/arr.json", "json"),
+            ),
         ];
         let sut = FileConvetor::new(source);
         let generator = RustTypeDescriptionGeneratorBuilder::new().build();
-        let convertor = JsonToRustConvertor::new(generator);
+        let convertor = JsonToRustConvertor::new("src", generator);
         let result = sut.convert(Extension::Rs, convertor);
 
         assert_eq!(
             result,
             vec![
                 FileStructer::new(
-                    "rs",
                     r#"struct Test {
     id: usize,
 }"#,
-                    "json/test.rs"
+                    PathStructure::new("src", "src/test.rs", "rs"),
                 ),
                 FileStructer::new(
-                    "rs",
                     r#"struct Arr {
     arr: Vec<ArrArr>,
 }
@@ -49,7 +53,7 @@ struct ArrArr {
     id: usize,
 }
 "#,
-                    "json/arr.rs"
+                    PathStructure::new("src", "src/arr.rs", "rs"),
                 ),
             ]
         )

@@ -7,62 +7,60 @@ pub trait FileStructerConvertor {
 }
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FileStructer {
-    extension: Extension,
     content: String,
-    path: String,
+    path: PathStructure,
 }
 impl FileStructer {
-    pub fn new(
-        extension: impl Into<Extension>,
-        content: impl Into<String>,
-        path: impl Into<String>,
-    ) -> Self {
+    pub fn new(content: impl Into<String>, path: PathStructure) -> Self {
         Self {
-            extension: extension.into(),
             content: content.into(),
-            path: path.into(),
+            path: path,
         }
     }
     pub fn name_without_extension(&self) -> &str {
-        let path: &Path = self.path.as_ref();
+        let path: &Path = self.path.path.as_ref();
         if let Some(Some(filename)) = path.file_name().map(|filename| filename.to_str()) {
             if let Some(index) = filename.find(".") {
                 return &filename[..index];
             }
         }
-        &self.path
+        &self.path.path
     }
     pub fn content(&self) -> &str {
         &self.content
     }
-    pub fn to_dist(&self, extension: impl Into<Extension>, content: impl Into<String>) -> Self {
-        let extension = extension.into();
-        Self::new(extension, content, self.repalace_extension_path(extension))
+    pub fn to_dist(
+        &self,
+        dist_root: impl Into<String>,
+        dist_extension: impl Into<Extension>,
+        content: impl Into<String>,
+    ) -> Self {
+        let dist = self.path.to_dist(dist_root, dist_extension);
+        Self::new(content, dist)
     }
-    pub fn from_source<F>(&self, extension: impl Into<Extension>, f: F) -> Self
-    where
-        F: Fn(&str) -> String,
-    {
-        let extension = extension.into();
-        Self::new(
-            extension,
-            f(&self.content),
-            self.repalace_extension_path(extension),
-        )
-    }
-    fn repalace_extension_path(&self, extension: impl Into<Extension>) -> String {
-        self.path.replace(
-            &format!(".{}", self.extension.to_str()),
-            &format!(".{}", extension.into().to_str()),
-        )
-    }
+    // pub fn from_source<F>(&self, extension: impl Into<Extension>, f: F) -> Self
+    // where
+    //     F: Fn(&str) -> String,
+    // {
+    //     let extension = extension.into();
+    //     Self::new(
+    //         extension,
+    //         f(&self.content),
+    //         self.repalace_extension_path(extension),
+    //     )
+    // }
+    // fn repalace_extension_path(&self, extension: impl Into<Extension>) -> PathStructure {
+    //     self.path.to_dist(dist_root, dist_extension)    }
 }
 #[cfg(test)]
 mod file_structer_tests {
     use super::*;
     #[test]
     fn pathと拡張子が取り除かれたファイル名を返す() {
-        let sut = FileStructer::new("rs", "fn main(){}", "src/main.rs");
+        let sut = FileStructer::new(
+            "fn main(){}",
+            PathStructure::new("src", "src/main.rs", "rs"),
+        );
 
         assert_eq!(sut.name_without_extension(), "main");
     }
@@ -94,15 +92,25 @@ mod tests {
 
     fn 受け取ったconvertorに従って受け取ったfile構造体を変換する() {
         let source = vec![
-            FileStructer::new("go", "func main(){}", "src/main.go"),
-            FileStructer::new("go", "func main(){}", "src/lib/lib.go"),
-            FileStructer::new("go", "func main(){}", "src/bin/bin.go"),
+            FileStructer::new(
+                "func main(){}",
+                PathStructure::new("src", "src/main.go", "go"),
+            ),
+            FileStructer::new(
+                "func main(){}",
+                PathStructure::new("src", "src/lib/lib.go", "go"),
+            ),
+            FileStructer::new(
+                "func main(){}",
+                PathStructure::new("src", "src/bin/bin.go", "go"),
+            ),
         ];
         let sut = FileConvetor::new(source);
         struct FakeConvertor {}
         impl FileStructerConvertor for FakeConvertor {
             fn convert(&self, f: &FileStructer, e: Extension) -> FileStructer {
-                f.from_source(e, |s| s.replace("func", "fn"))
+                let content = f.content().replace("func", "fn");
+                f.to_dist("dist", e, content)
             }
         }
         let convertor = FakeConvertor {};
@@ -110,9 +118,18 @@ mod tests {
         assert_eq!(
             result,
             vec![
-                FileStructer::new("rs", "fn main(){}", "src/main.rs"),
-                FileStructer::new("rs", "fn main(){}", "src/lib/lib.rs"),
-                FileStructer::new("rs", "fn main(){}", "src/bin/bin.rs"),
+                FileStructer::new(
+                    "fn main(){}",
+                    PathStructure::new("dist", "dist/main.rs", "rs",)
+                ),
+                FileStructer::new(
+                    "fn main(){}",
+                    PathStructure::new("dist", "dist/lib/lib.rs", "rs",)
+                ),
+                FileStructer::new(
+                    "fn main(){}",
+                    PathStructure::new("dist", "dist/bin/bin.rs", "rs",)
+                ),
             ]
         );
     }
@@ -137,10 +154,15 @@ impl PathStructure {
             extension: extension.into(),
         }
     }
-    pub fn to_dist(&self, dist_root: impl Into<String>, dist_extension: Extension) -> Self {
+    pub fn to_dist(
+        &self,
+        dist_root: impl Into<String>,
+        dist_extension: impl Into<Extension>,
+    ) -> Self {
         let dist_root = dist_root.into();
+        let dist_extension = dist_extension.into();
         let dist_path = Extension::repalace(
-            &self.path.replace(&self.root, &dist_root),
+            &self.path.replacen(&self.root, &dist_root, 1),
             &self.extension,
             &dist_extension,
         );

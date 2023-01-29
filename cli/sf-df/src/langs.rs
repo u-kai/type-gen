@@ -15,12 +15,16 @@ pub type RustTypeDescriptionGenerator =
     TypeDescriptionGenerator<RustDeclarePartGenerator, RustPropertyPartGenerator, RustMapper>;
 
 pub struct JsonToRustConvertor {
+    dist_root: String,
     generator: RustTypeDescriptionGenerator,
 }
 
 impl JsonToRustConvertor {
-    pub fn new(generator: RustTypeDescriptionGenerator) -> Self {
-        Self { generator }
+    pub fn new(dist_root: impl Into<String>, generator: RustTypeDescriptionGenerator) -> Self {
+        Self {
+            dist_root: dist_root.into(),
+            generator,
+        }
     }
 }
 impl FileStructerConvertor for JsonToRustConvertor {
@@ -29,6 +33,6 @@ impl FileStructerConvertor for JsonToRustConvertor {
         let type_structure =
             json.into_type_structures(to_pascal(filestructer.name_without_extension()));
         let rust_type_define = self.generator.generate_concat_define(type_structure);
-        filestructer.to_dist(extension, rust_type_define)
+        filestructer.to_dist(&self.dist_root, extension, rust_type_define)
     }
 }
