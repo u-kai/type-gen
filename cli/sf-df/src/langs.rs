@@ -1,4 +1,9 @@
-use description_generator::type_description_generator::TypeDescriptionGenerator;
+use description_generator::{
+    type_description_generator::{
+        DeclarePartGenerator, PropertyPartGenerator, TypeDescriptionGenerator,
+    },
+    type_mapper::TypeMapper,
+};
 use json::json::Json;
 use npc::fns::to_pascal;
 use rust::description_generator::{
@@ -11,23 +16,41 @@ use crate::{
     filedatas::extension::Extension,
 };
 
-pub type RustTypeDescriptionGenerator =
-    TypeDescriptionGenerator<RustDeclarePartGenerator, RustPropertyPartGenerator, RustMapper>;
+pub type JsonToRustConvertor =
+    JsonToLangConvertor<RustDeclarePartGenerator, RustPropertyPartGenerator, RustMapper>;
 
-pub struct JsonToRustConvertor {
+pub struct JsonToLangConvertor<Declear, Property, Mapper>
+where
+    Declear: DeclarePartGenerator<Mapper = Mapper>,
+    Property: PropertyPartGenerator<Mapper>,
+    Mapper: TypeMapper,
+{
     dist_root: String,
-    generator: RustTypeDescriptionGenerator,
+    generator: TypeDescriptionGenerator<Declear, Property, Mapper>,
 }
-
-impl JsonToRustConvertor {
-    pub fn new(dist_root: impl Into<String>, generator: RustTypeDescriptionGenerator) -> Self {
+impl<Declear, Property, Mapper> JsonToLangConvertor<Declear, Property, Mapper>
+where
+    Declear: DeclarePartGenerator<Mapper = Mapper>,
+    Property: PropertyPartGenerator<Mapper>,
+    Mapper: TypeMapper,
+{
+    pub fn new(
+        dist_root: impl Into<String>,
+        generator: TypeDescriptionGenerator<Declear, Property, Mapper>,
+    ) -> Self {
         Self {
             dist_root: dist_root.into(),
             generator,
         }
     }
 }
-impl FileStructerConvertor for JsonToRustConvertor {
+impl<Declear, Property, Mapper> FileStructerConvertor
+    for JsonToLangConvertor<Declear, Property, Mapper>
+where
+    Declear: DeclarePartGenerator<Mapper = Mapper>,
+    Property: PropertyPartGenerator<Mapper>,
+    Mapper: TypeMapper,
+{
     fn convert(&self, filestructer: &FileStructer, extension: Extension) -> FileStructer {
         let json = Json::from(filestructer.content());
         let type_structure =
