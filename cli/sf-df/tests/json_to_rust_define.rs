@@ -12,15 +12,62 @@
 
 #[cfg(test)]
 mod intergration_tests {
+    use std::fs::read_to_string;
+
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
         extension::Extension,
         fileconvertor::{FileConvetor, FileStructer, PathStructure},
-        langs::JsonToRustConvertor,
+        fileoperator::all_file_structure,
+        json_to_langs::JsonToRustConvertor,
     };
 
     #[test]
-    fn jsonのファイルをrustの型定義に変換する() {
+    fn exapmle配下のjsonファイル読み込んでfilestructureを生成する() {
+        let files = all_file_structure("./tests/jsons", "json");
+        println!(
+            "{:#?}",
+            files
+                .iter()
+                .map(|f| f.name_without_extension())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            files,
+            vec![
+                FileStructer::new(
+                    read_to_string("./tests/jsons/test.json").unwrap(),
+                    PathStructure::new("./tests/jsons", "./tests/jsons/test.json", "json"),
+                ),
+                FileStructer::new(
+                    read_to_string("./tests/jsons/nests/child/array.json").unwrap(),
+                    PathStructure::new(
+                        "./tests/jsons",
+                        "./tests/jsons/nests/child/array.json",
+                        "json"
+                    ),
+                ),
+                FileStructer::new(
+                    read_to_string("./tests/jsons/nests/child/json-placeholder.json").unwrap(),
+                    PathStructure::new(
+                        "./tests/jsons",
+                        "./tests/jsons/nests/child/json-placeholder.json",
+                        "json"
+                    ),
+                ),
+                FileStructer::new(
+                    read_to_string("./tests/jsons/nests/test-child.json").unwrap(),
+                    PathStructure::new(
+                        "./tests/jsons",
+                        "./tests/jsons/nests/test-child.json",
+                        "json"
+                    ),
+                ),
+            ]
+        )
+    }
+    #[test]
+    fn jsonのfilestructureをrustの型定義に変換する() {
         let source = vec![
             FileStructer::new(
                 r#"{"id":0}"#,
