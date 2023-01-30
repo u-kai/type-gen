@@ -1,9 +1,11 @@
 use std::path::Path;
 
+use npc::fns::to_snake;
+
 use crate::extension::Extension;
 
 pub trait FileStructerConvertor {
-    fn convert(&self, file: &FileStructer, extension: Extension) -> FileStructer;
+    fn convert(&self, file: &FileStructer, extension: impl Into<Extension>) -> FileStructer;
 }
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FileStructer {
@@ -17,14 +19,11 @@ impl FileStructer {
             path: path,
         }
     }
+    pub fn to_snake_path(&self) -> Self {
+        Self::new(self.content(), self.path.to_snake_path())
+    }
     pub fn name_without_extension(&self) -> &str {
-        let path: &Path = self.path.path.as_ref();
-        if let Some(Some(filename)) = path.file_name().map(|filename| filename.to_str()) {
-            if let Some(index) = filename.find(".") {
-                return &filename[..index];
-            }
-        }
-        &self.path.path
+        self.path.name_without_extension()
     }
     pub fn content(&self) -> &str {
         &self.content
@@ -98,7 +97,7 @@ mod tests {
         let sut = FileConvetor::new(source);
         struct FakeConvertor {}
         impl FileStructerConvertor for FakeConvertor {
-            fn convert(&self, f: &FileStructer, e: Extension) -> FileStructer {
+            fn convert(&self, f: &FileStructer, e: impl Into<Extension>) -> FileStructer {
                 let content = f.content().replace("func", "fn");
                 f.to_dist("dist", e, content)
             }
@@ -144,6 +143,20 @@ impl PathStructure {
             extension: extension.into(),
         }
     }
+    pub fn name_without_extension(&self) -> &str {
+        let path: &Path = self.path.as_ref();
+        if let Some(Some(filename)) = path.file_name().map(|filename| filename.to_str()) {
+            if let Some(index) = filename.find(".") {
+                return &filename[..index];
+            }
+        }
+        &self.path
+    }
+    pub fn to_snake_path(&self) -> Self {
+        let new_name = to_snake(self.name_without_extension());
+        let new_path = self.path.replace(self.name_without_extension(), &new_name);
+        Self::new(&self.root, new_path, self.extension)
+    }
     pub fn to_dist(
         &self,
         dist_root: impl Into<String>,
@@ -170,4 +183,16 @@ fn パスのルートを変更する() {
     let result = sut.to_dist("./dist", Extension::Go);
 
     assert_eq!(result, PathStructure::new("./dist", "./dist/main.go", "go"));
+}
+
+#[test]
+fn パスの名前をsnake_caseに変更する() {
+    let sut = PathStructure::new("./src", "./src/chain-case.rs", "rs");
+
+    let result = sut.to_snake_path();
+
+    assert_eq!(
+        result,
+        PathStructure::new("./src", "./src/chain_case.rs", "rs")
+    );
 }

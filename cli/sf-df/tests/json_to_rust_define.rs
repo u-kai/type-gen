@@ -1,13 +1,39 @@
 #[cfg(test)]
 mod intergration_tests {
 
+    use std::{fs::read_to_string, path::Path};
+
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
         extension::Extension,
         fileconvertor::{FileConvetor, FileStructer, PathStructure},
-        json_to_langs::JsonToRustConvertor,
+        json_to_langs::{json_to_rust, JsonToRustConvertor},
     };
 
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn jsons配下のjsonファイルをrustの型定義に変換してdist配下に格納する() {
+        let generator = RustTypeDescriptionGeneratorBuilder::new().build();
+        let dist = "./tests/dist";
+        json_to_rust("./tests/jsons", dist, generator);
+
+        assert!(Path::new("./tests/dist/test.rs").exists());
+        //assert!(Path::new("./tests/dist/nests.rs").exists());
+        assert!(Path::new("./tests/dist/nests/test_child.rs").exists(),);
+        //assert!(Path::new("./tests/dist/nests/child.rs").exists(),);
+        assert!(Path::new("./tests/dist/nests/child/array.rs").exists(),);
+        assert!(Path::new("./tests/dist/nests/child/json_placeholder.rs").exists(),);
+
+        //crean up
+        std::fs::remove_dir_all(dist).unwrap()
+        // assert_eq!(read_to_string("./tests/dist/test.rs").unwrap(),
+        // r#""#
+        // );
+        // //assert_eq!(read_to_string("./tests/dist/nests.rs").unwrap());
+        // assert_eq!(read_to_string("./tests/dist/nests/test_child.rs").unwrap(),);
+        // //assert_eq!(read_to_string("./tests/dist/nests/child.rs").unwrap(),);
+        // assert_eq!(read_to_string("./tests/dist/nests/child/array.rs").unwrap(),);
+    }
     #[test]
     fn jsonのfilestructureをrustの型定義に変換する() {
         let source = vec![
