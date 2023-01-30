@@ -19,8 +19,8 @@ impl FileStructer {
             path: path,
         }
     }
-    pub fn to_snake_path(&self) -> Self {
-        Self::new(self.content(), self.path.to_snake_path())
+    pub fn to_snake_path(self) -> Self {
+        Self::new(self.content, self.path.to_snake_path())
     }
     pub fn name_without_extension(&self) -> &str {
         self.path.name_without_extension()
@@ -132,6 +132,11 @@ pub struct PathStructure {
 }
 
 impl PathStructure {
+    #[cfg(not(target_os = "windows"))]
+    pub const SEPARATOR: &'static str = "/";
+    #[cfg(any(target_os = "windows", feature = "test_win"))]
+    pub const SEPARATOR: &'static str = "\\";
+
     pub fn new(
         root: impl Into<String>,
         path: impl Into<String>,
@@ -143,6 +148,27 @@ impl PathStructure {
             extension: extension.into(),
         }
     }
+    pub fn all_dir(&self) -> Vec<String> {
+        let all_dir = self.extract_dir();
+        let mut dir = String::new();
+        all_dir
+            .split(Self::SEPARATOR)
+            .into_iter()
+            .filter(|s| *s != "." && *s != "")
+            .fold(Vec::new(), |mut acc, s| {
+                dir += &format!("{}{}", s, Self::SEPARATOR);
+                acc.push(dir.clone());
+                acc
+            })
+    }
+    fn extract_dir(&self) -> String {
+        let path: &Path = self.path.as_ref();
+        if let Some(Some(filename)) = path.file_name().map(|f| f.to_str()) {
+            self.path.replace(filename, "")
+        } else {
+            self.path.clone()
+        }
+    }
     pub fn name_without_extension(&self) -> &str {
         let path: &Path = self.path.as_ref();
         if let Some(Some(filename)) = path.file_name().map(|filename| filename.to_str()) {
@@ -152,10 +178,10 @@ impl PathStructure {
         }
         &self.path
     }
-    pub fn to_snake_path(&self) -> Self {
+    pub fn to_snake_path(self) -> Self {
         let new_name = to_snake(self.name_without_extension());
         let new_path = self.path.replace(self.name_without_extension(), &new_name);
-        Self::new(&self.root, new_path, self.extension)
+        Self::new(self.root, new_path, self.extension)
     }
     pub fn to_dist(
         &self,
@@ -176,23 +202,35 @@ impl PathStructure {
         }
     }
 }
-#[test]
-fn パスのルートを変更する() {
-    let sut = PathStructure::new("./src", "./src/main.rs", "rs");
+#[cfg(test)]
+mod path_structure_tests {
+    use super::*;
+    #[test]
+    fn ルート配下のディレクトリを返す() {
+        let sut = PathStructure::new("./src", "./src/lib/common/util.rs", "rs");
 
-    let result = sut.to_dist("./dist", Extension::Go);
+        let result = sut.all_dir();
 
-    assert_eq!(result, PathStructure::new("./dist", "./dist/main.go", "go"));
-}
+        assert_eq!(result, vec!["src/", "src/lib/", "src/lib/common/"]);
+    }
+    #[test]
+    fn パスのルートを変更する() {
+        let sut = PathStructure::new("./src", "./src/main.rs", "rs");
 
-#[test]
-fn パスの名前をsnake_caseに変更する() {
-    let sut = PathStructure::new("./src", "./src/chain-case.rs", "rs");
+        let result = sut.to_dist("./dist", Extension::Go);
 
-    let result = sut.to_snake_path();
+        assert_eq!(result, PathStructure::new("./dist", "./dist/main.go", "go"));
+    }
 
-    assert_eq!(
-        result,
-        PathStructure::new("./src", "./src/chain_case.rs", "rs")
-    );
+    #[test]
+    fn パスの名前をsnake_caseに変更する() {
+        let sut = PathStructure::new("./src", "./src/chain-case.rs", "rs");
+
+        let result = sut.to_snake_path();
+
+        assert_eq!(
+            result,
+            PathStructure::new("./src", "./src/chain_case.rs", "rs")
+        );
+    }
 }

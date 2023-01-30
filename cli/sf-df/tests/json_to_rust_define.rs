@@ -12,6 +12,35 @@ mod intergration_tests {
 
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn filestructureの配列からrustのmod情報に関わるfilestructureを生成する() {
+        let source = vec![
+            FileStructer::new(
+                read_to_string("./tests/rusts/test.rs").unwrap(),
+                PathStructure::new("./tests/rusts", "./tests/rusts/test.rs", "rs"),
+            ),
+            FileStructer::new(
+                read_to_string("./tests/rusts/nests/test-child.rs").unwrap(),
+                PathStructure::new("./tests/rusts", "./tests/rusts/nests/test-child.rs", "rs"),
+            ),
+            FileStructer::new(
+                read_to_string("./tests/rusts/nests/child/array.rs").unwrap(),
+                PathStructure::new("./tests/rusts", "./tests/rusts/nests/child/array.rs", "rs"),
+            ),
+            FileStructer::new(
+                read_to_string("./tests/rusts/nests/child/rs-placeholder.rs").unwrap(),
+                PathStructure::new(
+                    "./tests/rusts",
+                    "./tests/rusts/nests/child/rs-placeholder.rs",
+                    "rs",
+                ),
+            ),
+        ];
+        //create_mod_file_from_filestructures(source);
+        assert!(Path::new("./tests/rusts/nests.rs").exists());
+        assert!(Path::new("./tests/rusts/nests/child.rs").exists(),);
+    }
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
     fn jsons配下のjsonファイルをrustの型定義に変換してdist配下に格納する() {
         let generator = RustTypeDescriptionGeneratorBuilder::new().build();
         let dist = "./tests/dist";
