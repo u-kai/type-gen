@@ -29,6 +29,9 @@ impl FileStructer {
     pub fn content(&self) -> &str {
         &self.content
     }
+    pub fn path(&self) -> &str {
+        &self.path.path
+    }
     pub fn to_dist(
         &self,
         dist_root: impl Into<String>,

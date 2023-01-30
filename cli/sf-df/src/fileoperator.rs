@@ -8,7 +8,14 @@ use crate::{
     extension::Extension,
     fileconvertor::{FileStructer, PathStructure},
 };
-
+impl FileStructer {
+    pub fn to_file(&self) {
+        create_file(self.path(), self.content())
+    }
+}
+pub fn file_structures_to_files(v: &Vec<FileStructer>) {
+    v.iter().for_each(|f| f.to_file());
+}
 #[cfg(not(target_os = "windows"))]
 pub const SEPARATOR: &'static str = r#"/"#;
 #[cfg(any(target_os = "windows", feature = "test_win"))]

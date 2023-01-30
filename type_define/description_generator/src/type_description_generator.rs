@@ -9,8 +9,8 @@ use crate::type_mapper::TypeMapper;
 
 /// TypeDescription is lang type define description string
 ///
-/// like below
-/// ```ignore
+/// # Examples
+/// ```no_run ignore
 /// // composite type define description
 /// let composite_type:TypeDescription =
 /// r#"struct Human {
@@ -23,7 +23,8 @@ use crate::type_mapper::TypeMapper;
 /// ```
 pub type TypeDescription = String;
 /// made lang type define descriptions
-/// ```ignore
+/// # Examples
+/// ```no_run ignore
 ///
 /// pub struct Test {
 ///     id: usize,
@@ -46,12 +47,13 @@ where
     mapper: Mapper,
 }
 
+/// # Examples
 /// made case composite
-/// ```ignore
+/// ```no_run ignore
 /// "struct TypeName { $properties_statement }";
 /// ```
 /// made case alias
-/// ```ignore
+/// ```no_run ignore
 /// "type Alias = String;"
 /// ```
 pub trait DeclarePartGenerator {
@@ -68,7 +70,7 @@ pub trait DeclarePartGenerator {
 }
 
 /// made case composite
-/// ```ignore
+/// ```no_run ignore
 /// "id: usize"
 /// ```
 pub trait PropertyPartGenerator<M>

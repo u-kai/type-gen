@@ -1,27 +1,43 @@
-// use std::{
-//     collections::HashMap,
-//     fs::File,
-//     io::{BufWriter, Write},
-//     path::Path,
-// };
-
-// use cli::from_src_files::{
-//     fs_operators::util_fns::{all_file_path, extract_dir, mkdir_rec},
-//     mains::json_to_rust_define,
-// };
-
 #[cfg(test)]
 mod intergration_tests {
-    use std::fs::read_to_string;
+    use std::{fs::read_to_string, path::Path};
 
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
         extension::Extension,
         fileconvertor::{FileConvetor, FileStructer, PathStructure},
-        fileoperator::all_file_structure,
+        fileoperator::{all_file_structure, file_structures_to_files},
         json_to_langs::JsonToRustConvertor,
     };
 
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn 受け取ったfilestructreの配列からディレクトリおよびファイルを生成する() {
+        let root = "for-filestructure-to-file";
+        let path1 = format!("{}/test.json", root);
+        let path2 = format!("{}/arr.json", root);
+        let path3 = format!("{}/child/child.json", root);
+        let files = vec![
+            FileStructer::new(r#"{"id":0}"#, PathStructure::new(root, &path1, "json")),
+            FileStructer::new(
+                r#"{"arr":[{"id":0}]}"#,
+                PathStructure::new(root, &path2, "json"),
+            ),
+            FileStructer::new(
+                r#"{"child":[{"id":0}]}"#,
+                PathStructure::new(root, &path3, "json"),
+            ),
+        ];
+
+        file_structures_to_files(&files);
+
+        assert!(Path::new(&path1).exists());
+        assert!(Path::new(&path2).exists(),);
+        assert!(Path::new(&path3).exists(),);
+
+        //crean up
+        std::fs::remove_dir_all(root).unwrap()
+    }
     #[test]
     fn exapmle配下のjsonファイル読み込んでfilestructureを生成する() {
         let files = all_file_structure("./tests/jsons", "json");
