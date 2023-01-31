@@ -15,14 +15,11 @@ mod intergration_tests {
         let path2 = format!("{}/arr.json", root);
         let path3 = format!("{}/child/child.json", root);
         let files = vec![
-            FileStructer::new(r#"{"id":0}"#, PathStructure::new(root, &path1, "json")),
-            FileStructer::new(
-                r#"{"arr":[{"id":0}]}"#,
-                PathStructure::new(root, &path2, "json"),
-            ),
+            FileStructer::new(r#"{"id":0}"#, PathStructure::new(&path1, "json")),
+            FileStructer::new(r#"{"arr":[{"id":0}]}"#, PathStructure::new(&path2, "json")),
             FileStructer::new(
                 r#"{"child":[{"id":0}]}"#,
-                PathStructure::new(root, &path3, "json"),
+                PathStructure::new(&path3, "json"),
             ),
         ];
 
@@ -50,31 +47,19 @@ mod intergration_tests {
             vec![
                 FileStructer::new(
                     read_to_string("./tests/jsons/test.json").unwrap(),
-                    PathStructure::new("./tests/jsons", "./tests/jsons/test.json", "json"),
+                    PathStructure::new("./tests/jsons/test.json", "json"),
                 ),
                 FileStructer::new(
                     read_to_string("./tests/jsons/nests/child/array.json").unwrap(),
-                    PathStructure::new(
-                        "./tests/jsons",
-                        "./tests/jsons/nests/child/array.json",
-                        "json"
-                    ),
+                    PathStructure::new("./tests/jsons/nests/child/array.json", "json"),
                 ),
                 FileStructer::new(
                     read_to_string("./tests/jsons/nests/child/json-placeholder.json").unwrap(),
-                    PathStructure::new(
-                        "./tests/jsons",
-                        "./tests/jsons/nests/child/json-placeholder.json",
-                        "json"
-                    ),
+                    PathStructure::new("./tests/jsons/nests/child/json-placeholder.json", "json"),
                 ),
                 FileStructer::new(
                     read_to_string("./tests/jsons/nests/test-child.json").unwrap(),
-                    PathStructure::new(
-                        "./tests/jsons",
-                        "./tests/jsons/nests/test-child.json",
-                        "json"
-                    ),
+                    PathStructure::new("./tests/jsons/nests/test-child.json", "json"),
                 ),
             ]
         )

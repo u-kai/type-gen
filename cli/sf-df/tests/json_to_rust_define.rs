@@ -16,23 +16,19 @@ mod intergration_tests {
         let source = vec![
             FileStructer::new(
                 read_to_string("./tests/rusts/test.rs").unwrap(),
-                PathStructure::new("./tests/rusts", "./tests/rusts/test.rs", "rs"),
+                PathStructure::new("./tests/rusts/test.rs", "rs"),
             ),
             FileStructer::new(
                 read_to_string("./tests/rusts/nests/test-child.rs").unwrap(),
-                PathStructure::new("./tests/rusts", "./tests/rusts/nests/test-child.rs", "rs"),
+                PathStructure::new("./tests/rusts/nests/test-child.rs", "rs"),
             ),
             FileStructer::new(
                 read_to_string("./tests/rusts/nests/child/array.rs").unwrap(),
-                PathStructure::new("./tests/rusts", "./tests/rusts/nests/child/array.rs", "rs"),
+                PathStructure::new("./tests/rusts/nests/child/array.rs", "rs"),
             ),
             FileStructer::new(
                 read_to_string("./tests/rusts/nests/child/rs-placeholder.rs").unwrap(),
-                PathStructure::new(
-                    "./tests/rusts",
-                    "./tests/rusts/nests/child/rs-placeholder.rs",
-                    "rs",
-                ),
+                PathStructure::new("./tests/rusts/nests/child/rs-placeholder.rs", "rs"),
             ),
         ];
         //create_mod_file_from_filestructures(source);
@@ -66,13 +62,10 @@ mod intergration_tests {
     #[test]
     fn jsonのfilestructureをrustの型定義に変換する() {
         let source = vec![
-            FileStructer::new(
-                r#"{"id":0}"#,
-                PathStructure::new("json", "json/test.json", "json"),
-            ),
+            FileStructer::new(r#"{"id":0}"#, PathStructure::new("json/test.json", "json")),
             FileStructer::new(
                 r#"{"arr":[{"id":0}]}"#,
-                PathStructure::new("json", "json/arr.json", "json"),
+                PathStructure::new("json/arr.json", "json"),
             ),
         ];
         let sut = FileConvetor::new(source);
@@ -87,7 +80,7 @@ mod intergration_tests {
                     r#"struct Test {
     id: usize,
 }"#,
-                    PathStructure::new("src", "src/test.rs", "rs"),
+                    PathStructure::new("src/test.rs", "rs"),
                 ),
                 FileStructer::new(
                     r#"struct Arr {
@@ -97,7 +90,7 @@ struct ArrArr {
     id: usize,
 }
 "#,
-                    PathStructure::new("src", "src/arr.rs", "rs"),
+                    PathStructure::new("src/arr.rs", "rs"),
                 ),
             ]
         )

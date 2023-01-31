@@ -48,7 +48,7 @@ impl FileStructer {
     }
 }
 impl FileStructer {
-    fn aggregate_dir(v: &Vec<Self>, this_root: &str) -> Vec<String> {
+    pub fn aggregate_dir(v: &Vec<Self>, this_root: &str) -> Vec<String> {
         v.iter()
             .map(|f| f.path.all_child_dirs(this_root))
             .flat_map(|v| v)
@@ -63,25 +63,18 @@ mod file_structer_tests {
     #[test]
     fn file_structuresの配列からそのfile_structureが格納されている全てのディレクトリを返す() {
         let source = vec![
+            FileStructer::new("dummy", PathStructure::new("./tests/rusts/test.rs", "rs")),
             FileStructer::new(
                 "dummy",
-                PathStructure::new("./tests/rusts", "./tests/rusts/test.rs", "rs"),
+                PathStructure::new("./tests/rusts/nests/test-child.rs", "rs"),
             ),
             FileStructer::new(
                 "dummy",
-                PathStructure::new("./tests/rusts", "./tests/rusts/nests/test-child.rs", "rs"),
+                PathStructure::new("./tests/rusts/nests/child/array.rs", "rs"),
             ),
             FileStructer::new(
                 "dummy",
-                PathStructure::new("./tests/rusts", "./tests/rusts/nests/child/array.rs", "rs"),
-            ),
-            FileStructer::new(
-                "dummy",
-                PathStructure::new(
-                    "./tests/rusts",
-                    "./tests/rusts/nests/child/rs-placeholder.rs",
-                    "rs",
-                ),
+                PathStructure::new("./tests/rusts/nests/child/rs-placeholder.rs", "rs"),
             ),
         ];
 
@@ -94,10 +87,7 @@ mod file_structer_tests {
     }
     #[test]
     fn pathと拡張子が取り除かれたファイル名を返す() {
-        let sut = FileStructer::new(
-            "fn main(){}",
-            PathStructure::new("src", "src/main.rs", "rs"),
-        );
+        let sut = FileStructer::new("fn main(){}", PathStructure::new("src/main.rs", "rs"));
 
         assert_eq!(sut.name_without_extension(), "main");
     }
@@ -125,7 +115,6 @@ impl FileConvetor {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PathStructure {
-    //root: String,
     path: String,
     extension: Extension,
 }
@@ -136,13 +125,8 @@ impl PathStructure {
     #[cfg(any(target_os = "windows", feature = "test_win"))]
     pub const SEPARATOR: &'static str = "\\";
 
-    pub fn new(
-        root: impl Into<String>,
-        path: impl Into<String>,
-        extension: impl Into<Extension>,
-    ) -> Self {
+    pub fn new(path: impl Into<String>, extension: impl Into<Extension>) -> Self {
         Self {
-            //root: root.into(),
             path: path.into(),
             extension: extension.into(),
         }
@@ -183,7 +167,7 @@ impl PathStructure {
     pub fn to_snake_path(self) -> Self {
         let new_name = to_snake(self.name_without_extension());
         let new_path = self.path.replace(self.name_without_extension(), &new_name);
-        Self::new("", new_path, self.extension)
+        Self::new(new_path, self.extension)
     }
     pub fn to_dist(
         &self,
@@ -198,7 +182,6 @@ impl PathStructure {
             &dist_extension,
         );
         Self {
-            //root: dist_root,
             path: dist_path,
             extension: dist_extension,
         }
@@ -209,7 +192,7 @@ mod path_structure_tests {
     use super::*;
     #[test]
     fn ルートの指定にルートより上のパスがあってもルート配下のディレクトリのみを返す() {
-        let sut = PathStructure::new("./project/src", "./project/src/lib/common/util.rs", "rs");
+        let sut = PathStructure::new("./project/src/lib/common/util.rs", "rs");
 
         let result = sut.all_child_dirs("./project/src");
 
@@ -217,7 +200,7 @@ mod path_structure_tests {
     }
     #[test]
     fn ルート配下のディレクトリを返す() {
-        let sut = PathStructure::new("./src", "./src/lib/common/util.rs", "rs");
+        let sut = PathStructure::new("./src/lib/common/util.rs", "rs");
 
         let result = sut.all_child_dirs("./src");
 
@@ -225,22 +208,19 @@ mod path_structure_tests {
     }
     #[test]
     fn パスのルートを変更する() {
-        let sut = PathStructure::new("./src", "./src/main.rs", "rs");
+        let sut = PathStructure::new("./src/main.rs", "rs");
 
         let result = sut.to_dist("./src", "./dist", Extension::Go);
 
-        assert_eq!(result, PathStructure::new("./dist", "./dist/main.go", "go"));
+        assert_eq!(result, PathStructure::new("./dist/main.go", "go"));
     }
 
     #[test]
     fn パスの名前をsnake_caseに変更する() {
-        let sut = PathStructure::new("./src", "./src/chain-case.rs", "rs");
+        let sut = PathStructure::new("./src/chain-case.rs", "rs");
 
         let result = sut.to_snake_path();
 
-        assert_eq!(
-            result,
-            PathStructure::new("./src", "./src/chain_case.rs", "rs")
-        );
+        assert_eq!(result, PathStructure::new("./src/chain_case.rs", "rs"));
     }
 }

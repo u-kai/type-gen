@@ -113,7 +113,7 @@ pub fn all_file_structure(root: &str, extension: impl Into<Extension>) -> Vec<Fi
             let path = p.to_str().unwrap_or_default();
             FileStructer::new(
                 read_to_string(p).unwrap(),
-                PathStructure::new(root, path, extension),
+                PathStructure::new(path, extension),
             )
         })
         .collect()
@@ -134,11 +134,11 @@ mod test_util_fns_win {
         let tobe = vec![
             FileStructer::new(
                 read_to_string("./for-test/rust.rs").unwrap(),
-                PathStructure::new("./for-test", "./for-test/rust.rs", "rs"),
+                PathStructure::new("./for-test/rust.rs", "rs"),
             ),
             FileStructer::new(
                 read_to_string("./for-test/child/rust_child.rs").unwrap(),
-                PathStructure::new("./for-test", "./for-test/child/rust_child.rs", "rs"),
+                PathStructure::new("./for-test/child/rust_child.rs", "rs"),
             ),
         ];
         assert_eq!(all_file_structure("./for-test", "rs"), tobe);
