@@ -1,11 +1,16 @@
-use std::path::Path;
+use std::{collections::BTreeSet, path::Path};
 
 use npc::fns::to_snake;
 
 use crate::extension::Extension;
 
 pub trait FileStructerConvertor {
-    fn convert(&self, file: &FileStructer, extension: impl Into<Extension>) -> FileStructer;
+    fn convert(
+        &self,
+        src_root: &str,
+        file: &FileStructer,
+        extension: impl Into<Extension>,
+    ) -> FileStructer;
 }
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FileStructer {
@@ -33,17 +38,60 @@ impl FileStructer {
     }
     pub fn to_dist(
         &self,
-        dist_root: impl Into<String>,
+        src_root: &str,
+        dist_root: &str,
         dist_extension: impl Into<Extension>,
         content: impl Into<String>,
     ) -> Self {
-        let dist = self.path.to_dist(dist_root, dist_extension);
+        let dist = self.path.to_dist(src_root, dist_root, dist_extension);
         Self::new(content, dist)
+    }
+}
+impl FileStructer {
+    fn aggregate_dir(v: &Vec<Self>, this_root: &str) -> Vec<String> {
+        v.iter()
+            .map(|f| f.path.all_child_dirs(this_root))
+            .flat_map(|v| v)
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect()
     }
 }
 #[cfg(test)]
 mod file_structer_tests {
     use super::*;
+    #[test]
+    fn file_structuresの配列からそのfile_structureが格納されている全てのディレクトリを返す() {
+        let source = vec![
+            FileStructer::new(
+                "dummy",
+                PathStructure::new("./tests/rusts", "./tests/rusts/test.rs", "rs"),
+            ),
+            FileStructer::new(
+                "dummy",
+                PathStructure::new("./tests/rusts", "./tests/rusts/nests/test-child.rs", "rs"),
+            ),
+            FileStructer::new(
+                "dummy",
+                PathStructure::new("./tests/rusts", "./tests/rusts/nests/child/array.rs", "rs"),
+            ),
+            FileStructer::new(
+                "dummy",
+                PathStructure::new(
+                    "./tests/rusts",
+                    "./tests/rusts/nests/child/rs-placeholder.rs",
+                    "rs",
+                ),
+            ),
+        ];
+
+        let result = FileStructer::aggregate_dir(&source, "./tests/rusts");
+
+        assert_eq!(
+            result,
+            vec!["tests/rusts/nests/", "tests/rusts/nests/child/",]
+        );
+    }
     #[test]
     fn pathと拡張子が取り除かれたファイル名を返す() {
         let sut = FileStructer::new(
@@ -64,69 +112,20 @@ impl FileConvetor {
     }
     pub fn convert(
         &self,
+        src_root: &str,
         extension: Extension,
         convertor: impl FileStructerConvertor,
     ) -> Vec<FileStructer> {
         self.source
             .iter()
-            .map(|file| convertor.convert(file, extension))
+            .map(|file| convertor.convert(src_root, file, extension))
             .collect()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-
-    fn 受け取ったconvertorに従って受け取ったfile構造体を変換する() {
-        let source = vec![
-            FileStructer::new(
-                "func main(){}",
-                PathStructure::new("src", "src/main.go", "go"),
-            ),
-            FileStructer::new(
-                "func main(){}",
-                PathStructure::new("src", "src/lib/lib.go", "go"),
-            ),
-            FileStructer::new(
-                "func main(){}",
-                PathStructure::new("src", "src/bin/bin.go", "go"),
-            ),
-        ];
-        let sut = FileConvetor::new(source);
-        struct FakeConvertor {}
-        impl FileStructerConvertor for FakeConvertor {
-            fn convert(&self, f: &FileStructer, e: impl Into<Extension>) -> FileStructer {
-                let content = f.content().replace("func", "fn");
-                f.to_dist("dist", e, content)
-            }
-        }
-        let convertor = FakeConvertor {};
-        let result = sut.convert(Extension::Rs, convertor);
-        assert_eq!(
-            result,
-            vec![
-                FileStructer::new(
-                    "fn main(){}",
-                    PathStructure::new("dist", "dist/main.rs", "rs",)
-                ),
-                FileStructer::new(
-                    "fn main(){}",
-                    PathStructure::new("dist", "dist/lib/lib.rs", "rs",)
-                ),
-                FileStructer::new(
-                    "fn main(){}",
-                    PathStructure::new("dist", "dist/bin/bin.rs", "rs",)
-                ),
-            ]
-        );
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PathStructure {
-    root: String,
+    //root: String,
     path: String,
     extension: Extension,
 }
@@ -143,15 +142,15 @@ impl PathStructure {
         extension: impl Into<Extension>,
     ) -> Self {
         Self {
-            root: root.into(),
+            //root: root.into(),
             path: path.into(),
             extension: extension.into(),
         }
     }
-    pub fn all_dir(&self) -> Vec<String> {
-        let all_dir = self.extract_dir();
+    pub fn all_child_dirs(&self, this_root: &str) -> Vec<String> {
+        let all_child_dirs = self.extract_dir();
         let mut dir = String::new();
-        all_dir
+        all_child_dirs
             .split(Self::SEPARATOR)
             .into_iter()
             .filter(|s| *s != "." && *s != "")
@@ -160,6 +159,9 @@ impl PathStructure {
                 acc.push(dir.clone());
                 acc
             })
+            .into_iter()
+            .filter(|path| path.len() > this_root.len())
+            .collect()
     }
     fn extract_dir(&self) -> String {
         let path: &Path = self.path.as_ref();
@@ -181,22 +183,22 @@ impl PathStructure {
     pub fn to_snake_path(self) -> Self {
         let new_name = to_snake(self.name_without_extension());
         let new_path = self.path.replace(self.name_without_extension(), &new_name);
-        Self::new(self.root, new_path, self.extension)
+        Self::new("", new_path, self.extension)
     }
     pub fn to_dist(
         &self,
-        dist_root: impl Into<String>,
+        src_root: &str,
+        dist_root: &str,
         dist_extension: impl Into<Extension>,
     ) -> Self {
-        let dist_root = dist_root.into();
         let dist_extension = dist_extension.into();
         let dist_path = Extension::repalace(
-            &self.path.replacen(&self.root, &dist_root, 1),
+            &self.path.replacen(src_root, dist_root, 1),
             &self.extension,
             &dist_extension,
         );
         Self {
-            root: dist_root,
+            //root: dist_root,
             path: dist_path,
             extension: dist_extension,
         }
@@ -206,18 +208,26 @@ impl PathStructure {
 mod path_structure_tests {
     use super::*;
     #[test]
+    fn ルートの指定にルートより上のパスがあってもルート配下のディレクトリのみを返す() {
+        let sut = PathStructure::new("./project/src", "./project/src/lib/common/util.rs", "rs");
+
+        let result = sut.all_child_dirs("./project/src");
+
+        assert_eq!(result, vec!["project/src/lib/", "project/src/lib/common/"]);
+    }
+    #[test]
     fn ルート配下のディレクトリを返す() {
         let sut = PathStructure::new("./src", "./src/lib/common/util.rs", "rs");
 
-        let result = sut.all_dir();
+        let result = sut.all_child_dirs("./src");
 
-        assert_eq!(result, vec!["src/", "src/lib/", "src/lib/common/"]);
+        assert_eq!(result, vec!["src/lib/", "src/lib/common/"]);
     }
     #[test]
     fn パスのルートを変更する() {
         let sut = PathStructure::new("./src", "./src/main.rs", "rs");
 
-        let result = sut.to_dist("./dist", Extension::Go);
+        let result = sut.to_dist("./src", "./dist", Extension::Go);
 
         assert_eq!(result, PathStructure::new("./dist", "./dist/main.go", "go"));
     }

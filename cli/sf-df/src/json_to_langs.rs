@@ -26,7 +26,7 @@ where
     Property: PropertyPartGenerator<Mapper>,
     Mapper: TypeMapper,
 {
-    dist_root: String,
+    src_root: String,
     generator: TypeDescriptionGenerator<Declear, Property, Mapper>,
 }
 impl<Declear, Property, Mapper> JsonToLangConvertor<Declear, Property, Mapper>
@@ -36,11 +36,11 @@ where
     Mapper: TypeMapper,
 {
     pub fn new(
-        dist_root: impl Into<String>,
+        src_root: impl Into<String>,
         generator: TypeDescriptionGenerator<Declear, Property, Mapper>,
     ) -> Self {
         Self {
-            dist_root: dist_root.into(),
+            src_root: src_root.into(),
             generator,
         }
     }
@@ -54,6 +54,7 @@ where
 {
     fn convert(
         &self,
+        dist_root: &str,
         filestructer: &FileStructer,
         extension: impl Into<Extension>,
     ) -> FileStructer {
@@ -61,16 +62,16 @@ where
         let type_structure =
             json.into_type_structures(to_pascal(filestructer.name_without_extension()));
         let rust_type_define = self.generator.generate_concat_define(type_structure);
-        filestructer.to_dist(&self.dist_root, extension, rust_type_define)
+        filestructer.to_dist(&self.src_root, dist_root, extension, rust_type_define)
     }
 }
 
 pub fn json_to_rust(src: &str, dist: &str, generator: RustTypeDescriptionGenerator) {
     let sources = all_file_structure(src, "json");
-    let convertor = JsonToRustConvertor::new(dist, generator);
+    let convertor = JsonToRustConvertor::new(src, generator);
     let dists = sources
         .iter()
-        .map(|s| convertor.convert(s, "rs").to_snake_path())
+        .map(|s| convertor.convert(dist, s, "rs").to_snake_path())
         .collect();
     file_structures_to_files(&dists);
 }
