@@ -27,24 +27,24 @@ use crate::{
 pub type JsonToRustConvertor =
     JsonToLangConvertor<RustDeclarePartGenerator, RustPropertyPartGenerator, RustMapper>;
 
-pub struct JsonToLangConvertor<Declear, Property, Mapper>
+pub struct JsonToLangConvertor<Declare, Property, Mapper>
 where
-    Declear: DeclarePartGenerator<Mapper = Mapper>,
+    Declare: DeclarePartGenerator<Mapper = Mapper>,
     Property: PropertyPartGenerator<Mapper>,
     Mapper: TypeMapper,
 {
     src_root: String,
-    generator: TypeDescriptionGenerator<Declear, Property, Mapper>,
+    generator: TypeDescriptionGenerator<Declare, Property, Mapper>,
 }
-impl<Declear, Property, Mapper> JsonToLangConvertor<Declear, Property, Mapper>
+impl<Declare, Property, Mapper> JsonToLangConvertor<Declare, Property, Mapper>
 where
-    Declear: DeclarePartGenerator<Mapper = Mapper>,
+    Declare: DeclarePartGenerator<Mapper = Mapper>,
     Property: PropertyPartGenerator<Mapper>,
     Mapper: TypeMapper,
 {
     pub fn new(
         src_root: impl Into<String>,
-        generator: TypeDescriptionGenerator<Declear, Property, Mapper>,
+        generator: TypeDescriptionGenerator<Declare, Property, Mapper>,
     ) -> Self {
         Self {
             src_root: src_root.into(),
@@ -52,10 +52,10 @@ where
         }
     }
 }
-impl<Declear, Property, Mapper> FileStructerConvertor
-    for JsonToLangConvertor<Declear, Property, Mapper>
+impl<Declare, Property, Mapper> FileStructerConvertor
+    for JsonToLangConvertor<Declare, Property, Mapper>
 where
-    Declear: DeclarePartGenerator<Mapper = Mapper>,
+    Declare: DeclarePartGenerator<Mapper = Mapper>,
     Property: PropertyPartGenerator<Mapper>,
     Mapper: TypeMapper,
 {
@@ -82,6 +82,45 @@ pub fn json_to_rust(src: &str, dist: &str, generator: RustTypeDescriptionGenerat
         .collect();
     file_structures_to_files(&dists);
 }
+
+fn create_rust_mod_filestructure(source_file: &FileStructer) -> FileStructer {
+    let mut parent = source_file.path().parent_str();
+    parent.pop();
+    parent.push_str(".rs");
+    let path = PathStructure::new(parent, "rs");
+    let file_name = source_file.name_without_extension();
+    FileStructer::new(format!("pub mod {};", file_name), path)
+}
+#[test]
+fn rustのfile_structureからそのファイルをpub宣言するためのfile_structureを作成する() {
+    let source_file = FileStructer::new(
+        "pub type St = String;",
+        PathStructure::new("./src/parts/types.rs", "rs"),
+    );
+
+    let result = create_rust_mod_filestructure(&source_file);
+
+    assert_eq!(
+        FileStructer::new("pub mod types;", PathStructure::new("./src/parts.rs", "rs")),
+        result
+    );
+
+    let source_file = FileStructer::new(
+        "pub type St = String;",
+        PathStructure::new("./src/parts/data.rs", "rs"),
+    );
+
+    let result = create_rust_mod_filestructure(&source_file);
+
+    assert_eq!(
+        FileStructer::new("pub mod data;", PathStructure::new("./src/parts.rs", "rs")),
+        result
+    )
+}
+
+// 1. filestructureからそのファイルの名前と親のディレクトリ名をもらう
+// 2. 上記のファイル名をpub mod FILE_NAMEとして宣言し，その内容を親のディレクトリ.rsとしてファイル出力する
+//
 pub fn create_rust_mod_file_from_filestructures(root_dir: &str, v: &Vec<FileStructer>) {
     fn get_parent_filename(path: &str) -> Option<String> {
         fn get_writed_filename(dist_file: impl AsRef<Path>) -> Option<String> {
