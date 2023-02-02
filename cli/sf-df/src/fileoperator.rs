@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, read_to_string, File},
+    fs::{self, read_to_string, File, OpenOptions},
     io::{BufWriter, Write},
     path::{Path, PathBuf},
 };
@@ -9,13 +9,17 @@ use crate::{
     fileconvertor::{FileStructer, PathStructure},
 };
 impl FileStructer {
+    pub fn add_new_line_to_file(&self) {
+        add_to_file(self.path().path_str(), format!("\n{}", self.content()));
+    }
     pub fn add_to_file(&self) {
-        create_file(self.path().path_str(), self.content())
+        add_to_file(self.path().path_str(), self.content())
     }
     pub fn new_file(&self) {
-        create_file(self.path().path_str(), self.content())
+        create_new_file(self.path().path_str(), self.content())
     }
 }
+
 pub fn file_structures_to_files(v: &Vec<FileStructer>) {
     v.iter().for_each(|f| f.new_file());
 }
@@ -46,8 +50,24 @@ pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
         }
     }
 }
-
-pub fn create_file(path: impl AsRef<Path>, content: impl Into<String>) {
+pub fn add_to_file(path: impl AsRef<Path>, content: impl Into<String>) {
+    let path = path.as_ref();
+    let content = content.into();
+    let mut file = if path.exists() {
+        OpenOptions::new()
+            .append(true)
+            .read(true)
+            .open(path)
+            .expect(&format!("path {:?} can not added , ", path,))
+    } else {
+        File::create(path).expect(&format!("path can not write {:?}", path,))
+    };
+    file.write_all(content.as_bytes()).expect(&format!(
+        "path {:?} can not write,\ncontent {}",
+        path, content
+    ));
+}
+pub fn create_new_file(path: impl AsRef<Path>, content: impl Into<String>) {
     let content: String = content.into();
     if path.as_ref().exists() {
         let mut writer = BufWriter::new(File::create(path).unwrap());
@@ -129,11 +149,14 @@ pub fn all_file_structure(root: &str, extension: impl Into<Extension>) -> Vec<Fi
 }
 #[cfg(test)]
 mod test_util_fns_win {
-    use std::{fs::read_to_string, path::Path};
+    use std::{
+        fs::{read_to_string, remove_file},
+        path::Path,
+    };
 
     use crate::{
         fileconvertor::{FileStructer, PathStructure},
-        fileoperator::{all_file_structure, create_file},
+        fileoperator::{add_to_file, all_file_structure, create_new_file},
     };
 
     use super::{all_file_path, mkdir_rec};
@@ -189,7 +212,7 @@ mod test_util_fns_win {
         let new_path = "not-exist/non-exist/new-file.txt";
         let content = "test hello world";
 
-        create_file(new_path, content);
+        create_new_file(new_path, content);
 
         assert!(Path::new("not-exist").exists());
         assert!(Path::new("not-exist/non-exist").exists());
@@ -201,5 +224,19 @@ mod test_util_fns_win {
 
         //crean up
         std::fs::remove_dir_all("not-exist").unwrap()
+    }
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn 元々存在しているファイルに対して追記する() {
+        let path: &Path = "./test.txt".as_ref();
+        if path.exists() {
+            remove_file(path).unwrap();
+        }
+        let init_content = "hello";
+        create_new_file(path, init_content);
+
+        add_to_file(path, " world");
+
+        assert_eq!(read_to_string(path).unwrap(), "hello world");
     }
 }

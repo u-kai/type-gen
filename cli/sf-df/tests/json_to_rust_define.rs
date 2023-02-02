@@ -17,24 +17,23 @@ mod intergration_tests {
     fn filestructureの配列からrustのmod情報に関わるfilestructureを生成する() {
         let source = vec![
             FileStructer::new(
-                read_to_string("./tests/rusts/test.rs").unwrap(),
+                "pub type Test=String;",
                 PathStructure::new("./tests/rusts/test.rs", "rs"),
             ),
             FileStructer::new(
-                read_to_string("./tests/rusts/nests/test-child.rs").unwrap(),
+                "pub type Test=String;",
                 PathStructure::new("./tests/rusts/nests/test-child.rs", "rs"),
             ),
             FileStructer::new(
-                read_to_string("./tests/rusts/nests/child/array.rs").unwrap(),
+                "pub type Test=String;",
                 PathStructure::new("./tests/rusts/nests/child/array.rs", "rs"),
             ),
             FileStructer::new(
-                read_to_string("./tests/rusts/nests/child/rs-placeholder.rs").unwrap(),
+                "pub type Test=String;",
                 PathStructure::new("./tests/rusts/nests/child/rs-placeholder.rs", "rs"),
             ),
         ];
-        let root_dir = "./tests/rusts";
-        create_rust_mod_file_from_filestructures(root_dir, &source);
+        create_rust_mod_file_from_filestructures(&source);
         assert!(Path::new("./tests/rusts.rs").exists());
         assert!(Path::new("./tests/rusts/nests.rs").exists());
         assert!(Path::new("./tests/rusts/nests/child.rs").exists(),);
