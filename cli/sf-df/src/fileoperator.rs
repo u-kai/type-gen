@@ -10,7 +10,7 @@ use crate::{
 };
 impl FileStructer {
     pub fn to_file(&self) {
-        create_file(self.path(), self.content())
+        create_file(self.path().path_str(), self.content())
     }
 }
 pub fn file_structures_to_files(v: &Vec<FileStructer>) {

@@ -7,7 +7,9 @@ mod intergration_tests {
     use sf_df::{
         extension::Extension,
         fileconvertor::{FileConvetor, FileStructer, PathStructure},
-        json_to_langs::{json_to_rust, JsonToRustConvertor},
+        json_to_langs::{
+            create_rust_mod_file_from_filestructures, json_to_rust, JsonToRustConvertor,
+        },
     };
 
     #[test]
@@ -31,7 +33,9 @@ mod intergration_tests {
                 PathStructure::new("./tests/rusts/nests/child/rs-placeholder.rs", "rs"),
             ),
         ];
-        //create_mod_file_from_filestructures(source);
+        let root_dir = "./tests/rusts";
+        create_rust_mod_file_from_filestructures(root_dir, &source);
+        assert!(Path::new("./tests/rusts.rs").exists());
         assert!(Path::new("./tests/rusts/nests.rs").exists());
         assert!(Path::new("./tests/rusts/nests/child.rs").exists(),);
     }
