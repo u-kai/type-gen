@@ -9,12 +9,15 @@ use crate::{
     fileconvertor::{FileStructer, PathStructure},
 };
 impl FileStructer {
-    pub fn to_file(&self) {
+    pub fn add_to_file(&self) {
+        create_file(self.path().path_str(), self.content())
+    }
+    pub fn new_file(&self) {
         create_file(self.path().path_str(), self.content())
     }
 }
 pub fn file_structures_to_files(v: &Vec<FileStructer>) {
-    v.iter().for_each(|f| f.to_file());
+    v.iter().for_each(|f| f.new_file());
 }
 #[cfg(not(target_os = "windows"))]
 pub const SEPARATOR: &'static str = r#"/"#;
@@ -51,6 +54,14 @@ pub fn create_file(path: impl AsRef<Path>, content: impl Into<String>) {
         writer.write_all(content.as_bytes()).unwrap();
         return;
     }
+    prepare_parents(path.as_ref());
+    let mut writer = BufWriter::new(File::create(path).unwrap());
+    writer.write_all(content.as_bytes()).unwrap();
+}
+fn prepare_parents(path: impl AsRef<Path>) {
+    if path.as_ref().exists() {
+        return;
+    }
     let filename = path
         .as_ref()
         .file_name()
@@ -63,8 +74,6 @@ pub fn create_file(path: impl AsRef<Path>, content: impl Into<String>) {
         .unwrap_or_default()
         .replacen(filename, "", 1);
     mkdir_rec(dirs).unwrap();
-    let mut writer = BufWriter::new(File::create(path).unwrap());
-    writer.write_all(content.as_bytes()).unwrap();
 }
 fn is_dir<P: AsRef<Path>>(path: P) -> bool {
     path.as_ref().is_dir() || path.as_ref().extension().is_none()
