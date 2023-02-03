@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::{fs::read_to_string, path::Path};
 
 use description_generator::{
     type_description_generator::{
@@ -16,7 +16,7 @@ use rust::description_generator::{
 use crate::{
     extension::Extension,
     fileconvertor::{FileStructer, FileStructerConvertor, PathStructure},
-    fileoperator::{all_file_structure, file_structures_to_files},
+    fileoperator::{all_file_path, all_file_structure, file_structures_to_files},
 };
 
 pub type JsonToRustConvertor =
@@ -87,6 +87,130 @@ fn create_rust_mod_filestructure(source_file: &FileStructer) -> FileStructer {
     let file_name = source_file.name_without_extension();
     FileStructer::new(format!("pub mod {};", file_name), path)
 }
+
+struct RustModDeclareFactory<P>
+where
+    P: AsRef<Path>,
+{
+    root_dir: P,
+    dirs: Vec<String>,
+    files: Vec<String>,
+}
+impl<P> RustModDeclareFactory<P>
+where
+    P: AsRef<Path>,
+{
+    fn new(root_dir: P) -> Self {
+        Self {
+            root_dir,
+            dirs: Vec::new(),
+            files: Vec::new(),
+        }
+    }
+}
+// src/parts
+// src/parts/nests/data.rs
+// src/parts/nests/child.rs
+//
+// 1 ルートからlsしてdirの名前を.rsにする
+// 2 上で作成した.rsの中身をルートとして1をやるって感じか？
+// 新規作成によってタイミングがズレるのでぼつ
+// src/parts.rs->pub mod nests;
+// src/parts/nests.rs->pub mod child;pub mod data;
+// src/parts/nests/data.rs
+// src/parts/nests/child.rs
+//
+fn prepare_parent_files(root: &str) {
+    let root_path: &Path = root.as_ref();
+    match std::fs::read_dir(root_path) {
+        Ok(root_dir) => {
+            root_dir
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| match entry.file_type() {
+                    Ok(file_type) => Some((file_type, entry.path())),
+                    Err(_) => None,
+                })
+                .for_each(|(file_type, path)| {
+                    if file_type.is_dir() {
+                        prepare_parent_files(path.to_str().unwrap());
+                    }
+                });
+
+            let mut root_file = root.to_string();
+            root_file.push_str(".rs");
+            FileStructer::new("", PathStructure::new(root_file, "rs")).new_file();
+        }
+        Err(e) => panic!("root {} {:#?}", root, e),
+    };
+}
+
+pub fn to_filestructures(root: &str) {
+    prepare_parent_files(root);
+    let mut this_dirs_files = Vec::new();
+    let root_path: &Path = root.as_ref();
+    match std::fs::read_dir(root_path) {
+        Ok(root_dir) => {
+            root_dir
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| match entry.file_type() {
+                    Ok(file_type) => Some((file_type, entry.path())),
+                    Err(_) => None,
+                })
+                .for_each(|(file_type, path)| {
+                    if file_type.is_dir() {
+                        to_filestructures(path.to_str().unwrap());
+                    } else {
+                        this_dirs_files.push(path);
+                    }
+                });
+
+            println!("{:#?}", this_dirs_files);
+            let mut root_file = root.to_string();
+            root_file.push_str(".rs");
+            FileStructer::new(
+                this_dirs_files.into_iter().fold(String::new(), |acc, s| {
+                    format!(
+                        "{}pub mod {};\n",
+                        acc,
+                        s.file_name().unwrap().to_str().unwrap().replace(".rs", "")
+                    )
+                }),
+                PathStructure::new(root_file, "rs"),
+            )
+            .new_file();
+        }
+        Err(e) => panic!("root {} {:#?}", root, e),
+    };
+}
+#[test]
+fn root_dirからrustのpub宣言するためのfile_structureを作成する() {
+    let source_file = FileStructer::new(
+        "pub type St = String;",
+        PathStructure::new("./src/parts/types.rs", "rs"),
+    );
+
+    let result = create_rust_mod_filestructure(&source_file);
+
+    assert_eq!(
+        FileStructer::new("pub mod types;", PathStructure::new("./src/parts.rs", "rs")),
+        result
+    );
+
+    let source_file = FileStructer::new(
+        "pub type St = String;",
+        PathStructure::new("./tests/rusts/nests/child/array.rs", "rs"),
+    );
+
+    let result = create_rust_mod_filestructure(&source_file);
+
+    assert_eq!(
+        FileStructer::new(
+            "pub mod array;",
+            PathStructure::new("./tests/rusts/nests/child.rs", "rs")
+        ),
+        result
+    )
+}
 #[test]
 fn rustのfile_structureからそのファイルをpub宣言するためのfile_structureを作成する() {
     let source_file = FileStructer::new(
@@ -103,13 +227,16 @@ fn rustのfile_structureからそのファイルをpub宣言するためのfile_
 
     let source_file = FileStructer::new(
         "pub type St = String;",
-        PathStructure::new("./src/parts/data.rs", "rs"),
+        PathStructure::new("./tests/rusts/nests/child/array.rs", "rs"),
     );
 
     let result = create_rust_mod_filestructure(&source_file);
 
     assert_eq!(
-        FileStructer::new("pub mod data;", PathStructure::new("./src/parts.rs", "rs")),
+        FileStructer::new(
+            "pub mod array;",
+            PathStructure::new("./tests/rusts/nests/child.rs", "rs")
+        ),
         result
     )
 }
@@ -123,10 +250,14 @@ pub fn create_rust_mod_file_from_filestructures(v: &Vec<FileStructer>) {
         .for_each(
             |mod_file| match read_to_string(mod_file.path().path_str()) {
                 Ok(content) if !content.contains(mod_file.content()) => {
+                    println!("ok not containe {:#?}", mod_file);
                     mod_file.add_new_line_to_file()
                 }
-                Err(_) => mod_file.new_file(),
-                _ => (),
+                Err(_) => {
+                    println!("error create  {:#?}", mod_file);
+                    mod_file.new_file()
+                }
+                _ => println!("{:#?}", mod_file),
             },
         )
 }

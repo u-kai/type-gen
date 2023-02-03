@@ -56,7 +56,6 @@ pub fn add_to_file(path: impl AsRef<Path>, content: impl Into<String>) {
     let mut file = if path.exists() {
         OpenOptions::new()
             .append(true)
-            .read(true)
             .open(path)
             .expect(&format!("path {:?} can not added , ", path,))
     } else {
