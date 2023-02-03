@@ -10,7 +10,7 @@ mod intergration_tests {
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
     fn 受け取ったfilestructreの配列からディレクトリおよびファイルを生成する() {
-        let root = "for-filestructure-to-file";
+        let root = "for-file_structure-to-file";
         let path1 = format!("{}/test.json", root);
         let path2 = format!("{}/arr.json", root);
         let path3 = format!("{}/child/child.json", root);
@@ -33,7 +33,7 @@ mod intergration_tests {
         std::fs::remove_dir_all(root).unwrap()
     }
     #[test]
-    fn exapmle配下のjsonファイル読み込んでfilestructureを生成する() {
+    fn exapmle配下のjsonファイル読み込んでfile_structureを生成する() {
         let files = all_file_structure("./tests/jsons", "json");
         println!(
             "{:#?}",

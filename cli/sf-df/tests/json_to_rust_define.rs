@@ -45,17 +45,14 @@ mod intergration_tests {
     use sf_df::{
         extension::Extension,
         fileconvertor::{FileConvetor, FileStructer, PathStructure},
-        json_to_langs::{
-            create_rust_mod_file_from_filestructures, json_to_rust, to_filestructures,
-            JsonToRustConvertor,
-        },
+        json_to_langs::{create_rust_mod_files, json_to_rust, JsonToRustConvertor},
     };
 
     use crate::TestDirectoryOperator;
 
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
-    fn filestructureの配列からrustのmod情報に関わるfilestructureを生成する() {
+    fn file_structureの配列からrustのmod情報に関わるfile_structureを生成する() {
         let mut operator = TestDirectoryOperator::new();
         let root = "./rust_mod_tests";
         operator.clean_up_before_test(root);
@@ -82,7 +79,7 @@ mod intergration_tests {
             operator.prepare_file(s.path().path_str(), s.content());
         }
 
-        to_filestructures(root);
+        create_rust_mod_files(root);
 
         operator.assert_exist_with_content("./rust_mod_tests.rs", "pub mod rusts;\n");
         operator.assert_exist_with_content(
@@ -128,7 +125,7 @@ mod intergration_tests {
         // assert_eq!(read_to_string("./tests/dist/nests/child/array.rs").unwrap(),);
     }
     #[test]
-    fn jsonのfilestructureをrustの型定義に変換する() {
+    fn jsonのfile_structureをrustの型定義に変換する() {
         let source = vec![
             FileStructer::new(r#"{"id":0}"#, PathStructure::new("json/test.json", "json")),
             FileStructer::new(

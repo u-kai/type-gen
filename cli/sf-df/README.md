@@ -6,7 +6,7 @@
 
 - 最終的には dist の filepath,type_defines やその他出力したいファイルがあれば良い
 
-- 受け取った filestructure を異なる filestructure に変換するだけ
+- 受け取った file_structure を異なる file_structure に変換するだけ
 
 1. filepath の dist 版の配列を作成する
 

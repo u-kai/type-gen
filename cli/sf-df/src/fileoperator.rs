@@ -160,7 +160,7 @@ mod test_util_fns_win {
 
     use super::{all_file_path, mkdir_rec};
     #[test]
-    fn for_testディレクトリ内の全てのファイルから指定した拡張子だけfilestructureとして生成する() {
+    fn for_testディレクトリ内の全てのファイルから指定した拡張子だけfile_structureとして生成する() {
         // this test context is exist test directory
         let tobe = vec![
             FileStructer::new(
