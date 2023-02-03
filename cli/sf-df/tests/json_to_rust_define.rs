@@ -1,43 +1,5 @@
-use std::{fs::read_to_string, path::Path};
-
-use sf_df::fileoperator::create_new_file;
-
-#[cfg(test)]
-pub struct TestDirectoryOperator {
-    paths: Vec<String>,
-}
-impl TestDirectoryOperator {
-    pub fn new() -> Self {
-        Self { paths: Vec::new() }
-    }
-    pub fn clean_up_before_test(&self, root: &str) {
-        std::fs::remove_dir_all(root).unwrap_or_default();
-    }
-    pub fn prepare_file(&mut self, path: impl Into<String>, content: impl Into<String>) {
-        let path = path.into();
-        let content = content.into();
-        create_new_file(path.clone(), content.clone());
-        self.paths.push(path);
-    }
-    pub fn assert_exist_with_content(
-        &mut self,
-        path: impl Into<String>,
-        content: impl Into<String>,
-    ) {
-        let path = path.into();
-        let content = content.into();
-        assert!(Path::new(&path).exists());
-        assert_eq!(content, read_to_string(&path).unwrap());
-        self.paths.push(path);
-    }
-    pub fn clean_up(self) {
-        self.paths
-            .into_iter()
-            .for_each(|p| std::fs::remove_file(p).unwrap_or_default())
-    }
-}
-#[cfg(test)]
-mod intergration_tests {
+mod helper;
+mod integration_tests {
 
     use std::path::Path;
 
@@ -48,7 +10,7 @@ mod intergration_tests {
         json_to_langs::{create_rust_mod_files, json_to_rust, JsonToRustConvertor},
     };
 
-    use crate::TestDirectoryOperator;
+    use crate::helper::TestDirectoryOperator;
 
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
