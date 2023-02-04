@@ -1,8 +1,6 @@
 mod helper;
 mod integration_tests {
 
-    use std::path::Path;
-
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
         extension::Extension,
@@ -12,8 +10,8 @@ mod integration_tests {
 
     use crate::helper::TestDirectoryOperator;
 
-    #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    #[test]
     fn file_structureの配列からrustのmod情報に関わるfile_structureを生成する() {
         let mut operator = TestDirectoryOperator::new();
         let root = "./rust_mod_tests";
@@ -57,34 +55,171 @@ mod integration_tests {
             "pub mod rs_placeholder;\npub mod array;\n",
         );
 
-        operator.clean_up_before_test(root);
-        std::fs::remove_file("./rust_mod_tests.rs").unwrap();
+        operator.remove_file("./rust_mod_tests.rs");
+        operator.clean_up();
     }
+
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
     fn jsons配下のjsonファイルをrustの型定義に変換してdist配下に格納する() {
-        let generator = RustTypeDescriptionGeneratorBuilder::new().build();
-        let dist = "./tests/dist";
-        //crean up
-        std::fs::remove_dir_all("./tm").unwrap();
-        json_to_rust("./tests/jsons", dist, generator);
+        let mut json_operator = TestDirectoryOperator::new();
+        json_operator.clean_up_before_test("./tests/jsons");
+        json_operator.prepare_file(
+            "./tests/jsons/test.json",
+            r#"
+            {
+              "id": 0,
+              "name": "kai",
+              "obj": {
+                "from": "kanagawa",
+                "now": "????",
+                "age": 20
+              }
+            }"#,
+        );
+        json_operator.prepare_file(
+            "./tests/jsons/nests/test-child.json",
+            r#"
+            {
+              "id": 0,
+              "child": [
+                {
+                  "hello": "world"
+                }
+              ]
+            }
+        "#,
+        );
+        json_operator.prepare_file("./tests/jsons/nests/child/json-placeholder.json", r#"
+            [
+              {
+                "userId": 1,
+                "id": 1,
+                "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+                "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+              },
+              {
+                "userId": 1,
+                "id": 2,
+                "title": "qui est esse",
+                "body": "est rerum tempore vitae\nsequi sint nihil reprehenderit dolor beatae ea dolores neque\nfugiat blanditiis voluptate porro vel nihil molestiae ut reiciendis\nqui aperiam non debitis possimus qui neque nisi nulla"
+              }
+            ] 
+        "#);
+        json_operator.prepare_file(
+            "./tests/jsons/nests/child/array.json",
+            r#"
+            [
+              {
+                "id": 0,
+                "greet": "Hello",
+                "arr": [
+                  {
+                    "data": {
+                      "id": 0
+                    }
+                  }
+                ]
+              }
+            ]
+        "#,
+        );
+        let mut rust_operator = TestDirectoryOperator::new();
+        rust_operator.clean_up_before_test("./tests/dist");
 
-        assert!(Path::new("./tests/dist/test.rs").exists());
-        //assert!(Path::new("./tests/dist/nests.rs").exists());
-        assert!(Path::new("./tests/dist/nests/test_child.rs").exists(),);
-        //assert!(Path::new("./tests/dist/nests/child.rs").exists(),);
-        assert!(Path::new("./tests/dist/nests/child/array.rs").exists(),);
-        assert!(Path::new("./tests/dist/nests/child/json_placeholder.rs").exists(),);
+        let generator = RustTypeDescriptionGeneratorBuilder::new()
+            .declare_part_pub_all()
+            .property_part_pub_all()
+            .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"])
+            .build();
+        json_to_rust("./tests/jsons", "./tests/dist", generator);
 
-        //crean up
-        std::fs::remove_dir_all(dist).unwrap()
-        // assert_eq!(read_to_string("./tests/dist/test.rs").unwrap(),
-        // r#""#
-        // );
-        // //assert_eq!(read_to_string("./tests/dist/nests.rs").unwrap());
-        // assert_eq!(read_to_string("./tests/dist/nests/test_child.rs").unwrap(),);
-        // //assert_eq!(read_to_string("./tests/dist/nests/child.rs").unwrap(),);
-        // assert_eq!(read_to_string("./tests/dist/nests/child/array.rs").unwrap(),);
+        rust_operator.assert_exist_with_content(
+            "./tests/dist.rs",
+            r#"pub mod test;
+pub mod nests;
+"#,
+        );
+        rust_operator.assert_exist_with_content(
+            "./tests/dist/test.rs",
+            r#"#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct Test {
+    pub id: usize,
+    pub name: String,
+    pub obj: TestObj,
+}
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestObj {
+    pub age: usize,
+    pub from: String,
+    pub now: String,
+}
+"#,
+        );
+        rust_operator.assert_exist_with_content(
+            "./tests/dist/nests.rs",
+            r#"pub mod test_child;
+pub mod child;
+"#,
+        );
+        rust_operator.assert_exist_with_content(
+            "./tests/dist/nests/test_child.rs",
+            r#"#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestChild {
+    pub child: Vec<TestChildChild>,
+    pub id: usize,
+}
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestChildChild {
+    pub hello: String,
+}
+"#,
+        );
+        rust_operator.assert_exist_with_content(
+            "./tests/dist/nests/child.rs",
+            r#"pub mod json_placeholder;
+pub mod array;
+"#,
+        );
+        rust_operator.assert_exist_with_content(
+            "./tests/dist/nests/child/array.rs",
+            r#"#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub type ArrayArray = Vec<Array>;
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct Array {
+    pub arr: Vec<ArrayArr>,
+    pub greet: String,
+    pub id: usize,
+}
+
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct ArrayArr {
+    pub data: ArrayArrData,
+}
+
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct ArrayArrData {
+    pub id: usize,
+}
+"#,
+        );
+        rust_operator.assert_exist_with_content(
+            "./tests/dist/nests/child/json_placeholder.rs",
+            r#"#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub type JsonPlaceholderArray = Vec<JsonPlaceholder>;
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct JsonPlaceholder {
+    pub body: String,
+    pub id: usize,
+    pub title: String,
+    #[serde(rename = "userId")]
+    pub user_id: usize,
+}
+"#,
+        );
+        rust_operator.remove_file("./tests/dist.rs");
+        rust_operator.clean_up();
+        json_operator.clean_up();
     }
     #[test]
     fn jsonのfile_structureをrustの型定義に変換する() {

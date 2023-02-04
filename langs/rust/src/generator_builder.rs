@@ -63,6 +63,7 @@ impl_declare_part_methods!(
     ,{all_attrs,(attrs,Vec<impl Into<String>>)}
     ,{all_attrs_with_serde,(attrs,Vec<impl Into<String>>)}
     ,{set_all_derive,(derives,Vec<impl Into<String>>)}
+    ,{set_all_derive_with_serde,(derives,Vec<impl Into<String>>)}
     ,{set_whitelist,(list,Vec<impl Into<String>>)}
     ,{set_blacklist,(list,Vec<impl Into<String>>)}
 );

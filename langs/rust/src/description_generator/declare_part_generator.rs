@@ -97,6 +97,12 @@ impl RustDeclarePartGeneratorBuilder {
             .add_description_convertor(Box::new(convertor));
         self
     }
+    pub fn set_all_derive_with_serde(self, derives: Vec<impl Into<String>>) -> Self {
+        let mut derives = derives.into_iter().map(|s| s.into()).collect::<Vec<_>>();
+        derives.push("serde::Deserialize".to_string());
+        derives.push("serde::Serialize".to_string());
+        self.set_all_derive(derives)
+    }
     pub fn set_all_derive(mut self, derives: Vec<impl Into<String>>) -> Self {
         let derive_description = format!(
             "#[derive({})]",
