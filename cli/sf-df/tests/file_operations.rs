@@ -1,7 +1,8 @@
-#[cfg(test)]
-mod intergration_tests {
+mod helper;
+mod integration_tests {
     use std::{fs::read_to_string, path::Path};
 
+    use crate::helper::TestDirectoryOperator;
     use sf_df::{
         fileconvertor::{FileStructer, PathStructure},
         fileoperator::{all_file_structure, file_structures_to_files},
@@ -33,35 +34,36 @@ mod intergration_tests {
         std::fs::remove_dir_all(root).unwrap()
     }
     #[test]
-    fn exapmle配下のjsonファイル読み込んでfile_structureを生成する() {
-        let files = all_file_structure("./tests/jsons", "json");
-        println!(
-            "{:#?}",
-            files
-                .iter()
-                .map(|f| f.name_without_extension())
-                .collect::<Vec<_>>()
-        );
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn example配下のjsonファイル読み込んでfile_structureを生成する() {
+        let mut operator = TestDirectoryOperator::new();
+        let root = "./tests-all-file-structer-tests";
+        operator.prepare_test_json_file(root);
+        let files = all_file_structure(root, "json");
         assert_eq!(
             files,
             vec![
                 FileStructer::new(
-                    read_to_string("./tests/jsons/test.json").unwrap(),
-                    PathStructure::new("./tests/jsons/test.json", "json"),
+                    read_to_string(format!("{}/test.json", root)).unwrap(),
+                    PathStructure::new(format!("{}/test.json", root), "json"),
                 ),
                 FileStructer::new(
-                    read_to_string("./tests/jsons/nests/child/array.json").unwrap(),
-                    PathStructure::new("./tests/jsons/nests/child/array.json", "json"),
+                    read_to_string(format!("{}/nests/child/array.json", root)).unwrap(),
+                    PathStructure::new(format!("{}/nests/child/array.json", root), "json"),
                 ),
                 FileStructer::new(
-                    read_to_string("./tests/jsons/nests/child/json-placeholder.json").unwrap(),
-                    PathStructure::new("./tests/jsons/nests/child/json-placeholder.json", "json"),
+                    read_to_string(format!("{}/nests/child/json-placeholder.json", root)).unwrap(),
+                    PathStructure::new(
+                        format!("{}/nests/child/json-placeholder.json", root),
+                        "json"
+                    ),
                 ),
                 FileStructer::new(
-                    read_to_string("./tests/jsons/nests/test-child.json").unwrap(),
-                    PathStructure::new("./tests/jsons/nests/test-child.json", "json"),
+                    read_to_string(format!("{}/nests/test-child.json", root)).unwrap(),
+                    PathStructure::new(format!("{}/nests/test-child.json", root), "json"),
                 ),
             ]
-        )
+        );
+        operator.clean_up();
     }
 }
