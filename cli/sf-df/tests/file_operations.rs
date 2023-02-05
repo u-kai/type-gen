@@ -1,6 +1,6 @@
 mod helper;
 mod integration_tests {
-    use std::{fs::read_to_string, path::Path};
+    use std::fs::read_to_string;
 
     use crate::helper::TestDirectoryOperator;
     use sf_df::{
@@ -11,7 +11,9 @@ mod integration_tests {
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
     fn 受け取ったfilestructreの配列からディレクトリおよびファイルを生成する() {
+        let mut operator = TestDirectoryOperator::new();
         let root = "for-file_structure-to-file";
+        operator.clean_up_before_test(root);
         let path1 = format!("{}/test.json", root);
         let path2 = format!("{}/arr.json", root);
         let path3 = format!("{}/child/child.json", root);
@@ -25,13 +27,11 @@ mod integration_tests {
         ];
 
         file_structures_to_files(&files);
+        operator.assert_exist_with_content(&path1, r#"{"id":0}"#);
+        operator.assert_exist_with_content(&path2, r#"{"arr":[{"id":0}]}"#);
+        operator.assert_exist_with_content(&path3, r#"{"child":[{"id":0}]}"#);
 
-        assert!(Path::new(&path1).exists());
-        assert!(Path::new(&path2).exists(),);
-        assert!(Path::new(&path3).exists(),);
-
-        //crean up
-        std::fs::remove_dir_all(root).unwrap()
+        operator.clean_up();
     }
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
