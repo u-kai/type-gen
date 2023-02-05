@@ -12,6 +12,7 @@ use crate::type_mapper::TypeMapper;
 /// # Examples
 /// ```no_run ignore
 /// // composite type define description
+/// use description_generator::type_description_generator::TypeDescription;
 /// let composite_type:TypeDescription =
 /// r#"struct Human {
 ///     pub name:HumanName,
@@ -31,7 +32,7 @@ pub type TypeDescription = String;
 ///     child: TestChild
 /// }
 /// struct TestChild {
-///     name: String
+///     name: String,
 ///     age: Option<usize>
 /// }
 /// ```
@@ -50,11 +51,11 @@ where
 /// # Examples
 /// made case composite
 /// ```no_run ignore
-/// "struct TypeName { $properties_statement }";
+/// let composite = "struct TypeName { $properties_statement }";
 /// ```
 /// made case alias
 /// ```no_run ignore
-/// "type Alias = String;"
+/// let alias = "type Alias = String;";
 /// ```
 pub trait DeclarePartGenerator {
     const TYPE_PREFIX: &'static str = "struct";
@@ -71,7 +72,7 @@ pub trait DeclarePartGenerator {
 
 /// made case composite
 /// ```no_run ignore
-/// "id: usize"
+/// let generator_result = "id:usize";
 /// ```
 pub trait PropertyPartGenerator<M>
 where
