@@ -8,6 +8,9 @@ impl TestDirectoryOperator {
     pub fn new() -> Self {
         Self { paths: Vec::new() }
     }
+    pub fn remove_dir_all(&self, root: &str) {
+        std::fs::remove_dir_all(root).unwrap_or_default();
+    }
     pub fn clean_up_before_test(&self, root: &str) {
         std::fs::remove_dir_all(root).unwrap_or_default();
     }
@@ -15,6 +18,11 @@ impl TestDirectoryOperator {
         let path = path.into();
         let content = content.into();
         create_new_file(path.clone(), content.clone());
+        self.paths.push(path);
+    }
+    pub fn assert_exist(&mut self, path: impl Into<String>) {
+        let path = path.into();
+        assert!(Path::new(&path).exists());
         self.paths.push(path);
     }
     pub fn assert_exist_with_content(

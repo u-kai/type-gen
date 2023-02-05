@@ -148,17 +148,14 @@ pub fn all_file_structure(root: &str, extension: impl Into<Extension>) -> Vec<Fi
 }
 #[cfg(test)]
 mod test_util_fns_win {
-    use std::{
-        fs::{read_to_string, remove_file},
-        path::Path,
-    };
+    use std::fs::read_to_string;
 
     use crate::{
         fileconvertor::{FileStructer, PathStructure},
-        fileoperator::{add_to_file, all_file_structure, create_new_file},
+        fileoperator::all_file_structure,
     };
 
-    use super::{all_file_path, mkdir_rec};
+    use super::all_file_path;
     #[test]
     fn for_testディレクトリ内の全てのファイルから指定した拡張子だけfile_structureとして生成する() {
         // this test context is exist test directory
@@ -191,51 +188,5 @@ mod test_util_fns_win {
                 .collect::<Vec<_>>(),
             tobe
         );
-    }
-    #[test]
-    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
-    fn 存在しない指定されたディレクトリを再起的に生成する() {
-        let path = "./mkdir/mkdir_rec/mkdir_rec_child";
-        let _sut = mkdir_rec(path).unwrap();
-
-        assert!(Path::new("mkdir/").exists());
-        assert!(Path::new("mkdir/mkdir_rec/").exists(),);
-        assert!(Path::new("mkdir/mkdir_rec/mkdir_rec_child").exists(),);
-
-        //crean up
-        std::fs::remove_dir_all("mkdir").unwrap()
-    }
-    #[test]
-    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
-    fn 指定されたファイルパスを存在しないディレクトリも含めて作成する() {
-        let new_path = "not-exist/non-exist/new-file.txt";
-        let content = "test hello world";
-
-        create_new_file(new_path, content);
-
-        assert!(Path::new("not-exist").exists());
-        assert!(Path::new("not-exist/non-exist").exists());
-        assert!(Path::new("not-exist/non-exist/new-file.txt").exists());
-        assert_eq!(
-            read_to_string("not-exist/non-exist/new-file.txt").unwrap(),
-            content
-        );
-
-        //crean up
-        std::fs::remove_dir_all("not-exist").unwrap()
-    }
-    #[test]
-    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
-    fn 元々存在しているファイルに対して追記する() {
-        let path: &Path = "./test.txt".as_ref();
-        if path.exists() {
-            remove_file(path).unwrap();
-        }
-        let init_content = "hello";
-        create_new_file(path, init_content);
-
-        add_to_file(path, " world");
-
-        assert_eq!(read_to_string(path).unwrap(), "hello world");
     }
 }

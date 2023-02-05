@@ -56,6 +56,7 @@ mod integration_tests {
         );
 
         operator.remove_file("./rust_mod_tests.rs");
+        operator.remove_dir_all(root);
         operator.clean_up();
     }
 
@@ -218,8 +219,10 @@ pub struct JsonPlaceholder {
 "#,
         );
         rust_operator.remove_file("./tests/dist.rs");
-        rust_operator.clean_up();
+        rust_operator.remove_dir_all("./tests/dist");
+        json_operator.remove_dir_all("./tests/jsons");
         json_operator.clean_up();
+        rust_operator.clean_up();
     }
     #[test]
     fn jsonのfile_structureをrustの型定義に変換する() {
