@@ -196,7 +196,7 @@ impl PathStructure {
         dist_extension: impl Into<Extension>,
     ) -> Self {
         let dist_extension = dist_extension.into();
-        let dist_path = Extension::repalace(
+        let dist_path = Extension::replace(
             &self.path.replacen(src_root, dist_root, 1),
             &self.extension,
             &dist_extension,
