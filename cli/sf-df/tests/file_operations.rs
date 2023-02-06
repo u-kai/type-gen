@@ -6,9 +6,61 @@ mod integration_tests {
     use sf_df::{
         fileconvertor::{FileStructer, PathStructure},
         fileoperator::{
-            add_to_file, all_file_structure, create_new_file, file_structures_to_files, mkdir_rec,
+            add_to_file, all_file_path, all_file_structure, create_new_file,
+            file_structures_to_files, mkdir_rec,
         },
     };
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn for_testディレクトリ内の全てのファイルから指定した拡張子だけfile_structureとして生成する() {
+        // this test context is exist test directory
+        let mut operator = TestDirectoryOperator::new();
+
+        operator.clean_up_before_test("./for-test");
+        operator.prepare_file("./for-test/rust.rs", "fn main(){}");
+        operator.prepare_file("./for-test/child/rust_child.rs", "fn main2(){}");
+
+        let tobe = vec![
+            FileStructer::new(
+                "fn main(){}",
+                PathStructure::new("./for-test/rust.rs", "rs"),
+            ),
+            FileStructer::new(
+                "fn main2(){}",
+                PathStructure::new("./for-test/child/rust_child.rs", "rs"),
+            ),
+        ];
+        assert_eq!(all_file_structure("./for-test", "rs"), tobe);
+        operator.remove_dir_all("./for-test");
+    }
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn for_testディレクトリ内の全てのファイルのパスを取得する() {
+        // this test context is exist test directory
+        let mut operator = TestDirectoryOperator::new();
+
+        operator.clean_up_before_test("./for-test");
+        operator.prepare_file("./for-test/parent.txt", "");
+        operator.prepare_file("./for-test/rust.rs", "");
+        operator.prepare_file("./for-test/child/child.txt", "");
+        operator.prepare_file("./for-test/child/grand_child/grand_child.txt", "");
+        operator.prepare_file("./for-test/child/rust_child.rs", "");
+        let tobe = vec![
+            "./for-test/parent.txt".to_string(),
+            "./for-test/rust.rs".to_string(),
+            "./for-test/child/child.txt".to_string(),
+            "./for-test/child/grand_child/grand_child.txt".to_string(),
+            "./for-test/child/rust_child.rs".to_string(),
+        ];
+        assert_eq!(
+            all_file_path("./for-test")
+                .into_iter()
+                .map(|p| p.to_str().unwrap().to_string())
+                .collect::<Vec<_>>(),
+            tobe
+        );
+        operator.remove_dir_all("./for-test");
+    }
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
     fn 存在しない指定されたディレクトリを再起的に生成する() {

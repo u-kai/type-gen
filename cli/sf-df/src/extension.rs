@@ -27,6 +27,19 @@ impl Extension {
             .unwrap_or(false)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Extension;
+
+    #[test]
+    fn 拡張子の変換機能は拡張子と同じ名前のファイルであっても拡張子だけが置換される() {
+        let path = "json.json";
+        let result = Extension::replace(path, &Extension::Json, &Extension::Rs);
+
+        assert_eq!(result, "json.rs");
+    }
+}
 impl From<&str> for Extension {
     fn from(s: &str) -> Self {
         match s {
