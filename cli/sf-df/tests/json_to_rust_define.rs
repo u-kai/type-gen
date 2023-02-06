@@ -3,6 +3,7 @@ mod integration_tests {
 
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
+        configs::FileToFileConfig,
         extension::Extension,
         fileconvertor::{FileConvetor, FileStructer, PathStructure},
         json_to_langs::{create_rust_mod_files, json_to_rust, JsonToRustConvertor},
@@ -136,7 +137,8 @@ mod integration_tests {
             .property_part_pub_all()
             .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"])
             .build();
-        json_to_rust("./tests/jsons", "./tests/dist", generator);
+        let config = FileToFileConfig::new("./tests/jsons", "./tests/dist");
+        json_to_rust(config, generator);
 
         rust_operator.assert_exist_with_content(
             "./tests/dist.rs",

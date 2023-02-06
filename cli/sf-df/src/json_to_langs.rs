@@ -14,6 +14,7 @@ use rust::description_generator::{
 };
 
 use crate::{
+    configs::FileToFileConfig,
     extension::Extension,
     fileconvertor::{FileStructer, FileStructerConvertor, PathStructure},
     fileoperator::{all_file_structure, file_structures_to_files},
@@ -68,7 +69,9 @@ where
     }
 }
 
-pub fn json_to_rust(src: &str, dist: &str, generator: RustTypeDescriptionGenerator) {
+pub fn json_to_rust(config: FileToFileConfig, generator: RustTypeDescriptionGenerator) {
+    let src = &config.src;
+    let dist = &config.dist;
     let sources = all_file_structure(src, "json");
     let convertor = JsonToRustConvertor::new(src, generator);
     let dists = sources

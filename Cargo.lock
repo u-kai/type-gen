@@ -114,6 +114,8 @@ dependencies = [
  "json",
  "npc",
  "rust",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
