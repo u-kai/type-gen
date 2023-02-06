@@ -1,4 +1,3 @@
-#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
 // this is auto generate
 pub type JsonPlaceholderArray = Vec<JsonPlaceholder>;
 #[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]

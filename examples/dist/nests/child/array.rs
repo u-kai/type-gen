@@ -1,4 +1,3 @@
-#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
 // this is auto generate
 pub type ArrayArray = Vec<Array>;
 #[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
