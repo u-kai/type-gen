@@ -5,6 +5,6 @@ members = [
     "json",
     "langs/rust",
     "utils",
-    "cli/sf-df",
-    "lang-parser"
+    "cli/sf_df",
+    "lang_parser"
 ]
