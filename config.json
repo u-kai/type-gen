@@ -1,25 +1,4 @@
 {
-  "src": {
-    "root": "examples/jsons",
-    "extension": "json"
-  },
-  "dist": {
-    "root": "examples/dist",
-    "extension": "rs"
-  },
-  "comment": {
-    "alltype": "this is auto make type",
-    "allproperty": "this is auto make property"
-  },
-  "attribute": {
-    "alltype": "allow(unused)\nderive(Serialize, Deserialize,Clone,Debug)",
-    "allproperty": "allow(unused)"
-  },
-  "visibility": {
-    "alltype": "pub",
-    "allproperty": "pub"
-  },
-  "optional": {
-    "all": true
-  }
+  "src": "examples/jsons",
+  "dist": "examples/dist"
 }

@@ -1,21 +1,12 @@
-use serde::{Deserialize,Serialize};
-// this is auto make type
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+// this is auto generate
 pub type JsonPlaceholderArray = Vec<JsonPlaceholder>;
-// this is auto make type
-#[allow(unused)]
-#[derive(Serialize, Deserialize,Clone,Debug)]
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+// this is auto generate
 pub struct JsonPlaceholder {
-    // this is auto make property
-    #[allow(unused)]
     pub body: Option<String>,
-    // this is auto make property
-    #[allow(unused)]
     pub id: Option<usize>,
-    // this is auto make property
-    #[allow(unused)]
     pub title: Option<String>,
-    // this is auto make property
-    #[allow(unused)]
     #[serde(rename = "userId")]
     pub user_id: Option<usize>,
 }

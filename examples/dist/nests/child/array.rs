@@ -1,35 +1,22 @@
-use serde::{Deserialize,Serialize};
-// this is auto make type
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+// this is auto generate
 pub type ArrayArray = Vec<Array>;
-// this is auto make type
-#[allow(unused)]
-#[derive(Serialize, Deserialize,Clone,Debug)]
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+// this is auto generate
 pub struct Array {
-    // this is auto make property
-    #[allow(unused)]
     pub arr: Option<Vec<ArrayArr>>,
-    // this is auto make property
-    #[allow(unused)]
     pub greet: Option<String>,
-    // this is auto make property
-    #[allow(unused)]
     pub id: Option<usize>,
 }
 
-// this is auto make type
-#[allow(unused)]
-#[derive(Serialize, Deserialize,Clone,Debug)]
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+// this is auto generate
 pub struct ArrayArr {
-    // this is auto make property
-    #[allow(unused)]
     pub data: Option<ArrayArrData>,
 }
 
-// this is auto make type
-#[allow(unused)]
-#[derive(Serialize, Deserialize,Clone,Debug)]
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+// this is auto generate
 pub struct ArrayArrData {
-    // this is auto make property
-    #[allow(unused)]
     pub id: Option<usize>,
 }
