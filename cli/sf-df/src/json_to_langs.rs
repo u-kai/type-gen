@@ -109,9 +109,11 @@ pub fn create_rust_mod_files(root: &str) {
                         }
                     });
 
-                let mut root_file = root.to_string();
-                root_file.push_str(".rs");
-                FileStructer::new("", PathStructure::new(root_file, "rs")).new_file();
+                FileStructer::new(
+                    "",
+                    PathStructure::new(Extension::to_filepath(root, "rs"), "rs"),
+                )
+                .new_file();
             }
             Err(e) => panic!("root {} {:#?}", root, e),
         };
@@ -135,13 +137,11 @@ pub fn create_rust_mod_files(root: &str) {
                     }
                 });
 
-            let mut root_file = root.to_string();
-            root_file.push_str(".rs");
             FileStructer::new(
                 this_dirs_files.into_iter().fold(String::new(), |acc, s| {
                     format!("{}pub mod {};\n", acc, Extension::remove_extension(s))
                 }),
-                PathStructure::new(root_file, "rs"),
+                PathStructure::new(Extension::to_filepath(root, "rs"), "rs"),
             )
             .new_file();
         }
