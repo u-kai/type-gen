@@ -31,7 +31,10 @@ mod integration_tests {
             ),
             FileStructer::new(
                 "pub type Test=String;",
-                PathStructure::new("./rust_mod_tests/rusts/nests/child/rs_placeholder.rs", "rs"),
+                PathStructure::new(
+                    "./rust_mod_tests/rusts/nests/child/json_placeholder.rs",
+                    "rs",
+                ),
             ),
         ];
 
@@ -52,7 +55,7 @@ mod integration_tests {
         );
         operator.assert_exist_with_content(
             "./rust_mod_tests/rusts/nests/child.rs",
-            "pub mod rs_placeholder;\npub mod array;\n",
+            "pub mod json_placeholder;\npub mod array;\n",
         );
 
         operator.remove_file("./rust_mod_tests.rs");

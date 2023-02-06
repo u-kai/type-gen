@@ -139,11 +139,7 @@ pub fn create_rust_mod_files(root: &str) {
             root_file.push_str(".rs");
             FileStructer::new(
                 this_dirs_files.into_iter().fold(String::new(), |acc, s| {
-                    format!(
-                        "{}pub mod {};\n",
-                        acc,
-                        s.file_name().unwrap().to_str().unwrap().replace(".rs", "")
-                    )
+                    format!("{}pub mod {};\n", acc, Extension::remove_extension(s))
                 }),
                 PathStructure::new(root_file, "rs"),
             )
