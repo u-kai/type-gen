@@ -1,6 +1,7 @@
 use std::{fs::read_to_string, path::Path};
 
 use sf_df::fileoperator::create_new_file;
+#[cfg(test)]
 pub struct TestDirectoryOperator {
     paths: Vec<String>,
 }
@@ -20,6 +21,7 @@ impl TestDirectoryOperator {
         create_new_file(path.clone(), content.clone());
         self.paths.push(path);
     }
+    #[allow(unused)]
     pub fn assert_exist(&mut self, path: impl Into<String>) {
         let path = path.into();
         assert!(Path::new(&path).exists());
@@ -36,6 +38,7 @@ impl TestDirectoryOperator {
         assert_eq!(content, read_to_string(&path).unwrap());
         self.paths.push(path);
     }
+    #[allow(unused)]
     pub fn remove_file(&self, file_name: &str) {
         std::fs::remove_file(file_name).unwrap_or_default();
     }
@@ -44,6 +47,7 @@ impl TestDirectoryOperator {
             .into_iter()
             .for_each(|p| std::fs::remove_file(p).unwrap_or_default())
     }
+    #[allow(unused)]
     pub fn prepare_test_json_file(&mut self, json_path: &str) {
         self.clean_up_before_test(json_path);
         self.prepare_file(
