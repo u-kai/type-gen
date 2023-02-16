@@ -4,6 +4,7 @@ members = [
     "type_define/description_generator",
     "json",
     "langs/rust",
+    "langs/go",
     "utils",
     "cli/sf_df",
     "lang_parser"
