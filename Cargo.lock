@@ -13,6 +13,12 @@ dependencies = [
 [[package]]
 name = "go"
 version = "0.1.0"
+dependencies = [
+ "description_generator",
+ "npc",
+ "paste",
+ "structure",
+]
 
 [[package]]
 name = "itoa"
