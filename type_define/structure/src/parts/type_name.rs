@@ -2,8 +2,8 @@ use npc::convertor::NamingPrincipalConvertor;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeName(String);
 impl TypeName {
-    pub fn new(str: String) -> Self {
-        Self(str)
+    pub fn new(str: impl Into<String>) -> Self {
+        Self(str.into())
     }
     pub fn as_str(&self) -> &str {
         &self.0
