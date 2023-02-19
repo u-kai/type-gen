@@ -42,6 +42,25 @@ impl GoPropertyPartGeneratorBuilder {
             generator: GoPropertyPartGenerator::new(),
         }
     }
+    pub fn json_marshal(mut self) -> Self {
+        struct AddJsonMarshalConvertor {}
+        impl Convertor<GoMapper> for AddJsonMarshalConvertor {
+            fn convert(
+                &self,
+                acc: &mut String,
+                _type_name: &structure::parts::type_name::TypeName,
+                property_key: &structure::parts::property_key::PropertyKey,
+                _property_type: &structure::parts::property_type::PropertyType,
+                __mapper: &GoMapper,
+            ) -> () {
+                *acc = format!(r#"{} `json:"{}"`"#, acc, property_key.as_str())
+            }
+        }
+        self.generator
+            .inner
+            .add_property_type_convertor(Box::new(AddJsonMarshalConvertor {}));
+        self
+    }
     pub fn pub_all(mut self) -> Self {
         struct ToPascalConvertor {}
         impl Convertor<GoMapper> for ToPascalConvertor {
@@ -79,6 +98,23 @@ mod tests {
         property_part_generator::{GoPropertyPartGenerator, GoPropertyPartGeneratorBuilder},
     };
 
+    #[test]
+    fn 全てのプロパティをパブリックにしてjsonの元の名前を記述する() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = GoMapper;
+
+        let sut = GoPropertyPartGeneratorBuilder::new()
+            .pub_all()
+            .json_marshal()
+            .build();
+        assert_eq!(
+            sut.generate(&type_name, &property_key, &property_type, &mapper,),
+            r#"   Id int `json:"id"`
+"#
+        );
+    }
     #[test]
     fn 全てのプロパティをパブリックにする() {
         let type_name: TypeName = "Test".into();
