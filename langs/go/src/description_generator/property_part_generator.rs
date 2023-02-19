@@ -1,7 +1,8 @@
 use description_generator::{
-    customizable::property_part_generator::CustomizablePropertyDescriptionGenerator,
+    customizable::property_part_generator::{Convertor, CustomizablePropertyDescriptionGenerator},
     type_description_generator::PropertyPartGenerator,
 };
+use npc::fns::to_pascal;
 
 use super::mapper::GoMapper;
 
@@ -32,6 +33,38 @@ impl PropertyPartGenerator<GoMapper> for GoPropertyPartGenerator {
             .generate(type_name, property_key, property_type, mapper)
     }
 }
+pub struct GoPropertyPartGeneratorBuilder {
+    generator: GoPropertyPartGenerator,
+}
+impl GoPropertyPartGeneratorBuilder {
+    pub fn new() -> Self {
+        Self {
+            generator: GoPropertyPartGenerator::new(),
+        }
+    }
+    pub fn pub_all(mut self) -> Self {
+        struct ToPascalConvertor {}
+        impl Convertor<GoMapper> for ToPascalConvertor {
+            fn convert(
+                &self,
+                acc: &mut String,
+                _type_name: &structure::parts::type_name::TypeName,
+                property_key: &structure::parts::property_key::PropertyKey,
+                _property_type: &structure::parts::property_type::PropertyType,
+                _mapper: &GoMapper,
+            ) -> () {
+                *acc = format!("{}", to_pascal(property_key.as_str()));
+            }
+        }
+        self.generator
+            .inner
+            .add_property_key_convertor(Box::new(ToPascalConvertor {}));
+        self
+    }
+    pub fn build(self) -> GoPropertyPartGenerator {
+        self.generator
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -42,9 +75,23 @@ mod tests {
     };
 
     use crate::description_generator::{
-        mapper::GoMapper, property_part_generator::GoPropertyPartGenerator,
+        mapper::GoMapper,
+        property_part_generator::{GoPropertyPartGenerator, GoPropertyPartGeneratorBuilder},
     };
 
+    #[test]
+    fn 全てのプロパティをパブリックにする() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = GoMapper;
+
+        let sut = GoPropertyPartGeneratorBuilder::new().pub_all().build();
+        assert_eq!(
+            sut.generate(&type_name, &property_key, &property_type, &mapper,),
+            "   Id int\n"
+        );
+    }
     #[test]
     fn idという整数型のプロパティの作成() {
         let type_name: TypeName = "Test".into();
