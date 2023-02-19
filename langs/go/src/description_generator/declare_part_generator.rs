@@ -64,7 +64,7 @@ mod tests {
 
     use super::*;
     #[test]
-    fn カスタム型のalias型定義の作成() {
+    fn 文字列型のalias型定義の作成() {
         let sut = GoDeclarePartGenerator::new();
         let mapper = GoMapper {};
         let alias = AliasTypeStructure::new("Test", make_string_type());
