@@ -1,7 +1,7 @@
 use description_generator::{
     customizable::declare_part_generator::{
-        CompositeTypeDeclareConvertor, CustomizableAliasTypeDeclareGenerator,
-        CustomizableCompositeTypeDeclareGenerator, CustomizableDeclarePartGenerator,
+        CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
+        CustomizableDeclarePartGenerator,
     },
     type_description_generator::DeclarePartGenerator,
 };
@@ -57,9 +57,8 @@ mod tests {
     use std::collections::BTreeMap;
 
     use structure::{
-        alias_type_structure::AliasTypeStructure,
-        composite_type_structure::CompositeTypeStructure,
-        parts::property_type::property_type_factories::{make_primitive_type, make_string_type},
+        alias_type_structure::AliasTypeStructure, composite_type_structure::CompositeTypeStructure,
+        parts::property_type::property_type_factories::make_string_type,
     };
 
     use super::*;
