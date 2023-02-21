@@ -1,5 +1,21 @@
 use std::collections::HashMap;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Token {
+    r#type: TokenType,
+    literal: String,
+}
+impl Token {
+    pub fn from_ident(keywords:&KeywordsToTokenType,ident:&str)->Self {
+        let Some(token_type) = keywords.inner.get(ident) else {
+            return Self {
+                r#type:TokenType::Ident,
+                literal:ident.to_string()
+            }      
+        };
+        Self { r#type: *token_type, literal: ident.to_string() }
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
     Illegal,
