@@ -2,23 +2,29 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Token {
-    r#type: TokenType,
-    literal: String,
+    pub(crate) r#type: TokenType,
+    pub(crate) literal: String,
 }
 impl Token {
-    pub fn from_ident(keywords:&KeywordsToTokenType,ident:&str)->Self {
+    pub fn new(r#type: TokenType, literal: impl Into<String>) -> Self {
+        Token {
+            r#type,
+            literal: literal.into(),
+        }
+    }
+    pub fn from_ident(keywords: &KeywordsToTokenType, ident: &str) -> Self {
         let Some(token_type) = keywords.inner.get(ident) else {
-            return Self {
-                r#type:TokenType::Ident,
-                literal:ident.to_string()
-            }      
+            return Self::new(
+                TokenType::Ident,
+                ident)
         };
-        Self { r#type: *token_type, literal: ident.to_string() }
+        Self::new(*token_type, ident)
     }
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
     Illegal,
+    Assign,
     Eof,
     NumberLiteral,
     Ident,
