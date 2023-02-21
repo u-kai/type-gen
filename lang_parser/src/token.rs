@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Token {
+pub enum TokenType {
     Illegal,
     Eof,
     NumberLiteral,
@@ -34,29 +34,29 @@ pub enum Token {
     Class,
 }
 
-pub struct KeywordsToToken {
-    inner: HashMap<&'static str, Token>,
+pub struct KeywordsToTokenType {
+    inner: HashMap<&'static str, TokenType>,
 }
 
-impl KeywordsToToken {
+impl KeywordsToTokenType {
     pub fn new() -> Self {
         let mut inner = HashMap::new();
-        inner.insert("fn", Token::Fn);
-        inner.insert("let", Token::Let);
-        inner.insert("return", Token::Return);
-        inner.insert("if", Token::If);
-        inner.insert("else", Token::Else);
-        inner.insert("true", Token::True);
-        inner.insert("false", Token::False);
+        inner.insert("fn", TokenType::Fn);
+        inner.insert("let", TokenType::Let);
+        inner.insert("return", TokenType::Return);
+        inner.insert("if", TokenType::If);
+        inner.insert("else", TokenType::Else);
+        inner.insert("true", TokenType::True);
+        inner.insert("false", TokenType::False);
         Self { inner }
     }
     pub fn add_type_keyword(&mut self) {
-        self.inner.insert("type", Token::Type);
+        self.inner.insert("type", TokenType::Type);
     }
     pub fn add_class_keyword(&mut self) {
-        self.inner.insert("class", Token::Class);
+        self.inner.insert("class", TokenType::Class);
     }
     pub fn add_struct_keyword(&mut self) {
-        self.inner.insert("struct", Token::Struct);
+        self.inner.insert("struct", TokenType::Struct);
     }
 }
