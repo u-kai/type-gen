@@ -1,52 +1,142 @@
 use std::str::Chars;
 
-use crate::token::Token;
+use crate::token::{KeywordsToTokenType, Token, TokenType};
 
 #[derive(Debug)]
 pub struct Lexer<'a> {
     input: Chars<'a>,
-    position: usize,
+    focus: char,
+    keywords: KeywordsToTokenType,
 }
 impl<'a> Lexer<'a> {
-    pub fn new(input: &'a str) -> Self {
+    pub fn new(input: &'a str, keywords: KeywordsToTokenType) -> Self {
         let chars = input.chars();
+
         Self {
             input: chars,
-            position: 0,
+            keywords,
+            focus: ' ',
         }
     }
 
     pub fn next_token(&mut self) -> Option<Token> {
+        println!("b_c:{}", self.focus);
+        self.skip_whitespace();
+        println!("a_c:{}", self.focus);
+        let token = match self.focus {
+            '/' | '*' | '<' | '>' | ',' | ';' | '(' | ')' | '{' | '}' => {
+                let token = Token::from_token_char(self.focus);
+                self.read_char();
+                token
+            }
+            '!' => {
+                if let Some(()) = self.read_char() {
+                    if self.focus == '=' {
+                        self.read_char().unwrap();
+                        self.read_char().unwrap();
+                        return Some(Token::new(TokenType::NotEq, "!="));
+                    }
+                };
+                let token = Token::from_token_char('!');
+                self.read_char();
+                token
+            }
+            '=' => {
+                if let Some(()) = self.read_char() {
+                    if self.focus == '=' {
+                        self.read_char().unwrap();
+                        return Some(Token::new(TokenType::Eq, "=="));
+                    }
+                };
+                let token = Token::from_token_char('=');
+                token
+            }
+            '+' => {
+                if let Some(()) = self.read_char() {
+                    if self.focus == '=' {
+                        self.read_char().unwrap();
+                        return Some(Token::new(TokenType::Add, "+="));
+                    }
+                    if self.focus == '+' {
+                        self.read_char().unwrap();
+                        return Some(Token::new(TokenType::Increment, "++"));
+                    }
+                }
+                println!("a_+: {}", self.focus);
+                let token = Token::from_token_char('+');
+                println!("b_+: {}", self.focus);
+                token
+            }
+            '-' => {
+                if let Some(()) = self.read_char() {
+                    if self.focus == '=' {
+                        self.read_char().unwrap();
+                        return Some(Token::new(TokenType::Sub, "-="));
+                    }
+                    if self.focus == '-' {
+                        self.read_char().unwrap();
+                        return Some(Token::new(TokenType::Decrement, "--"));
+                    }
+                }
+                let token = Token::from_token_char('-');
+                token
+            }
+            _ => {
+                if Self::is_letter(self.focus) {
+                    let literal = self.read_identify();
+                    if let Some(token_type) = self.keywords.get(&literal) {
+                        return Some(Token::new(token_type, literal));
+                    }
+                    return Some(Token::new(TokenType::Ident, literal));
+                }
+                if Self::is_digit(self.focus) {
+                    let literal = self.read_number();
+                    return Some(Token::new(TokenType::NumberLiteral, literal));
+                }
+                Token::new(TokenType::Eof, "")
+                //Token::new(TokenType::Let,"let")
+            }
+        };
+        Some(token)
+    }
+    fn read_char(&mut self) -> Option<()> {
+        if let Some(c) = self.input.next() {
+            self.focus = c;
+            return Some(());
+        }
         None
     }
-    fn read_char(&mut self) -> Option<char> {
-        self.input.next()
-    }
-    fn skip_whitespace(&mut self) -> Option<char> {
-         loop {
-              let Some(c) = self.input.next() else {
-                  return None;
-              };
-              if !c.is_whitespace() {
-                  return Some(c);
-              }
-         }
-    }
-    fn peek_char(&mut self)->Option<char> {
-        self.input.by_ref().peekable().peek().copied()
-    }
-    fn read_number(&mut self)-> String {
-        let mut result = String::new(); 
-        let  Some(mut ch) = self.read_char() else {
-            return result; 
-        }; 
-        while Self::is_digit(ch) {
-            result.push(ch);
-            let Some(new_ch) = self.read_char() else {
-                return result;
+    fn skip_whitespace(&mut self) {
+        loop {
+            if !self.focus.is_whitespace() {
+                return;
+            }
+            if self.read_char().is_none() {
+                return;
             };
-            ch = new_ch;
-        };
+        }
+    }
+    fn read_identify(&mut self) -> String {
+        let mut result = String::new();
+        while Self::is_letter(self.focus) {
+            result.push(self.focus);
+            self.read_char().unwrap();
+        }
+        // for c in self.input.by_ref(){
+
+        // }
+        // self.input.
+        result
+    }
+    fn peek_char(&mut self) -> Option<char> {
+        self.input.by_ref().peekable().peek().cloned()
+    }
+    fn read_number(&mut self) -> String {
+        let mut result = String::new();
+        while Self::is_digit(self.focus) {
+            result.push(self.focus);
+            self.read_char().unwrap();
+        }
         result
     }
     fn is_digit(ch: char) -> bool {
@@ -62,14 +152,17 @@ mod tests {
     use crate::token::{Token, TokenType};
     #[test]
     fn white_skipが動作するか確認() {
-        let input = "   hello world";
-        let mut sut = Lexer::new(input);
-        let c = sut.skip_whitespace();
-        // let h = sut.input.next();
-        assert_eq!(c.unwrap(),'h');
-        let p = sut.peek_char();
+        let input = "hello world";
+        let mut sut = Lexer::new(input, KeywordsToTokenType::new());
+        sut.skip_whitespace();
 
-        assert_eq!(p.unwrap(),'e');
+        let mut v = vec!["a", "b", "c"].into_iter();
+        let a = v.by_ref().peekable().peek();
+        assert_eq!(v.next(), Some("a"));
+        // let h = sut.input.next();
+        assert_eq!(sut.focus, 'h');
+        let p = sut.peek_char();
+        assert_eq!(p.unwrap(), 'e');
     }
 
     #[test]
@@ -81,7 +174,6 @@ mod tests {
             x+y;
         };
         let result = add(five,ten);
-        !-/*5;
         5 < 10 > 5;
         if(5<10) {
             return true;
@@ -92,7 +184,7 @@ mod tests {
         10 != 9;
         "#;
 
-        let mut sut = Lexer::new(input);
+        let mut sut = Lexer::new(input, KeywordsToTokenType::new());
 
         let tobe = vec![
             Token::new(TokenType::Let, "let"),
@@ -119,7 +211,7 @@ mod tests {
             Token::new(TokenType::Plus, "+"),
             Token::new(TokenType::Ident, "y"),
             Token::new(TokenType::Semicolon, ";"),
-            Token::new(TokenType::RBracket, ")"),
+            Token::new(TokenType::RBracket, "}"),
             Token::new(TokenType::Semicolon, ";"),
             Token::new(TokenType::Let, "let"),
             Token::new(TokenType::Ident, "result"),
@@ -130,12 +222,6 @@ mod tests {
             Token::new(TokenType::Comma, ","),
             Token::new(TokenType::Ident, "ten"),
             Token::new(TokenType::RParentheses, ")"),
-            Token::new(TokenType::Semicolon, ";"),
-            Token::new(TokenType::Bang, "!"),
-            Token::new(TokenType::Minus, "-"),
-            Token::new(TokenType::Slash, "/"),
-            Token::new(TokenType::Asterisk, "*"),
-            Token::new(TokenType::NumberLiteral, "5"),
             Token::new(TokenType::Semicolon, ";"),
             Token::new(TokenType::NumberLiteral, "5"),
             Token::new(TokenType::Lt, "<"),
@@ -153,13 +239,13 @@ mod tests {
             Token::new(TokenType::Return, "return"),
             Token::new(TokenType::True, "true"),
             Token::new(TokenType::Semicolon, ";"),
-            Token::new(TokenType::RBracket, ")"),
+            Token::new(TokenType::RBracket, "}"),
             Token::new(TokenType::Else, "else"),
             Token::new(TokenType::LBracket, "{"),
             Token::new(TokenType::Return, "return"),
             Token::new(TokenType::False, "false"),
             Token::new(TokenType::Semicolon, ";"),
-            Token::new(TokenType::RBracket, ")"),
+            Token::new(TokenType::RBracket, "}"),
             Token::new(TokenType::NumberLiteral, "10"),
             Token::new(TokenType::Eq, "=="),
             Token::new(TokenType::NumberLiteral, "10"),
@@ -170,8 +256,9 @@ mod tests {
             Token::new(TokenType::Semicolon, ";"),
             Token::new(TokenType::Eof, ""),
         ];
-        for t in tobe {
+        for (i, t) in tobe.into_iter().enumerate() {
             let token = sut.next_token();
+            println!("i:{}", i);
             assert_eq!(t, token.unwrap());
         }
     }
