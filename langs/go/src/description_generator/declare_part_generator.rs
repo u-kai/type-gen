@@ -18,19 +18,19 @@ pub struct GoDeclarePartGenerator {
 }
 
 impl GoDeclarePartGenerator {
-    fn concat_go_alias(identify: &str, type_name: &TypeName, type_: String) -> String {
-        format!("{} {} {}", identify, type_name.as_str(), type_)
-    }
-    fn concat_go_composite(identify: &str, type_name: &TypeName, type_: String) -> String {
-        format!("type {} {} {{\n{}}}", type_name.as_str(), identify, type_)
-    }
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             inner: CustomizableDeclarePartGenerator::new(
                 CustomizableAliasTypeDeclareGenerator::new("type", Self::concat_go_alias),
                 CustomizableCompositeTypeDeclareGenerator::new("struct", Self::concat_go_composite),
             ),
         }
+    }
+    fn concat_go_alias(identify: &str, type_name: &TypeName, type_: String) -> String {
+        format!("{} {} {}", identify, type_name.as_str(), type_)
+    }
+    fn concat_go_composite(identify: &str, type_name: &TypeName, type_: String) -> String {
+        format!("type {} {} {{\n{}}}", type_name.as_str(), identify, type_)
     }
 }
 impl DeclarePartGenerator for GoDeclarePartGenerator {
