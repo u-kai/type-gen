@@ -9,20 +9,38 @@ pub struct Lexer<'a> {
     keywords: KeywordsToTokenType,
 }
 impl<'a> Lexer<'a> {
+    const EOF_CHAR: char = ' ';
     pub fn new(input: &'a str, keywords: KeywordsToTokenType) -> Self {
         let chars = input.chars();
-
         Self {
             input: chars,
             keywords,
-            focus: ' ',
+            focus: Self::EOF_CHAR,
         }
     }
-
     pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
         match self.focus {
-            '/' | '*' | '<' | '>' | ',' | ';' | '(' | ')' | '{' | '}' | ':' => {
+            '/' | '*' | '<' | '>' | ',' | ';' | '(' | ')' | '{' | '}' | ':' | '#' => {
+                let c = self.focus;
+                if self.keywords.contain_comment_ident(c) {
+                    if self.keywords.get_comment_ident().len() == 1 {
+                        let token = Token::new(TokenType::Comment, self.focus);
+                        self.set_next_char();
+                        return token;
+                    }
+                    let mut literal = String::new();
+                    for _ in 0..self.keywords.get_comment_ident().len() {
+                        literal.push(c);
+                        if self.focus != c {
+                            return Token::from_token_char(c);
+                        }
+                        self.set_next_char();
+                    }
+                    self.set_next_char();
+                    return Token::new(TokenType::Comment, literal);
+                }
+
                 let token = Token::from_token_char(self.focus);
                 self.set_next_char();
                 token
@@ -86,7 +104,7 @@ impl<'a> Lexer<'a> {
                     let literal = self.read_number();
                     return Token::new(TokenType::NumberLiteral, literal);
                 }
-                Token::new(TokenType::Eof, "")
+                Token::eof()
             }
         }
     }
@@ -94,7 +112,7 @@ impl<'a> Lexer<'a> {
         if let Some(()) = self.read_char() {
             return;
         }
-        self.focus = ' ';
+        self.focus = Self::EOF_CHAR;
     }
     fn read_char(&mut self) -> Option<()> {
         if let Some(c) = self.input.next() {
@@ -117,7 +135,7 @@ impl<'a> Lexer<'a> {
         let mut result = String::new();
         while Self::is_letter(self.focus) {
             result.push(self.focus);
-            self.read_char().unwrap();
+            self.set_next_char();
         }
         result
     }
@@ -125,7 +143,7 @@ impl<'a> Lexer<'a> {
         let mut result = String::new();
         while Self::is_digit(self.focus) {
             result.push(self.focus);
-            self.read_char().unwrap();
+            self.set_next_char();
         }
         result
     }
@@ -141,6 +159,52 @@ mod tests {
     use super::*;
     use crate::token::{Token, TokenType};
 
+    #[test]
+    fn 二文字がコメント文の識別子の場合コメント文の識別子としてtokenを認識できる() {
+        let mut keywords = KeywordsToTokenType::new();
+        keywords.add_struct_keyword();
+        keywords.set_comment_ident("//");
+
+        let input = r"data = 5
+        // これはテストです
+        // last";
+
+        let mut sut = Lexer::new(input, keywords);
+
+        assert_eq!(sut.next_token(), Token::new(TokenType::Ident, "data"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Assign, "="));
+        assert_eq!(sut.next_token(), Token::new(TokenType::NumberLiteral, "5"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Comment, "//"));
+        assert_eq!(
+            sut.next_token(),
+            Token::new(TokenType::Ident, "これはテストです")
+        );
+        assert_eq!(sut.next_token(), Token::new(TokenType::Comment, "//"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Ident, "last"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Eof, ""));
+    }
+    #[test]
+    fn 一文字がコメント文の識別子の場合コメント文の識別子としてtokenを認識できる() {
+        let mut keywords = KeywordsToTokenType::new();
+        keywords.add_struct_keyword();
+        keywords.set_comment_ident("#");
+
+        let input = r"data = 5
+        # これはテストです
+        ";
+
+        let mut sut = Lexer::new(input, keywords);
+
+        assert_eq!(sut.next_token(), Token::new(TokenType::Ident, "data"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Assign, "="));
+        assert_eq!(sut.next_token(), Token::new(TokenType::NumberLiteral, "5"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Comment, "#"));
+        assert_eq!(
+            sut.next_token(),
+            Token::new(TokenType::Ident, "これはテストです")
+        );
+        assert_eq!(sut.next_token(), Token::new(TokenType::Eof, ""));
+    }
     #[test]
     fn keywordsにstructを追加することでtokenの配列を生成することができる() {
         let mut keywords = KeywordsToTokenType::new();

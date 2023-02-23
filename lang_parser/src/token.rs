@@ -12,6 +12,9 @@ impl Token {
             literal: literal.into(),
         }
     }
+    pub fn eof() -> Self {
+        Token::new(TokenType::Eof, "")
+    }
     pub fn from_token_char(c: char) -> Self {
         match c {
             '/' => Token::new(TokenType::Slash, c),
@@ -29,7 +32,7 @@ impl Token {
             '+' => Token::new(TokenType::Plus, c),
             '-' => Token::new(TokenType::Minus, c),
             ':' => Token::new(TokenType::Colon, c),
-            _ => panic!("{} is not register token char", c),
+            _ => Token::new(TokenType::Ident, c),
         }
     }
     pub fn from_ident(keywords: &KeywordsToTokenType, ident: &str) -> Self {
@@ -43,6 +46,7 @@ impl Token {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
+    Comment,
     Increment,
     Add,
     Sub,
@@ -83,6 +87,7 @@ pub enum TokenType {
 #[derive(Debug)]
 pub struct KeywordsToTokenType {
     inner: HashMap<&'static str, TokenType>,
+    comment_ident: String,
 }
 
 impl KeywordsToTokenType {
@@ -95,7 +100,20 @@ impl KeywordsToTokenType {
         inner.insert("else", TokenType::Else);
         inner.insert("true", TokenType::True);
         inner.insert("false", TokenType::False);
-        Self { inner }
+        Self {
+            inner,
+            comment_ident: "//".to_string(),
+        }
+    }
+    pub fn set_comment_ident(&mut self, comment_ident: impl Into<String>) {
+        let comment_ident = comment_ident.into();
+        self.comment_ident = comment_ident;
+    }
+    pub fn contain_comment_ident(&mut self, ch: char) -> bool {
+        self.comment_ident.contains(ch)
+    }
+    pub fn get_comment_ident(&self) -> &str {
+        &self.comment_ident
     }
     pub fn get(&self, word: &str) -> Option<TokenType> {
         self.inner.get(word).copied()
