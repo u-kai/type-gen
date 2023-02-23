@@ -46,49 +46,42 @@ impl<'a> Lexer<'a> {
                 token
             }
             '!' => {
-                if let Some(()) = self.read_char() {
-                    if self.focus == '=' {
-                        self.set_next_char();
-                        self.set_next_char();
-                        return Token::new(TokenType::NotEq, "!=");
-                    }
-                };
-                let token = Token::from_token_char('!');
                 self.set_next_char();
-                token
+                if self.focus == '=' {
+                    self.set_next_char();
+                    return Token::new(TokenType::NotEq, "!=");
+                }
+                Token::from_token_char('!')
             }
             '=' => {
-                if let Some(()) = self.read_char() {
-                    if self.focus == '=' {
-                        self.set_next_char();
-                        return Token::new(TokenType::Eq, "==");
-                    }
-                };
+                self.set_next_char();
+                if self.focus == '=' {
+                    self.set_next_char();
+                    return Token::new(TokenType::Eq, "==");
+                }
                 Token::from_token_char('=')
             }
             '+' => {
-                if let Some(()) = self.read_char() {
-                    if self.focus == '=' {
-                        self.set_next_char();
-                        return Token::new(TokenType::Add, "+=");
-                    }
-                    if self.focus == '+' {
-                        self.set_next_char();
-                        return Token::new(TokenType::Increment, "++");
-                    }
+                self.set_next_char();
+                if self.focus == '=' {
+                    self.set_next_char();
+                    return Token::new(TokenType::Add, "+=");
+                }
+                if self.focus == '+' {
+                    self.set_next_char();
+                    return Token::new(TokenType::Increment, "++");
                 }
                 Token::from_token_char('+')
             }
             '-' => {
-                if let Some(()) = self.read_char() {
-                    if self.focus == '=' {
-                        self.set_next_char();
-                        return Token::new(TokenType::Sub, "-=");
-                    }
-                    if self.focus == '-' {
-                        self.set_next_char();
-                        return Token::new(TokenType::Decrement, "--");
-                    }
+                self.set_next_char();
+                if self.focus == '=' {
+                    self.set_next_char();
+                    return Token::new(TokenType::Sub, "-=");
+                }
+                if self.focus == '-' {
+                    self.set_next_char();
+                    return Token::new(TokenType::Decrement, "--");
                 }
                 Token::from_token_char('-')
             }
@@ -241,9 +234,10 @@ mod tests {
            return false; 
         }
         10 == 10;
-        10 != 9;
+        10 !=9;
         *5;
         /5;
+        !
         "#;
 
         let mut sut = Lexer::new(input, KeywordsToTokenType::new());
@@ -322,6 +316,7 @@ mod tests {
             Token::new(TokenType::Slash, "/"),
             Token::new(TokenType::NumberLiteral, "5"),
             Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Bang, "!"),
             Token::new(TokenType::Eof, ""),
         ];
         for (i, t) in tobe.into_iter().enumerate() {
