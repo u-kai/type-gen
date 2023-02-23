@@ -19,9 +19,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn next_token(&mut self) -> Option<Token> {
+    pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
-        let token = match self.focus {
+        match self.focus {
             '/' | '*' | '<' | '>' | ',' | ';' | '(' | ')' | '{' | '}' | ':' => {
                 let token = Token::from_token_char(self.focus);
                 self.set_next_char();
@@ -32,7 +32,7 @@ impl<'a> Lexer<'a> {
                     if self.focus == '=' {
                         self.set_next_char();
                         self.set_next_char();
-                        return Some(Token::new(TokenType::NotEq, "!="));
+                        return Token::new(TokenType::NotEq, "!=");
                     }
                 };
                 let token = Token::from_token_char('!');
@@ -43,56 +43,52 @@ impl<'a> Lexer<'a> {
                 if let Some(()) = self.read_char() {
                     if self.focus == '=' {
                         self.set_next_char();
-                        return Some(Token::new(TokenType::Eq, "=="));
+                        return Token::new(TokenType::Eq, "==");
                     }
                 };
-                let token = Token::from_token_char('=');
-                token
+                Token::from_token_char('=')
             }
             '+' => {
                 if let Some(()) = self.read_char() {
                     if self.focus == '=' {
                         self.set_next_char();
-                        return Some(Token::new(TokenType::Add, "+="));
+                        return Token::new(TokenType::Add, "+=");
                     }
                     if self.focus == '+' {
                         self.set_next_char();
-                        return Some(Token::new(TokenType::Increment, "++"));
+                        return Token::new(TokenType::Increment, "++");
                     }
                 }
-                let token = Token::from_token_char('+');
-                token
+                Token::from_token_char('+')
             }
             '-' => {
                 if let Some(()) = self.read_char() {
                     if self.focus == '=' {
                         self.set_next_char();
-                        return Some(Token::new(TokenType::Sub, "-="));
+                        return Token::new(TokenType::Sub, "-=");
                     }
                     if self.focus == '-' {
                         self.set_next_char();
-                        return Some(Token::new(TokenType::Decrement, "--"));
+                        return Token::new(TokenType::Decrement, "--");
                     }
                 }
-                let token = Token::from_token_char('-');
-                token
+                Token::from_token_char('-')
             }
             _ => {
                 if Self::is_letter(self.focus) {
                     let literal = self.read_identify();
                     if let Some(token_type) = self.keywords.get(&literal) {
-                        return Some(Token::new(token_type, literal));
+                        return Token::new(token_type, literal);
                     }
-                    return Some(Token::new(TokenType::Ident, literal));
+                    return Token::new(TokenType::Ident, literal);
                 }
                 if Self::is_digit(self.focus) {
                     let literal = self.read_number();
-                    return Some(Token::new(TokenType::NumberLiteral, literal));
+                    return Token::new(TokenType::NumberLiteral, literal);
                 }
                 Token::new(TokenType::Eof, "")
             }
-        };
-        Some(token)
+        }
     }
     fn set_next_char(&mut self) {
         if let Some(()) = self.read_char() {
@@ -156,32 +152,14 @@ mod tests {
 
         let mut sut = Lexer::new(input, keywords);
 
-        assert_eq!(
-            sut.next_token().unwrap(),
-            Token::new(TokenType::Struct, "struct")
-        );
-        assert_eq!(
-            sut.next_token().unwrap(),
-            Token::new(TokenType::Ident, "Test")
-        );
-        assert_eq!(
-            sut.next_token().unwrap(),
-            Token::new(TokenType::LBracket, "{")
-        );
-        assert_eq!(
-            sut.next_token().unwrap(),
-            Token::new(TokenType::Ident, "id")
-        );
-        assert_eq!(sut.next_token().unwrap(), Token::new(TokenType::Colon, ":"));
-        assert_eq!(
-            sut.next_token().unwrap(),
-            Token::new(TokenType::Ident, "usize")
-        );
-        assert_eq!(
-            sut.next_token().unwrap(),
-            Token::new(TokenType::RBracket, "}")
-        );
-        assert_eq!(sut.next_token().unwrap(), Token::new(TokenType::Eof, ""));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Struct, "struct"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Ident, "Test"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::LBracket, "{"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Ident, "id"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Colon, ":"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Ident, "usize"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::RBracket, "}"));
+        assert_eq!(sut.next_token(), Token::new(TokenType::Eof, ""));
     }
     #[test]
     fn 基本的な構文に対してtokenの配列を生成することができる() {
@@ -285,7 +263,7 @@ mod tests {
         for (i, t) in tobe.into_iter().enumerate() {
             let token = sut.next_token();
             println!("i:{}", i);
-            assert_eq!(t, token.unwrap());
+            assert_eq!(token, t);
         }
     }
 }
