@@ -20,31 +20,29 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn next_token(&mut self) -> Option<Token> {
-        println!("b_c:{}", self.focus);
         self.skip_whitespace();
-        println!("a_c:{}", self.focus);
         let token = match self.focus {
-            '/' | '*' | '<' | '>' | ',' | ';' | '(' | ')' | '{' | '}' => {
+            '/' | '*' | '<' | '>' | ',' | ';' | '(' | ')' | '{' | '}' | ':' => {
                 let token = Token::from_token_char(self.focus);
-                self.read_char();
+                self.set_next_char();
                 token
             }
             '!' => {
                 if let Some(()) = self.read_char() {
                     if self.focus == '=' {
-                        self.read_char().unwrap();
-                        self.read_char().unwrap();
+                        self.set_next_char();
+                        self.set_next_char();
                         return Some(Token::new(TokenType::NotEq, "!="));
                     }
                 };
                 let token = Token::from_token_char('!');
-                self.read_char();
+                self.set_next_char();
                 token
             }
             '=' => {
                 if let Some(()) = self.read_char() {
                     if self.focus == '=' {
-                        self.read_char().unwrap();
+                        self.set_next_char();
                         return Some(Token::new(TokenType::Eq, "=="));
                     }
                 };
@@ -54,27 +52,25 @@ impl<'a> Lexer<'a> {
             '+' => {
                 if let Some(()) = self.read_char() {
                     if self.focus == '=' {
-                        self.read_char().unwrap();
+                        self.set_next_char();
                         return Some(Token::new(TokenType::Add, "+="));
                     }
                     if self.focus == '+' {
-                        self.read_char().unwrap();
+                        self.set_next_char();
                         return Some(Token::new(TokenType::Increment, "++"));
                     }
                 }
-                println!("a_+: {}", self.focus);
                 let token = Token::from_token_char('+');
-                println!("b_+: {}", self.focus);
                 token
             }
             '-' => {
                 if let Some(()) = self.read_char() {
                     if self.focus == '=' {
-                        self.read_char().unwrap();
+                        self.set_next_char();
                         return Some(Token::new(TokenType::Sub, "-="));
                     }
                     if self.focus == '-' {
-                        self.read_char().unwrap();
+                        self.set_next_char();
                         return Some(Token::new(TokenType::Decrement, "--"));
                     }
                 }
@@ -94,10 +90,15 @@ impl<'a> Lexer<'a> {
                     return Some(Token::new(TokenType::NumberLiteral, literal));
                 }
                 Token::new(TokenType::Eof, "")
-                //Token::new(TokenType::Let,"let")
             }
         };
         Some(token)
+    }
+    fn set_next_char(&mut self) {
+        if let Some(()) = self.read_char() {
+            return;
+        }
+        self.focus = ' ';
     }
     fn read_char(&mut self) -> Option<()> {
         if let Some(c) = self.input.next() {
@@ -122,14 +123,7 @@ impl<'a> Lexer<'a> {
             result.push(self.focus);
             self.read_char().unwrap();
         }
-        // for c in self.input.by_ref(){
-
-        // }
-        // self.input.
         result
-    }
-    fn peek_char(&mut self) -> Option<char> {
-        self.input.by_ref().peekable().peek().cloned()
     }
     fn read_number(&mut self) -> String {
         let mut result = String::new();
@@ -150,21 +144,45 @@ impl<'a> Lexer<'a> {
 mod tests {
     use super::*;
     use crate::token::{Token, TokenType};
+
     #[test]
-    fn white_skipが動作するか確認() {
-        let input = "hello world";
-        let mut sut = Lexer::new(input, KeywordsToTokenType::new());
-        sut.skip_whitespace();
+    fn keywordsにstructを追加することでtokenの配列を生成することができる() {
+        let mut keywords = KeywordsToTokenType::new();
+        keywords.add_struct_keyword();
 
-        let mut v = vec!["a", "b", "c"].into_iter();
-        let a = v.by_ref().peekable().peek();
-        assert_eq!(v.next(), Some("a"));
-        // let h = sut.input.next();
-        assert_eq!(sut.focus, 'h');
-        let p = sut.peek_char();
-        assert_eq!(p.unwrap(), 'e');
+        let input = r#"struct Test {
+            id:usize
+        }"#;
+
+        let mut sut = Lexer::new(input, keywords);
+
+        assert_eq!(
+            sut.next_token().unwrap(),
+            Token::new(TokenType::Struct, "struct")
+        );
+        assert_eq!(
+            sut.next_token().unwrap(),
+            Token::new(TokenType::Ident, "Test")
+        );
+        assert_eq!(
+            sut.next_token().unwrap(),
+            Token::new(TokenType::LBracket, "{")
+        );
+        assert_eq!(
+            sut.next_token().unwrap(),
+            Token::new(TokenType::Ident, "id")
+        );
+        assert_eq!(sut.next_token().unwrap(), Token::new(TokenType::Colon, ":"));
+        assert_eq!(
+            sut.next_token().unwrap(),
+            Token::new(TokenType::Ident, "usize")
+        );
+        assert_eq!(
+            sut.next_token().unwrap(),
+            Token::new(TokenType::RBracket, "}")
+        );
+        assert_eq!(sut.next_token().unwrap(), Token::new(TokenType::Eof, ""));
     }
-
     #[test]
     fn 基本的な構文に対してtokenの配列を生成することができる() {
         let input = r#"
@@ -182,6 +200,8 @@ mod tests {
         }
         10 == 10;
         10 != 9;
+        *5;
+        /5;
         "#;
 
         let mut sut = Lexer::new(input, KeywordsToTokenType::new());
@@ -253,6 +273,12 @@ mod tests {
             Token::new(TokenType::NumberLiteral, "10"),
             Token::new(TokenType::NotEq, "!="),
             Token::new(TokenType::NumberLiteral, "9"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Asterisk, "*"),
+            Token::new(TokenType::NumberLiteral, "5"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Slash, "/"),
+            Token::new(TokenType::NumberLiteral, "5"),
             Token::new(TokenType::Semicolon, ";"),
             Token::new(TokenType::Eof, ""),
         ];

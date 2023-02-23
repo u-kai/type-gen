@@ -28,6 +28,7 @@ impl Token {
             '!' => Token::new(TokenType::Bang, c),
             '+' => Token::new(TokenType::Plus, c),
             '-' => Token::new(TokenType::Minus, c),
+            ':' => Token::new(TokenType::Colon, c),
             _ => panic!("{} is not register token char", c),
         }
     }
@@ -45,6 +46,7 @@ pub enum TokenType {
     Increment,
     Add,
     Sub,
+    Colon,
     Decrement,
     Illegal,
     Assign,
