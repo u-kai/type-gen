@@ -33,30 +33,36 @@ impl<'a> Parser<'a> {
     }
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.cur_token.r#type {
-            TokenType::Let => self.parse_let_statement(),
+            TokenType::Let => Some(self.parse_let_statement()),
             _ => None,
         }
     }
-    fn parse_let_statement(&mut self) -> Option<Statement> {
+    fn parse_let_statement(&mut self) -> Statement {
         let stmt_token = self.cur_token.clone();
         if !self.expect_peek(TokenType::Ident) {
-            return None;
+            panic!(
+                "let statement is expect ident. but got = {:#?}",
+                self.cur_token
+            )
         }
         let name = Identifier {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
         };
         if !self.expect_peek(TokenType::Assign) {
-            return None;
+            panic!(
+                "let statement is expect assign. but got = {:#?}",
+                self.cur_token
+            )
         }
         while self.cur_token_is(TokenType::Semicolon) {
             self.set_next_token();
         }
-        Some(Statement::LetStatement(LetStatement {
+        Statement::LetStatement(LetStatement {
             token: stmt_token,
             name,
             expression: crate::ast::Expression::L,
-        }))
+        })
     }
     fn expect_peek(&mut self, token_type: TokenType) -> bool {
         if self.peek_token_is(token_type) {

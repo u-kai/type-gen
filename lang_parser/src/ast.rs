@@ -4,19 +4,11 @@ pub struct Program {
     pub(super) statements: Vec<Statement>,
 }
 
-//impl Program {
-//    pub fn new()
-//}
-
 pub trait Node {
     fn token_literal(&self) -> &str;
     fn string(&self) -> String;
 }
 
-#[derive(Debug)]
-pub enum Statement {
-    LetStatement(LetStatement),
-}
 #[derive(Debug)]
 pub enum Expression {
     L,
@@ -36,6 +28,11 @@ pub struct LetStatement {
     pub(super) name: Identifier,
     pub(super) expression: Expression,
 }
+#[derive(Debug)]
+pub struct ReturnStatement {
+    pub(super) token: Token,
+    pub(super) return_value: Expression,
+}
 
 #[derive(Debug)]
 pub struct Identifier {
@@ -43,6 +40,15 @@ pub struct Identifier {
     pub(super) value: String,
 }
 
+macro_rules! declare_statement {
+    ($($statement:ident),*) => {
+        #[derive(Debug)]
+        pub enum Statement {
+            $($statement($statement),)*
+        }
+    };
+}
+declare_statement!(LetStatement, ReturnStatement);
 macro_rules! impl_node_trait_for_statement {
     ($($statement:ident),*) => {
        impl Node for Statement {
@@ -81,8 +87,8 @@ macro_rules! impl_simple_node_trait {
     };
 }
 
-impl_node_trait_for_statement!(LetStatement);
-impl_simple_node_trait!(Identifier, LetStatement);
+impl_node_trait_for_statement!(LetStatement, ReturnStatement);
+impl_simple_node_trait!(Identifier, LetStatement, ReturnStatement);
 
 #[cfg(test)]
 mod tests {
