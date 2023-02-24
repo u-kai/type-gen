@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Identifier, LetStatement, Program, Statement},
+    ast::{Identifier, LetStatement, Program, ReturnStatement, Statement},
     lexer::Lexer,
     token::{Token, TokenType},
 };
@@ -34,8 +34,22 @@ impl<'a> Parser<'a> {
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.cur_token.r#type {
             TokenType::Let => Some(self.parse_let_statement()),
+            TokenType::Return => Some(self.parse_return_statement()),
             _ => None,
         }
+    }
+    fn parse_return_statement(&mut self) -> Statement {
+        let stmt_token = self.cur_token.clone();
+        while !self.cur_token_is(TokenType::Semicolon) {
+            self.set_next_token();
+        }
+        Statement::ReturnStatement(ReturnStatement {
+            token: stmt_token,
+            return_value: crate::ast::Expression::Identifier(Identifier {
+                token: Token::eof(),
+                value: String::new(),
+            }),
+        })
     }
     fn parse_let_statement(&mut self) -> Statement {
         let stmt_token = self.cur_token.clone();
@@ -61,7 +75,10 @@ impl<'a> Parser<'a> {
         Statement::LetStatement(LetStatement {
             token: stmt_token,
             name,
-            expression: crate::ast::Expression::L,
+            value: crate::ast::Expression::Identifier(Identifier {
+                token: Token::eof(),
+                value: "".to_string(),
+            }),
         })
     }
     fn expect_peek(&mut self, token_type: TokenType) -> bool {
@@ -94,6 +111,34 @@ mod tests {
     use super::Parser;
 
     #[test]
+    fn test_return_statements() {
+        let input = r#"
+            return 5;
+            return 10;
+            return 838383;
+        "#;
+        let lexer = Lexer::default(input);
+
+        let mut sut = Parser::new(lexer);
+
+        let program = sut.parse_program();
+        let mut stmt = program.statements.into_iter();
+        let stmt1 = stmt.next().unwrap();
+        let stmt2 = stmt.next().unwrap();
+        let stmt3 = stmt.next().unwrap();
+        assert_return_statement(stmt1, "5");
+        assert_return_statement(stmt2, "10");
+        assert_return_statement(stmt3, "838383");
+        fn assert_return_statement(stmt: Statement, value: &str) {
+            match stmt {
+                Statement::ReturnStatement(s) => {
+                    assert_eq!(s.token_literal(), "return");
+                }
+                _ => panic!("not ReturnStatement, got={:#?}", stmt),
+            }
+        }
+    }
+    #[test]
     fn test_let_statements() {
         let input = r#"
             let x = 5;
@@ -116,7 +161,7 @@ mod tests {
         fn assert_let_statement(stmt: Statement, name: &str) {
             match stmt {
                 Statement::LetStatement(s) => {
-                    assert_eq!(s.string(), "let");
+                    assert_eq!(s.token_literal(), "let");
                     assert_eq!(s.name.value, name);
                 }
                 _ => panic!("not LetStatement, got={:#?}", stmt),

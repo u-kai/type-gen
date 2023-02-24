@@ -3,6 +3,13 @@ use crate::token::Token;
 pub struct Program {
     pub(super) statements: Vec<Statement>,
 }
+impl Program {
+    pub fn string(&self) -> String {
+        self.statements.iter().fold(String::new(), |acc, stmt| {
+            format!("{}{}", acc, stmt.string())
+        })
+    }
+}
 
 pub trait Node {
     fn token_literal(&self) -> &str;
@@ -10,28 +17,44 @@ pub trait Node {
 }
 
 #[derive(Debug)]
-pub enum Expression {
-    L,
-}
-impl Node for Expression {
-    fn string(&self) -> String {
-        String::new()
-    }
-    fn token_literal(&self) -> &str {
-        ""
-    }
-}
-
-#[derive(Debug)]
 pub struct LetStatement {
     pub(super) token: Token,
     pub(super) name: Identifier,
-    pub(super) expression: Expression,
+    pub(super) value: Expression,
+}
+impl LetStatement {
+    fn to_string(&self) -> String {
+        format!(
+            "{} {} = {};",
+            self.token_literal(),
+            self.name.string(),
+            self.value.string()
+        )
+    }
 }
 #[derive(Debug)]
 pub struct ReturnStatement {
     pub(super) token: Token,
     pub(super) return_value: Expression,
+}
+impl ReturnStatement {
+    fn to_string(&self) -> String {
+        format!("{} {};", self.token_literal(), self.return_value.string())
+    }
+}
+#[derive(Debug)]
+pub struct ExpressionStatement {
+    pub(super) token: Token,
+    pub(super) expression: Option<Expression>,
+}
+impl ExpressionStatement {
+    fn to_string(&self) -> String {
+        if let Some(ex) = self.expression.as_ref() {
+            format!("{}", ex.string())
+        } else {
+            String::new()
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -39,7 +62,20 @@ pub struct Identifier {
     pub(super) token: Token,
     pub(super) value: String,
 }
+impl Identifier {
+    fn to_string(&self) -> String {
+        self.value.clone()
+    }
+}
 
+macro_rules! declare_expression {
+    ($($expression:ident),*) => {
+        #[derive(Debug)]
+        pub enum Expression {
+            $($expression($expression),)*
+        }
+    };
+}
 macro_rules! declare_statement {
     ($($statement:ident),*) => {
         #[derive(Debug)]
@@ -48,7 +84,29 @@ macro_rules! declare_statement {
         }
     };
 }
-declare_statement!(LetStatement, ReturnStatement);
+declare_expression!(Identifier);
+macro_rules! impl_node_trait_for_expression {
+    ($($expression:ident),*) => {
+       impl Node for Expression {
+            fn string(&self)->String {
+                match self {
+                    $(
+                        Self::$expression(s)=>s.string(),
+                    )*
+                }
+            }
+            fn token_literal(&self)->&str {
+                match self {
+                    $(
+                        Self::$expression(s)=>s.token_literal(),
+                    )*
+                }
+            }
+       }
+    };
+}
+impl_node_trait_for_expression!(Identifier);
+declare_statement!(LetStatement, ReturnStatement, ExpressionStatement);
 macro_rules! impl_node_trait_for_statement {
     ($($statement:ident),*) => {
        impl Node for Statement {
@@ -74,7 +132,7 @@ macro_rules! impl_simple_node_trait {
         $(
             impl Node for $node {
                 fn string(&self) -> String {
-                    self.token.literal.clone()
+                    self.to_string()
                 }
                 fn token_literal(&self) -> &str {
                     &self.token.literal
@@ -87,14 +145,37 @@ macro_rules! impl_simple_node_trait {
     };
 }
 
-impl_node_trait_for_statement!(LetStatement, ReturnStatement);
-impl_simple_node_trait!(Identifier, LetStatement, ReturnStatement);
+impl_node_trait_for_statement!(LetStatement, ReturnStatement, ExpressionStatement);
+impl_simple_node_trait!(
+    Identifier,
+    LetStatement,
+    ReturnStatement,
+    ExpressionStatement
+);
 
 #[cfg(test)]
 mod tests {
     use crate::token::KeywordsToTokenType;
 
     use super::*;
+    #[test]
+    fn statementsは文字列出力できる() {
+        let keyword = KeywordsToTokenType::new();
+        let program = Program {
+            statements: vec![Statement::LetStatement(LetStatement {
+                token: Token::from_ident(&keyword, "let"),
+                name: Identifier {
+                    token: Token::from_ident(&keyword, "myVar"),
+                    value: "myVar".to_string(),
+                },
+                value: Expression::Identifier(Identifier {
+                    token: Token::from_ident(&keyword, "anotherVar"),
+                    value: "anotherVar".to_string(),
+                }),
+            })],
+        };
+        assert_eq!(program.string(), "let myVar = anotherVar;")
+    }
     #[test]
     fn statementsのnode_traitの実装はマクロで簡潔にできる() {
         let key = KeywordsToTokenType::new();
@@ -105,9 +186,12 @@ mod tests {
         let l = Statement::LetStatement(LetStatement {
             token: Token::from_ident(&key, "let"),
             name: name,
-            expression: Expression::L,
+            value: Expression::Identifier(Identifier {
+                token: Token::eof(),
+                value: "".to_string(),
+            }),
         });
-        assert_eq!(l.string(), "let");
+        assert_eq!(l.token_literal(), "let");
     }
     #[test]
     fn 簡単なnode_traitの実装はマクロで簡潔にできる() {
@@ -116,6 +200,5 @@ mod tests {
             value: "EOF".to_string(),
         };
         assert_eq!(l.token_literal(), "");
-        assert_eq!(l.string(), "");
     }
 }
