@@ -1,105 +1,54 @@
-pub enum Surround {
-    Parentheses,
-    SquareBracket,
-    CurlyBracket,
-    AngleBracket,
-    DoubleQuote,
-    SingleQuote,
-}
-impl From<char> for Surround {
-    fn from(c: char) -> Self {
-        match c {
-            '{' | '}' => Self::CurlyBracket,
-            '"' => Self::DoubleQuote,
-            '\'' => Self::SingleQuote,
-            '<' | '>' => Self::AngleBracket,
-            '(' | ')' => Self::Parentheses,
-            '[' | ']' => Self::SquareBracket,
-            _ => panic!("not consider {}", c),
-        }
-    }
-}
-impl Surround {
-    pub fn read_surrounded<'a>(&self, source: &'a str) -> &'a str {
-        let mut acc_start_num = 0;
-        let mut start_index = 0;
-        let mut end_index = 0;
+use crate::{ast::Program, lexer::Lexer, token::Token};
 
-        for (i, c) in source.chars().enumerate() {
-            if c == self.start() {
-                if acc_start_num == 0 {
-                    start_index += i + 1;
-                };
-                acc_start_num += 1;
-            }
-            if c == self.end() {
-                acc_start_num -= 1;
-                if acc_start_num == 0 {
-                    end_index = i;
-                    break;
-                }
-            }
-        }
-        &source[start_index..end_index]
-    }
-    pub fn start(&self) -> char {
-        match self {
-            Surround::Parentheses => '(',
-            Surround::CurlyBracket => '{',
-            Surround::DoubleQuote => '"',
-            Surround::SingleQuote => '\'',
-            Surround::SquareBracket => '[',
-            Surround::AngleBracket => '<',
-        }
-    }
-    pub fn end(&self) -> char {
-        match self {
-            Surround::Parentheses => ')',
-            Surround::CurlyBracket => '}',
-            Surround::DoubleQuote => '"',
-            Surround::SingleQuote => '\'',
-            Surround::SquareBracket => ']',
-            Surround::AngleBracket => '>',
-        }
-    }
+pub struct Parser<'a> {
+    l: Lexer<'a>,
+    cur_token: Token,
+    peek_token: Token,
 }
 
-pub fn read_after_match<'a>(source: &'a str, match_str: &str) -> &'a str {
-    if let Some(match_index) = source.find(match_str) {
-        &source[match_index..]
-    } else {
-        source
+impl<'a> Parser<'a> {
+    pub fn new(l: Lexer<'a>) -> Self {
+        let mut l = l;
+        let cur_token = l.next_token();
+        let peek_token = l.next_token();
+        Self {
+            l,
+            cur_token,
+            peek_token,
+        }
     }
-}
-
-pub fn skip_whitespace(source: &str) -> &str {
-    if let Some(index) = source.find(|c: char| !c.is_whitespace()) {
-        &source[index..]
-    } else {
-        source
+    pub fn parse_program(&mut self) -> Program {
+        Program {
+            statements: Vec::new(),
+        }
+    }
+    fn set_next_token(&mut self) {
+        std::mem::swap(&mut self.peek_token, &mut self.cur_token);
+        self.peek_token = self.l.next_token();
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    #[cfg(test)]
+    use crate::lexer::Lexer;
+
+    use super::Parser;
+
     #[test]
-    fn 囲まれている範囲の文字列を読み取る() {
-        let source = "{hello world}";
+    fn test_let_statements() {
+        let input = r#"
+            let x = 5;
+            let y = 10;
+            let foobar = 838383;
+        "#;
+        let lexer = Lexer::default(input);
 
-        let sut = Surround::CurlyBracket;
+        let mut sut = Parser::new(lexer);
 
-        let result = sut.read_surrounded(source);
-        assert_eq!("hello world", result);
-    }
-    #[test]
-    fn 空白以外の文字まで読み飛ばす() {
-        let tobe = r#"let data = "data";"#;
-        let source = format!(r#"      {}"#, tobe);
+        let program = sut.parse_program();
 
-        let result = skip_whitespace(&source);
-
-        assert_eq!(tobe, result);
+        for s in program.statements {
+            //assert_eq!(s)
+        }
     }
 }

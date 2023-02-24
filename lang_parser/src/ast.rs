@@ -1,7 +1,7 @@
 use crate::token::Token;
 #[derive(Debug)]
 pub struct Program {
-    statements: Vec<Statement>,
+    pub(super) statements: Vec<Statement>,
 }
 
 //impl Program {
@@ -15,18 +15,12 @@ pub trait Node {
 
 #[derive(Debug)]
 pub enum Statement {
-    Let(LetStatement),
-}
-impl Node for Statement {
-    fn string(&self) -> String {
-        String::new()
-    }
-    fn token_literal(&self) -> &str {
-        ""
-    }
+    LetStatement(LetStatement),
 }
 #[derive(Debug)]
-pub enum Expression {}
+pub enum Expression {
+    L,
+}
 impl Node for Expression {
     fn string(&self) -> String {
         String::new()
@@ -49,6 +43,26 @@ pub struct Identifier {
     value: String,
 }
 
+macro_rules! impl_node_trait_for_statement {
+    ($($statement:ident),*) => {
+       impl Node for Statement {
+            fn string(&self)->String {
+                match self {
+                    $(
+                        Self::$statement(s)=>s.string(),
+                    )*
+                }
+            }
+            fn token_literal(&self)->&str {
+                match self {
+                    $(
+                        Self::$statement(s)=>s.token_literal(),
+                    )*
+                }
+            }
+       }
+    };
+}
 macro_rules! impl_simple_node_trait {
     ($($node:ident),*) => {
         $(
@@ -67,11 +81,28 @@ macro_rules! impl_simple_node_trait {
     };
 }
 
+impl_node_trait_for_statement!(LetStatement);
 impl_simple_node_trait!(Identifier, LetStatement);
 
 #[cfg(test)]
 mod tests {
+    use crate::token::KeywordsToTokenType;
+
     use super::*;
+    #[test]
+    fn statementsのnode_traitの実装はマクロで簡潔にできる() {
+        let key = KeywordsToTokenType::new();
+        let name = Identifier {
+            token: Token::from_ident(&key, "name"),
+            value: "3".to_string(),
+        };
+        let l = Statement::LetStatement(LetStatement {
+            token: Token::from_ident(&key, "let"),
+            name: name,
+            expression: Expression::L,
+        });
+        assert_eq!(l.string(), "let");
+    }
     #[test]
     fn 簡単なnode_traitの実装はマクロで簡潔にできる() {
         let l = Identifier {

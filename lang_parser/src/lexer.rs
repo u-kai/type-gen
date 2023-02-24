@@ -18,6 +18,14 @@ impl<'a> Lexer<'a> {
             focus: Self::EOF_CHAR,
         }
     }
+    pub fn default(input: &'a str) -> Self {
+        let chars = input.chars();
+        Self {
+            input: chars,
+            keywords: KeywordsToTokenType::new(),
+            focus: Self::EOF_CHAR,
+        }
+    }
     pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
         match self.focus {
