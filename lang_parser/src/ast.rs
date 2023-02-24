@@ -32,15 +32,15 @@ impl Node for Expression {
 
 #[derive(Debug)]
 pub struct LetStatement {
-    token: Token,
-    name: Identifier,
-    expression: Expression,
+    pub(super) token: Token,
+    pub(super) name: Identifier,
+    pub(super) expression: Expression,
 }
 
 #[derive(Debug)]
 pub struct Identifier {
-    token: Token,
-    value: String,
+    pub(super) token: Token,
+    pub(super) value: String,
 }
 
 macro_rules! impl_node_trait_for_statement {
