@@ -263,6 +263,44 @@ mod tests {
     use super::Parser;
 
     #[test]
+    fn test_parsing_infix_expressions_string() {
+        let input = r#"
+            -a * b;
+            !-a;
+            a + b + c;
+            a + b - c;
+            a * b * c;
+            a * b / c;
+            a + b / c;
+            a > b == c < d;
+        "#;
+
+        let lexer = Lexer::default(input);
+        let mut sut = Parser::new(lexer);
+
+        let statements = sut.parse_program().statements;
+
+        let opes = vec![
+            "((-a) * b)",
+            "(!(-a))",
+            "((a + b) + c)",
+            "((a + b) - c)",
+            "((a * b) * c)",
+            "((a * b) / c)",
+            "(a + (b / c))",
+            "((a > b) == (c < d))",
+        ];
+
+        for (i, s) in statements.into_iter().enumerate() {
+            match s {
+                Statement::ExpressionStatement(ex) => {
+                    assert_eq!(ex.string(), opes[i]);
+                }
+                _ => panic!("statement is not expression statement = {:#?}", s),
+            }
+        }
+    }
+    #[test]
     fn test_parsing_infix_expressions() {
         let input = r#"
             6+5;
