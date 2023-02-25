@@ -89,6 +89,25 @@ impl PrefixExpression {
     }
 }
 
+//<left expression> <operator> <right expression>
+#[derive(Debug)]
+pub struct InfixExpression {
+    pub(super) token: Token,
+    pub(super) operator: String,
+    pub(super) left: Box<Expression>,
+    pub(super) right: Box<Expression>,
+}
+impl InfixExpression {
+    fn to_string(&self) -> String {
+        format!(
+            "({} {} {})",
+            self.left.string(),
+            self.operator,
+            self.right.string()
+        )
+    }
+}
+
 macro_rules! declare_expression {
     ($($expression:ident),*) => {
         #[derive(Debug)]
@@ -162,12 +181,23 @@ macro_rules! impl_simple_node_trait {
        impl_simple_node_trait!($($node),*)
     };
 }
-declare_expression!(Identifier, IntegerLiteral, PrefixExpression);
-impl_node_trait_for_expression!(Identifier, IntegerLiteral, PrefixExpression);
+declare_expression!(
+    Identifier,
+    IntegerLiteral,
+    PrefixExpression,
+    InfixExpression
+);
+impl_node_trait_for_expression!(
+    Identifier,
+    IntegerLiteral,
+    PrefixExpression,
+    InfixExpression
+);
 declare_statement!(LetStatement, ReturnStatement, ExpressionStatement);
 impl_node_trait_for_statement!(LetStatement, ReturnStatement, ExpressionStatement);
 impl_simple_node_trait!(
     Identifier,
+    InfixExpression,
     PrefixExpression,
     IntegerLiteral,
     LetStatement,
