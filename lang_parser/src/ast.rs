@@ -58,6 +58,16 @@ impl ExpressionStatement {
 }
 
 #[derive(Debug)]
+pub struct IntegerLiteral {
+    pub(super) token: Token,
+    pub(super) value: isize,
+}
+impl IntegerLiteral {
+    fn to_string(&self) -> String {
+        self.token.literal.clone()
+    }
+}
+#[derive(Debug)]
 pub struct Identifier {
     pub(super) token: Token,
     pub(super) value: String,
@@ -65,6 +75,17 @@ pub struct Identifier {
 impl Identifier {
     fn to_string(&self) -> String {
         self.value.clone()
+    }
+}
+#[derive(Debug)]
+pub struct PrefixExpression {
+    pub(super) token: Token,
+    pub(super) operator: String,
+    pub(super) right: Box<Expression>,
+}
+impl PrefixExpression {
+    fn to_string(&self) -> String {
+        format!("({}{})", self.operator, self.right.string())
     }
 }
 
@@ -84,7 +105,6 @@ macro_rules! declare_statement {
         }
     };
 }
-declare_expression!(Identifier);
 macro_rules! impl_node_trait_for_expression {
     ($($expression:ident),*) => {
        impl Node for Expression {
@@ -105,8 +125,6 @@ macro_rules! impl_node_trait_for_expression {
        }
     };
 }
-impl_node_trait_for_expression!(Identifier);
-declare_statement!(LetStatement, ReturnStatement, ExpressionStatement);
 macro_rules! impl_node_trait_for_statement {
     ($($statement:ident),*) => {
        impl Node for Statement {
@@ -144,10 +162,14 @@ macro_rules! impl_simple_node_trait {
        impl_simple_node_trait!($($node),*)
     };
 }
-
+declare_expression!(Identifier, IntegerLiteral, PrefixExpression);
+impl_node_trait_for_expression!(Identifier, IntegerLiteral, PrefixExpression);
+declare_statement!(LetStatement, ReturnStatement, ExpressionStatement);
 impl_node_trait_for_statement!(LetStatement, ReturnStatement, ExpressionStatement);
 impl_simple_node_trait!(
     Identifier,
+    PrefixExpression,
+    IntegerLiteral,
     LetStatement,
     ReturnStatement,
     ExpressionStatement
