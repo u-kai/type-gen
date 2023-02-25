@@ -228,12 +228,9 @@ impl<'a> Parser<'a> {
     }
     // <expression>
     fn parse_boolean(&mut self) -> Expression {
-        let Ok(value) = self.cur_token.literal.parse::<bool>() else {
-            panic!("{} is not parsed boolean", &self.cur_token.literal)
-        };
         let bool = Boolean {
             token: self.cur_token.clone(),
-            value,
+            value: self.cur_token_is(TokenType::True),
         };
         Expression::Boolean(bool)
     }
@@ -274,6 +271,23 @@ mod tests {
 
     use super::Parser;
 
+    #[test]
+    fn test_parsing_bool_string() {
+        let input = r#"
+            3 > 5 == false
+        "#;
+
+        let lexer = Lexer::default(input);
+        let mut sut = Parser::new(lexer);
+        let statements = sut.parse_program().statements;
+        let tobes = vec!["((3 > 5) == false)"];
+        for (i, s) in statements.into_iter().enumerate() {
+            match s {
+                Statement::ExpressionStatement(ex) => assert_eq!(ex.string(), tobes[i]),
+                _ => panic!("statement got={:#?}", s),
+            }
+        }
+    }
     #[test]
     fn test_parsing_bool() {
         let input = r#"
