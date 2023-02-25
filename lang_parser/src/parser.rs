@@ -1,7 +1,7 @@
 use crate::{
     ast::{
-        Expression, ExpressionStatement, Identifier, InfixExpression, IntegerLiteral, LetStatement,
-        PrefixExpression, Program, ReturnStatement, Statement,
+        Boolean, Expression, ExpressionStatement, Identifier, InfixExpression, IntegerLiteral,
+        LetStatement, PrefixExpression, Program, ReturnStatement, Statement,
     },
     lexer::Lexer,
     token::{Token, TokenType},
@@ -28,6 +28,7 @@ impl<'a> PrefixParse for Parser<'a> {
                 Some(Expression::Identifier(ident))
             }
             TokenType::NumberLiteral => Some(self.parse_integer_literal()),
+            TokenType::True | TokenType::False => Some(self.parse_boolean()),
             TokenType::Bang | TokenType::Minus => Some(self.parse_prefix_expression()),
             _ => None,
         }
@@ -226,6 +227,17 @@ impl<'a> Parser<'a> {
         })
     }
     // <expression>
+    fn parse_boolean(&mut self) -> Expression {
+        let Ok(value) = self.cur_token.literal.parse::<bool>() else {
+            panic!("{} is not parsed boolean", &self.cur_token.literal)
+        };
+        let bool = Boolean {
+            token: self.cur_token.clone(),
+            value,
+        };
+        Expression::Boolean(bool)
+    }
+    // <expression>
     fn parse_integer_literal(&mut self) -> Expression {
         let Ok(value) = self.cur_token.literal.parse::<isize>() else {
             panic!("{} is not parsed isize", &self.cur_token.literal)
@@ -262,6 +274,30 @@ mod tests {
 
     use super::Parser;
 
+    #[test]
+    fn test_parsing_bool() {
+        let input = r#"
+            true;
+            false;
+        "#;
+
+        let lexer = Lexer::default(input);
+        let mut sut = Parser::new(lexer);
+        let statements = sut.parse_program().statements;
+        let tobes = vec![true, false];
+        for (i, s) in statements.into_iter().enumerate() {
+            match s {
+                Statement::ExpressionStatement(ex) => match ex.expression {
+                    Some(Expression::Boolean(bool)) => {
+                        assert_eq!(bool.string(), tobes[i].to_string());
+                        assert_eq!(bool.value, tobes[i])
+                    }
+                    _ => panic!("expression got = {:#?}", ex.expression),
+                },
+                _ => panic!("statement got={:#?}", s),
+            }
+        }
+    }
     #[test]
     fn test_parsing_infix_expressions_string() {
         let input = r#"

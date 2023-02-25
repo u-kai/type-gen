@@ -78,6 +78,16 @@ impl Identifier {
     }
 }
 #[derive(Debug)]
+pub struct Boolean {
+    pub(super) token: Token,
+    pub(super) value: bool,
+}
+impl Boolean {
+    fn to_string(&self) -> String {
+        self.value.to_string()
+    }
+}
+#[derive(Debug)]
 pub struct PrefixExpression {
     pub(super) token: Token,
     pub(super) operator: String,
@@ -185,18 +195,21 @@ declare_expression!(
     Identifier,
     IntegerLiteral,
     PrefixExpression,
-    InfixExpression
+    InfixExpression,
+    Boolean
 );
 impl_node_trait_for_expression!(
     Identifier,
     IntegerLiteral,
     PrefixExpression,
-    InfixExpression
+    InfixExpression,
+    Boolean
 );
 declare_statement!(LetStatement, ReturnStatement, ExpressionStatement);
 impl_node_trait_for_statement!(LetStatement, ReturnStatement, ExpressionStatement);
 impl_simple_node_trait!(
     Identifier,
+    Boolean,
     InfixExpression,
     PrefixExpression,
     IntegerLiteral,
