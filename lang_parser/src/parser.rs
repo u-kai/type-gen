@@ -132,8 +132,6 @@ impl<'a> Parser<'a> {
         match self.cur_token.r#type {
             TokenType::Let => Some(self.parse_let_statement()),
             TokenType::Return => Some(self.parse_return_statement()),
-            //TokenType::If => Some(self.parse_if_statement()),
-            //TokenType::Else => Some(self.parse_else_statement()),
             _ => Some(self.parse_expression_statement()),
         }
     }
@@ -282,16 +280,15 @@ impl<'a> Parser<'a> {
                 self.cur_token
             )
         }
-        while self.cur_token_is(TokenType::Semicolon) {
+        self.set_next_token();
+        let value = self.parse_expression(Precedence::Lowest).unwrap();
+        if self.peek_token_is(TokenType::Semicolon) {
             self.set_next_token();
         }
         Statement::LetStatement(LetStatement {
             token: stmt_token,
             name,
-            value: crate::ast::Expression::Identifier(Identifier {
-                token: self.cur_token.clone(),
-                value: self.cur_token.literal.clone(),
-            }),
+            value,
         })
     }
     fn expect_peek(&mut self, token_type: TokenType) -> bool {
@@ -769,13 +766,13 @@ mod tests {
         assert_let_statement(stmt2, "y");
         assert_let_statement(stmt3, "foobar");
         fn assert_let_statement(stmt: Statement, name: &str) {
-            //match stmt {
-            //Statement::LetStatement(s) => {
-            //assert_eq!(s.token_literal(), "let");
-            //assert_eq!(s.name.value, name);
-            //}
-            //_ => panic!("not LetStatement, got={:#?}", stmt),
-            //}
+            match stmt {
+                Statement::LetStatement(s) => {
+                    assert_eq!(s.token_literal(), "let");
+                    assert_eq!(s.name.value, name);
+                }
+                _ => panic!("not LetStatement, got={:#?}", stmt),
+            }
         }
     }
 }
