@@ -17,6 +17,18 @@ pub trait Node {
 }
 
 #[derive(Debug)]
+pub struct BlockStatement {
+    pub(super) token: Token,
+    pub(super) statements: Vec<Statement>,
+}
+impl BlockStatement {
+    fn to_string(&self) -> String {
+        self.statements
+            .iter()
+            .fold(String::new(), |acc, cur| format!("{}{}", acc, cur.string()))
+    }
+}
+#[derive(Debug)]
 pub struct LetStatement {
     pub(super) token: Token,
     pub(super) name: Identifier,
@@ -75,6 +87,29 @@ pub struct Identifier {
 impl Identifier {
     fn to_string(&self) -> String {
         self.value.clone()
+    }
+}
+// if (<condition>) {<consequence>} else {<alternative>}
+#[derive(Debug)]
+pub struct IfExpression {
+    pub(super) token: Token,
+    pub(super) condition: Box<Expression>,
+    pub(super) consequence: BlockStatement,
+    pub(super) alternative: Option<BlockStatement>,
+}
+impl IfExpression {
+    fn to_string(&self) -> String {
+        let alternative_string = if let Some(alt) = &self.alternative {
+            format!(" else {}", alt.string())
+        } else {
+            String::new()
+        };
+        format!(
+            "if {} {}{}",
+            self.condition.string(),
+            self.consequence.string(),
+            alternative_string
+        )
     }
 }
 #[derive(Debug)]
@@ -196,6 +231,7 @@ declare_expression!(
     IntegerLiteral,
     PrefixExpression,
     InfixExpression,
+    IfExpression,
     Boolean
 );
 impl_node_trait_for_expression!(
@@ -203,18 +239,31 @@ impl_node_trait_for_expression!(
     IntegerLiteral,
     PrefixExpression,
     InfixExpression,
+    IfExpression,
     Boolean
 );
-declare_statement!(LetStatement, ReturnStatement, ExpressionStatement);
-impl_node_trait_for_statement!(LetStatement, ReturnStatement, ExpressionStatement);
+declare_statement!(
+    LetStatement,
+    ReturnStatement,
+    ExpressionStatement,
+    BlockStatement
+);
+impl_node_trait_for_statement!(
+    LetStatement,
+    ReturnStatement,
+    ExpressionStatement,
+    BlockStatement
+);
 impl_simple_node_trait!(
     Identifier,
     Boolean,
+    IfExpression,
     InfixExpression,
     PrefixExpression,
     IntegerLiteral,
     LetStatement,
     ReturnStatement,
+    BlockStatement,
     ExpressionStatement
 );
 

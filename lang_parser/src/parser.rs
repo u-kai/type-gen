@@ -1,7 +1,8 @@
 use crate::{
     ast::{
-        Boolean, Expression, ExpressionStatement, Identifier, InfixExpression, IntegerLiteral,
-        LetStatement, PrefixExpression, Program, ReturnStatement, Statement,
+        BlockStatement, Boolean, Expression, ExpressionStatement, Identifier, IfExpression,
+        InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement,
+        Statement,
     },
     lexer::Lexer,
     token::{Token, TokenType},
@@ -30,6 +31,8 @@ impl<'a> PrefixParse for Parser<'a> {
             TokenType::NumberLiteral => Some(self.parse_integer_literal()),
             TokenType::True | TokenType::False => Some(self.parse_boolean()),
             TokenType::Bang | TokenType::Minus => Some(self.parse_prefix_expression()),
+            TokenType::LParentheses => Some(self.parse_grouped_expression()),
+            TokenType::If => Some(self.parse_if_expression()),
             _ => None,
         }
     }
@@ -87,6 +90,7 @@ impl TokenType {
         }
     }
 }
+#[derive(Debug)]
 pub struct Parser<'a> {
     l: Lexer<'a>,
     cur_token: Token,
@@ -124,7 +128,67 @@ impl<'a> Parser<'a> {
         match self.cur_token.r#type {
             TokenType::Let => Some(self.parse_let_statement()),
             TokenType::Return => Some(self.parse_return_statement()),
+            //TokenType::If => Some(self.parse_if_statement()),
+            //TokenType::Else => Some(self.parse_else_statement()),
             _ => Some(self.parse_expression_statement()),
+        }
+    }
+    fn parse_if_expression(&mut self) -> Expression {
+        let token = self.cur_token.clone();
+        if !self.expect_peek(TokenType::LParentheses) {
+            panic!(
+                "if expression must contain LParentheses, but got={:#?}",
+                self.cur_token
+            )
+        }
+        self.set_next_token();
+        let condition = Box::new(self.parse_expression(Precedence::Lowest).unwrap());
+        if !self.expect_peek(TokenType::RParentheses) {
+            panic!(
+                "if expression must contain RParentheses, but got={:#?}",
+                self.cur_token
+            )
+        }
+        println!("{:#?}", self);
+        if !self.expect_peek(TokenType::LBracket) {
+            panic!(
+                "if expression must contain LBracket, but got={:#?}",
+                self.cur_token
+            )
+        }
+        let consequence = self.parse_block_statement();
+        let mut alternative = None;
+        if self.peek_token_is(TokenType::Else) {
+            self.set_next_token();
+            if !self.expect_peek(TokenType::LBracket) {
+                panic!(
+                    "else expression must contain LBracket, but got={:#?}",
+                    self.cur_token
+                )
+            }
+            alternative = Some(self.parse_block_statement());
+        }
+
+        Expression::IfExpression(IfExpression {
+            token,
+            condition,
+            consequence,
+            alternative,
+        })
+    }
+    fn parse_block_statement(&mut self) -> BlockStatement {
+        let token = self.cur_token.clone();
+        let mut v = Vec::new();
+
+        while !self.cur_token_is(TokenType::RBracket) && !self.cur_token_is(TokenType::Eof) {
+            if let Some(stmt) = self.parse_statement() {
+                v.push(stmt)
+            };
+            self.set_next_token();
+        }
+        BlockStatement {
+            token,
+            statements: v,
         }
     }
     //
@@ -259,6 +323,18 @@ impl<'a> Parser<'a> {
             right: Box::new(self.parse_expression(precedence).unwrap()),
         })
     }
+    fn parse_grouped_expression(&mut self) -> Expression {
+        self.set_next_token();
+
+        let exp = self.parse_expression(Precedence::Lowest);
+        if !self.expect_peek(TokenType::RParentheses) {
+            panic!(
+                "token type expected RParentheses. but got={:#?}",
+                self.cur_token
+            )
+        }
+        exp.unwrap()
+    }
 }
 
 #[cfg(test)]
@@ -271,6 +347,42 @@ mod tests {
 
     use super::Parser;
 
+    #[test]
+    fn test_if_expression() {
+        let input = "if (x > y) {y} else {x}";
+        let lexer = Lexer::default(input);
+
+        let statements = Parser::new(lexer).parse_program().statements;
+
+        let stmt1 = &statements[0];
+        match stmt1 {
+            Statement::ExpressionStatement(ex) => match &ex.expression {
+                Some(Expression::IfExpression(i)) => {
+                    assert_eq!(i.condition.string(), "(x > y)");
+                    assert_eq!(i.consequence.string(), "y");
+                    assert_eq!(i.alternative.as_ref().unwrap().string(), "x");
+                }
+                _ => panic!("expected IfExpression but got={:#?}", stmt1),
+            },
+            _ => panic!("expected IfExpression but got={:#?}", stmt1),
+        }
+    }
+    #[test]
+    fn test_operator_precedence_parsing() {
+        let input = r#"
+            1 + (2 + 3) + 4
+       "#;
+        let lexer = Lexer::default(input);
+        let mut sut = Parser::new(lexer);
+        let statements = sut.parse_program().statements;
+        let tobes = vec!["((1 + (2 + 3)) + 4)"];
+        for (i, s) in statements.into_iter().enumerate() {
+            match s {
+                Statement::ExpressionStatement(ex) => assert_eq!(ex.string(), tobes[i]),
+                _ => panic!("statement got={:#?}", s),
+            }
+        }
+    }
     #[test]
     fn test_parsing_bool_string() {
         let input = r#"
