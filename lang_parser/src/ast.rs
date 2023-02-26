@@ -70,6 +70,25 @@ impl ExpressionStatement {
 }
 
 #[derive(Debug)]
+pub struct FunctionalLiteral {
+    pub(super) token: Token,
+    pub(super) parameters: Vec<Identifier>,
+    pub(super) body: BlockStatement,
+}
+impl FunctionalLiteral {
+    fn to_string(&self) -> String {
+        let params = self.parameters.iter().fold(String::new(), |acc, cur| {
+            format!("{}{},", acc, cur.string())
+        });
+        format!(
+            "{} ({}) {}",
+            self.token_literal(),
+            params,
+            self.body.string()
+        )
+    }
+}
+#[derive(Debug)]
 pub struct IntegerLiteral {
     pub(super) token: Token,
     pub(super) value: isize,
@@ -131,6 +150,20 @@ pub struct PrefixExpression {
 impl PrefixExpression {
     fn to_string(&self) -> String {
         format!("({}{})", self.operator, self.right.string())
+    }
+}
+#[derive(Debug)]
+pub struct CallExpression {
+    pub(super) token: Token,
+    pub(super) function: Box<Expression>,
+    pub(super) arguments: Vec<Expression>,
+}
+impl CallExpression {
+    fn to_string(&self) -> String {
+        let args = self.arguments.iter().fold(String::new(), |acc, cur| {
+            format!("{}{},", acc, cur.string())
+        });
+        format!("{}({})", self.function.string(), args)
     }
 }
 
@@ -229,14 +262,18 @@ macro_rules! impl_simple_node_trait {
 declare_expression!(
     Identifier,
     IntegerLiteral,
+    FunctionalLiteral,
     PrefixExpression,
     InfixExpression,
     IfExpression,
+    CallExpression,
     Boolean
 );
 impl_node_trait_for_expression!(
     Identifier,
+    CallExpression,
     IntegerLiteral,
+    FunctionalLiteral,
     PrefixExpression,
     InfixExpression,
     IfExpression,
@@ -257,6 +294,7 @@ impl_node_trait_for_statement!(
 impl_simple_node_trait!(
     Identifier,
     Boolean,
+    FunctionalLiteral,
     IfExpression,
     InfixExpression,
     PrefixExpression,
@@ -264,6 +302,7 @@ impl_simple_node_trait!(
     LetStatement,
     ReturnStatement,
     BlockStatement,
+    CallExpression,
     ExpressionStatement
 );
 

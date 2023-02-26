@@ -1,8 +1,8 @@
 use crate::{
     ast::{
-        BlockStatement, Boolean, Expression, ExpressionStatement, Identifier, IfExpression,
-        InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement,
-        Statement,
+        BlockStatement, Boolean, CallExpression, Expression, ExpressionStatement,
+        FunctionalLiteral, Identifier, IfExpression, InfixExpression, IntegerLiteral, LetStatement,
+        PrefixExpression, Program, ReturnStatement, Statement,
     },
     lexer::Lexer,
     token::{Token, TokenType},
@@ -33,6 +33,7 @@ impl<'a> PrefixParse for Parser<'a> {
             TokenType::Bang | TokenType::Minus => Some(self.parse_prefix_expression()),
             TokenType::LParentheses => Some(self.parse_grouped_expression()),
             TokenType::If => Some(self.parse_if_expression()),
+            TokenType::Fn => Some(self.parse_fn_expression()),
             _ => None,
         }
     }
@@ -44,6 +45,7 @@ impl<'a> InfixParse for Parser<'a> {
             | TokenType::Minus
             | TokenType::Eq
             | TokenType::NotEq
+            | TokenType::LParentheses
             | TokenType::Lt
             | TokenType::Gt
             | TokenType::Slash
@@ -65,6 +67,7 @@ impl<'a> InfixParse for Parser<'a> {
             | TokenType::Gt
             | TokenType::Slash
             | TokenType::Asterisk => Some(self.parse_infix_expression(pre_expression)),
+            TokenType::LParentheses => Some(self.parse_call_expression(pre_expression)),
             _ => None,
         }
     }
@@ -86,6 +89,7 @@ impl TokenType {
             TokenType::Eq | TokenType::NotEq => Precedence::Equals,
             TokenType::Lt | TokenType::Gt => Precedence::LessGreater,
             TokenType::Slash | TokenType::Asterisk => Precedence::Product,
+            TokenType::LParentheses => Precedence::Call,
             _ => Precedence::Lowest,
         }
     }
@@ -132,6 +136,38 @@ impl<'a> Parser<'a> {
             //TokenType::Else => Some(self.parse_else_statement()),
             _ => Some(self.parse_expression_statement()),
         }
+    }
+    fn parse_call_expression(&mut self, function: Expression) -> Expression {
+        let token = self.cur_token.clone();
+        let function = Box::new(function);
+        let arguments = self.parse_call_arguments();
+        Expression::CallExpression(CallExpression {
+            token,
+            function,
+            arguments,
+        })
+    }
+    fn parse_call_arguments(&mut self) -> Vec<Expression> {
+        let mut result = Vec::new();
+        if self.peek_token_is(TokenType::RParentheses) {
+            self.set_next_token();
+            return result;
+        }
+        self.set_next_token();
+        result.push(self.parse_expression(Precedence::Lowest).unwrap());
+
+        while self.peek_token_is(TokenType::Comma) {
+            self.set_next_token();
+            self.set_next_token();
+            result.push(self.parse_expression(Precedence::Lowest).unwrap())
+        }
+        if !self.peek_token_is(TokenType::RParentheses) {
+            panic!(
+                "if expression must contain RParentheses, but got={:#?}",
+                self.cur_token
+            )
+        }
+        result
     }
     fn parse_if_expression(&mut self) -> Expression {
         let token = self.cur_token.clone();
@@ -335,6 +371,55 @@ impl<'a> Parser<'a> {
         }
         exp.unwrap()
     }
+    fn parse_fn_expression(&mut self) -> Expression {
+        let token = self.cur_token.clone();
+        if !self.expect_peek(TokenType::LParentheses) {
+            panic!(
+                "token type expected LParentheses. but got={:#?}",
+                self.cur_token
+            )
+        }
+        let parameters = self.parse_fn_parameters();
+        if !self.expect_peek(TokenType::LBracket) {
+            panic!(
+                "token type expected LBracket. but got={:#?}",
+                self.cur_token
+            )
+        }
+        let body = self.parse_block_statement();
+        Expression::FunctionalLiteral(FunctionalLiteral {
+            token,
+            parameters,
+            body,
+        })
+    }
+    fn parse_fn_parameters(&mut self) -> Vec<Identifier> {
+        let mut result = Vec::new();
+        if self.peek_token_is(TokenType::RParentheses) {
+            self.set_next_token();
+            return result;
+        }
+        self.set_next_token();
+        result.push(Identifier {
+            token: self.cur_token.clone(),
+            value: self.cur_token.literal.clone(),
+        });
+        while self.peek_token_is(TokenType::Comma) {
+            self.set_next_token();
+            self.set_next_token();
+            result.push(Identifier {
+                token: self.cur_token.clone(),
+                value: self.cur_token.literal.clone(),
+            });
+        }
+        if !self.expect_peek(TokenType::RParentheses) {
+            panic!(
+                "token type expected RParentheses. but got={:#?}",
+                self.cur_token
+            )
+        }
+        result
+    }
 }
 
 #[cfg(test)]
@@ -347,6 +432,57 @@ mod tests {
 
     use super::Parser;
 
+    #[test]
+    fn test_fn_call_expression() {
+        let input = "add(1, 2*3,4+5);";
+        let lexer = Lexer::default(input);
+
+        let statements = Parser::new(lexer).parse_program().statements;
+
+        let stmt1 = &statements[0];
+        match stmt1 {
+            Statement::ExpressionStatement(ex) => match &ex.expression {
+                Some(Expression::CallExpression(ce)) => {
+                    assert_eq!(ce.string(), "add(1,(2 * 3),(4 + 5),)");
+                }
+                _ => panic!("expected CallExpression but got={:#?}", stmt1),
+            },
+            _ => panic!("expected ExpressionStatement but got={:#?}", stmt1),
+        }
+    }
+    #[test]
+    fn test_fn_expression() {
+        let input = "fn(x,y){x+y;}";
+        let lexer = Lexer::default(input);
+
+        let statements = Parser::new(lexer).parse_program().statements;
+
+        let stmt1 = &statements[0];
+        match stmt1 {
+            Statement::ExpressionStatement(ex) => match &ex.expression {
+                Some(Expression::FunctionalLiteral(f)) => {
+                    assert_eq!(f.string(), "fn (x,y,) (x + y)");
+                }
+                _ => panic!("expected FunctionalExpression but got={:#?}", stmt1),
+            },
+            _ => panic!("expected FunctionalExpression but got={:#?}", stmt1),
+        }
+        let input = "fn(){}";
+        let lexer = Lexer::default(input);
+
+        let statements = Parser::new(lexer).parse_program().statements;
+
+        let stmt1 = &statements[0];
+        match stmt1 {
+            Statement::ExpressionStatement(ex) => match &ex.expression {
+                Some(Expression::FunctionalLiteral(f)) => {
+                    assert_eq!(f.string(), "fn () ");
+                }
+                _ => panic!("expected FunctionalExpression but got={:#?}", stmt1),
+            },
+            _ => panic!("expected FunctionalExpression but got={:#?}", stmt1),
+        }
+    }
     #[test]
     fn test_if_expression() {
         let input = "if (x > y) {y} else {x}";
