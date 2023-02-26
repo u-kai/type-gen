@@ -47,11 +47,16 @@ impl LetStatement {
 #[derive(Debug)]
 pub struct ReturnStatement {
     pub(super) token: Token,
-    pub(super) return_value: Expression,
+    pub(super) return_value: Option<Expression>,
 }
 impl ReturnStatement {
     fn to_string(&self) -> String {
-        format!("{} {};", self.token_literal(), self.return_value.string())
+        let return_value_string = if let Some(return_value) = &self.return_value {
+            return_value.string()
+        } else {
+            String::new()
+        };
+        format!("{} {};", self.token_literal(), return_value_string)
     }
 }
 #[derive(Debug)]

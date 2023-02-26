@@ -250,15 +250,14 @@ impl<'a> Parser<'a> {
     // return <expression>
     fn parse_return_statement(&mut self) -> Statement {
         let stmt_token = self.cur_token.clone();
-        while !self.cur_token_is(TokenType::Semicolon) {
+        self.set_next_token();
+        let return_value = self.parse_expression(Precedence::Lowest);
+        if self.peek_token_is(TokenType::Semicolon) {
             self.set_next_token();
         }
         Statement::ReturnStatement(ReturnStatement {
             token: stmt_token,
-            return_value: crate::ast::Expression::Identifier(Identifier {
-                token: Token::eof(),
-                value: String::new(),
-            }),
+            return_value,
         })
     }
     // let <identify> = <expression>
