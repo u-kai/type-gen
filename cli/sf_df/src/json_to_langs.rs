@@ -6,6 +6,10 @@ use description_generator::{
     },
     type_mapper::TypeMapper,
 };
+use go::description_generator::{
+    declare_part_generator::GoDeclarePartGenerator, mapper::GoMapper,
+    property_part_generator::GoPropertyPartGenerator, GoTypeDescriptionGenerator,
+};
 use json::json::Json;
 use npc::fns::to_pascal;
 use rust::description_generator::{
@@ -22,6 +26,8 @@ use crate::{
 
 pub type JsonToRustConvertor =
     JsonToLangConvertor<RustDeclarePartGenerator, RustPropertyPartGenerator, RustMapper>;
+pub type JsonToGoConvertor =
+    JsonToLangConvertor<GoDeclarePartGenerator, GoPropertyPartGenerator, GoMapper>;
 
 pub struct JsonToLangConvertor<Declare, Property, Mapper>
 where
@@ -81,7 +87,34 @@ pub fn json_to_rust(config: FileToFileConfig, generator: RustTypeDescriptionGene
     file_structures_to_files(&dists);
     create_rust_mod_files(dist);
 }
+pub fn json_to_rust_(
+    source: impl AsRef<Path>,
+    dist: &str,
+    generator: RustTypeDescriptionGenerator,
+) {
+    let convertor = JsonToRustConvertor::new("./", generator);
+    let source = FileStructer::from_path(source);
+    let result = convertor.convert(dist, &source, "rs");
+    file_structures_to_files(&vec![result]);
+}
 
+pub fn json_to_go(source: impl AsRef<Path>, dist: &str, generator: GoTypeDescriptionGenerator) {
+    let convertor = JsonToGoConvertor::new("./", generator);
+    let source = FileStructer::from_path(source);
+    let result = convertor.convert(dist, &source, "go");
+    file_structures_to_files(&vec![result]);
+}
+pub fn json_dirs_to_go(config: FileToFileConfig, generator: GoTypeDescriptionGenerator) {
+    let src = &config.src;
+    let dist = &config.dist;
+    let sources = all_file_structure(src, "json");
+    let convertor = JsonToGoConvertor::new(src, generator);
+    let dists = sources
+        .iter()
+        .map(|s| convertor.convert(dist, s, "go").to_snake_path())
+        .collect();
+    file_structures_to_files(&dists);
+}
 // src/parts
 // src/parts/nests/data.rs
 // src/parts/nests/child.rs

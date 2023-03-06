@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, path::Path};
+use std::{collections::BTreeSet, fs::read_to_string, path::Path};
 
 use npc::fns::to_snake;
 
@@ -22,6 +22,15 @@ impl FileStructer {
         Self {
             content: content.into(),
             path: path,
+        }
+    }
+    pub fn from_path(path: impl AsRef<Path>) -> Self {
+        let path = path.as_ref();
+        let path_structure = PathStructure::from_path(&path);
+        let content = read_to_string(&path).unwrap();
+        Self {
+            content,
+            path: path_structure,
         }
     }
     pub fn to_snake_path(self) -> Self {
@@ -134,6 +143,12 @@ impl PathStructure {
             path: path.into(),
             extension: extension.into(),
         }
+    }
+    pub fn from_path(path: impl AsRef<Path>) -> Self {
+        let path = path.as_ref();
+        let extension = Extension::from(path.extension().unwrap().to_str().unwrap());
+        let path = path.to_str().unwrap().to_string();
+        Self { path, extension }
     }
     pub fn parent_str(&self) -> String {
         let path: &Path = self.path.as_ref();
@@ -258,5 +273,14 @@ mod path_structure_tests {
         let result = sut.to_snake_path();
 
         assert_eq!(result, PathStructure::new("./src/chain_case.rs", "rs"));
+    }
+    #[test]
+    fn path構造体から生成できる() {
+        let sut = PathStructure::from_path("./src/main.rs");
+
+        let result = sut.path_str();
+
+        assert_eq!(result, "./src/main.rs");
+        assert_eq!(sut.extension, Extension::Rs);
     }
 }
