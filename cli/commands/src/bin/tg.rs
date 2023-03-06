@@ -16,10 +16,13 @@ fn main() {
     };
     match &args.lang {
         Some(Lang::Go) => {
-            let property_generator = GoPropertyPartGeneratorBuilder::new()
-                .pub_all()
-                .json_marshal()
-                .build();
+            let builder = GoPropertyPartGeneratorBuilder::new().json_marshal();
+
+            let property_generator = if args.pub_all {
+                builder.pub_all().build()
+            } else {
+                builder.build()
+            };
             let generator = GoTypeDescriptionGenerator::new(
                 GoDeclarePartGenerator::new(),
                 property_generator,
@@ -28,18 +31,26 @@ fn main() {
             json_to_go(args.source, dist, generator);
         }
         Some(Lang::Rust) => {
-            let generator = RustTypeDescriptionGeneratorBuilder::new()
-                .declare_part_pub_all()
-                .property_part_pub_all()
-                .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"])
-                .build();
+            let builder = RustTypeDescriptionGeneratorBuilder::new()
+                .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"]);
+            let generator = if args.pub_all {
+                builder
+                    .declare_part_pub_all()
+                    .property_part_pub_all()
+                    .build()
+            } else {
+                builder.build()
+            };
             json_to_rust_(args.source, dist, generator);
         }
         _ => {
-            let property_generator = GoPropertyPartGeneratorBuilder::new()
-                .pub_all()
-                .json_marshal()
-                .build();
+            let builder = GoPropertyPartGeneratorBuilder::new().json_marshal();
+
+            let property_generator = if args.pub_all {
+                builder.pub_all().build()
+            } else {
+                builder.build()
+            };
             let generator = GoTypeDescriptionGenerator::new(
                 GoDeclarePartGenerator::new(),
                 property_generator,
@@ -52,6 +63,8 @@ fn main() {
 
 #[derive(Parser)]
 struct CommandArgs {
+    #[clap(short, long)]
+    pub_all: bool,
     #[clap(short, long)]
     source: String,
     #[clap(short, long)]
