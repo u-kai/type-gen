@@ -9,6 +9,19 @@ use structure::parts::type_name::TypeName;
 
 use super::mapper::GoMapper;
 
+pub struct GoDeclarePartGeneratorBuilder {
+    generator: GoDeclarePartGenerator,
+}
+impl GoDeclarePartGeneratorBuilder {
+    pub fn new() -> Self {
+        Self {
+            generator: GoDeclarePartGenerator::new(),
+        }
+    }
+    pub fn build(self) -> GoDeclarePartGenerator {
+        self.generator
+    }
+}
 pub struct GoDeclarePartGenerator {
     inner: CustomizableDeclarePartGenerator<
         GoMapper,

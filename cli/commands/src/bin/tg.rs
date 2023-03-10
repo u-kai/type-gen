@@ -1,9 +1,12 @@
 use std::str::FromStr;
 
 use clap::Parser;
-use go::description_generator::{
-    declare_part_generator::GoDeclarePartGenerator, mapper::GoMapper,
-    property_part_generator::GoPropertyPartGeneratorBuilder, GoTypeDescriptionGenerator,
+use go::{
+    description_generator::{
+        declare_part_generator::GoDeclarePartGenerator, mapper::GoMapper,
+        property_part_generator::GoPropertyPartGeneratorBuilder, GoTypeDescriptionGenerator,
+    },
+    generator_builder::GoTypeDescriptionGeneratorBuilder,
 };
 use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
 use sf_df::json_to_langs::{json_to_go, json_to_rust_};
@@ -44,18 +47,19 @@ fn main() {
             json_to_rust_(args.source, dist, generator);
         }
         _ => {
-            let builder = GoPropertyPartGeneratorBuilder::new().json_marshal();
+            let builder = GoTypeDescriptionGeneratorBuilder::new().property_part_json_marshal();
 
-            let property_generator = if args.pub_all {
-                builder.pub_all().build()
+            let builder = if args.pub_all {
+                builder.property_part_pub_all()
             } else {
-                builder.build()
+                builder
             };
-            let generator = GoTypeDescriptionGenerator::new(
-                GoDeclarePartGenerator::new(),
-                property_generator,
-                GoMapper {},
-            );
+            let generator = args.build_generator(builder);
+            //let generator = GoTypeDescriptionGenerator::new(
+            //GoDeclarePartGenerator::new(),
+            //property_generator,
+            //GoMapper {},
+            //);
             json_to_go(args.source, dist, generator);
         }
     };
@@ -71,6 +75,14 @@ struct CommandArgs {
     dist: Option<String>,
     #[clap(short, long)]
     lang: Option<Lang>,
+}
+impl CommandArgs {
+    fn build_generator(
+        &self,
+        builder: GoTypeDescriptionGeneratorBuilder,
+    ) -> GoTypeDescriptionGenerator {
+        builder.build()
+    }
 }
 
 enum Lang {
