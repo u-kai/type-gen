@@ -40,8 +40,8 @@ macro_rules! impl_declare_part_methods {
 }
 impl_property_part_methods!(
     {pub_all,},
-    {json_marshal,}
-    //,{all_optional,},
+    {json_marshal,},
+    {all_optional,}
 );
 impl_declare_part_methods!(
     {pub_all,}

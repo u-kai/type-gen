@@ -19,18 +19,18 @@ fn main() {
     };
     match &args.lang {
         Some(Lang::Go) => {
-            let builder = GoPropertyPartGeneratorBuilder::new().json_marshal();
-
-            let property_generator = if args.pub_all {
-                builder.pub_all().build()
+            let builder = GoTypeDescriptionGeneratorBuilder::new().property_part_json_marshal();
+            let builder = if args.pub_all {
+                builder.property_part_pub_all().declare_part_pub_all()
             } else {
-                builder.build()
+                builder
             };
-            let generator = GoTypeDescriptionGenerator::new(
-                GoDeclarePartGenerator::new(),
-                property_generator,
-                GoMapper {},
-            );
+            let builder = if args.pub_all {
+                builder.property_part_all_optional()
+            } else {
+                builder
+            };
+            let generator = args.build_generator(builder);
             json_to_go(args.source, dist, generator);
         }
         Some(Lang::Rust) => {
@@ -50,21 +50,20 @@ fn main() {
             let builder = GoTypeDescriptionGeneratorBuilder::new().property_part_json_marshal();
 
             let builder = if args.pub_all {
-                builder.property_part_pub_all()
+                builder.property_part_pub_all().declare_part_pub_all()
+            } else {
+                builder
+            };
+            let builder = if args.pub_all {
+                builder.property_part_all_optional()
             } else {
                 builder
             };
             let generator = args.build_generator(builder);
-            //let generator = GoTypeDescriptionGenerator::new(
-            //GoDeclarePartGenerator::new(),
-            //property_generator,
-            //GoMapper {},
-            //);
             json_to_go(args.source, dist, generator);
         }
     };
 }
-
 #[derive(Parser)]
 struct CommandArgs {
     #[clap(short, long)]
@@ -75,6 +74,15 @@ struct CommandArgs {
     dist: Option<String>,
     #[clap(short, long)]
     lang: Option<Lang>,
+    #[clap(short, long)]
+    optional_all: bool,
+}
+
+trait CommandSupportOption<T>
+where
+    T: Sized,
+{
+    fn pub_all(self) -> Self;
 }
 impl CommandArgs {
     fn build_generator(
