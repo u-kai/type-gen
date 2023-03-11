@@ -36,6 +36,11 @@ fn main() {
         Some(Lang::Rust) => {
             let builder = RustTypeDescriptionGeneratorBuilder::new()
                 .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"]);
+            let builder = if args.pub_all {
+                builder.property_part_all_optional()
+            } else {
+                builder
+            };
             let generator = if args.pub_all {
                 builder
                     .declare_part_pub_all()
