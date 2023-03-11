@@ -43,7 +43,9 @@ impl_property_part_methods!(
     {json_marshal,}
     //,{all_optional,},
 );
-impl_declare_part_methods!();
+impl_declare_part_methods!(
+    {pub_all,}
+);
 impl GoTypeDescriptionGeneratorBuilder {
     pub fn new() -> Self {
         Self {

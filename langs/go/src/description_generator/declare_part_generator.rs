@@ -1,10 +1,11 @@
 use description_generator::{
     customizable::declare_part_generator::{
-        CustomizableAliasTypeDeclareGenerator, CustomizableCompositeTypeDeclareGenerator,
-        CustomizableDeclarePartGenerator,
+        CompositeTypeDeclareConvertor, CustomizableAliasTypeDeclareGenerator,
+        CustomizableCompositeTypeDeclareGenerator, CustomizableDeclarePartGenerator,
     },
     type_description_generator::DeclarePartGenerator,
 };
+use npc::fns::to_camel;
 use structure::parts::type_name::TypeName;
 
 use super::mapper::GoMapper;
@@ -21,6 +22,28 @@ impl GoDeclarePartGeneratorBuilder {
     pub fn build(self) -> GoDeclarePartGenerator {
         self.generator
     }
+    pub fn pub_all(mut self) -> Self {
+        struct PubConvertor {}
+        impl CompositeTypeDeclareConvertor for PubConvertor {
+            fn convert(
+                &self,
+                acc: Option<String>,
+                composite_type: &structure::composite_type_structure::CompositeTypeStructure,
+            ) -> Option<String> {
+                let Some(acc) = acc else {
+                    return None
+                };
+                let type_name = composite_type.type_name();
+                Some(acc.replace(&to_private(type_name), type_name.as_str()))
+            }
+        }
+        let convertor = PubConvertor {};
+        self.generator
+            .inner
+            .change_composite_generator()
+            .add_description_convertor(Box::new(convertor));
+        self
+    }
 }
 pub struct GoDeclarePartGenerator {
     inner: CustomizableDeclarePartGenerator<
@@ -29,7 +52,9 @@ pub struct GoDeclarePartGenerator {
         fn(&str, &TypeName, String) -> String,
     >,
 }
-
+fn to_private(type_name: &TypeName) -> String {
+    to_camel(type_name.as_str())
+}
 impl GoDeclarePartGenerator {
     pub fn new() -> Self {
         Self {
@@ -40,10 +65,15 @@ impl GoDeclarePartGenerator {
         }
     }
     fn concat_go_alias(identify: &str, type_name: &TypeName, type_: String) -> String {
-        format!("{} {} {}", identify, type_name.as_str(), type_)
+        format!("{} {} {}", identify, to_private(type_name), type_)
     }
     fn concat_go_composite(identify: &str, type_name: &TypeName, type_: String) -> String {
-        format!("type {} {} {{\n{}}}", type_name.as_str(), identify, type_)
+        format!(
+            "type {} {} {{\n{}}}",
+            to_private(type_name),
+            identify,
+            type_
+        )
     }
 }
 impl DeclarePartGenerator for GoDeclarePartGenerator {
@@ -76,21 +106,36 @@ mod tests {
 
     use super::*;
     #[test]
-    fn 文字列型のalias型定義の作成() {
-        let sut = GoDeclarePartGenerator::new();
-        let mapper = GoMapper {};
-        let alias = AliasTypeStructure::new("Test", make_string_type());
-        let result = sut.generate_case_alias(&alias, &mapper);
-        println!("{}", result);
-        assert_eq!(result, "type Test string");
-    }
-    #[test]
-    fn idという整数型のプロパティを持つ型定義の作成() {
+    fn pub_allをしないと名前はパスカルケースで出力されない() {
         let type_name = TypeName::new("Test");
         let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
         let property_part = "    id int\n".to_string();
 
         let sut = GoDeclarePartGenerator::new();
+        let result = sut.generate_case_composite(&composite_type, property_part);
+        assert_eq!(
+            result,
+            r#"type test struct {
+    id int
+}"#
+        );
+    }
+    #[test]
+    fn 文字列型のalias型定義の作成() {
+        let sut = GoDeclarePartGenerator::new();
+        let mapper = GoMapper {};
+        let alias = AliasTypeStructure::new("test", make_string_type());
+        let result = sut.generate_case_alias(&alias, &mapper);
+        println!("{}", result);
+        assert_eq!(result, "type test string");
+    }
+    #[test]
+    fn pubの設定をするとtypenameがパスカルケースになる() {
+        let type_name = TypeName::new("Test");
+        let composite_type = CompositeTypeStructure::new(type_name, BTreeMap::new());
+        let property_part = "    id int\n".to_string();
+
+        let sut = GoDeclarePartGeneratorBuilder::new().pub_all().build();
         let result = sut.generate_case_composite(&composite_type, property_part);
         println!("{}", result);
         assert_eq!(
