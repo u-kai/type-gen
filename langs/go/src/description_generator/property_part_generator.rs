@@ -1,5 +1,8 @@
 use description_generator::{
-    customizable::property_part_generator::{Convertor, CustomizablePropertyDescriptionGenerator},
+    customizable::{
+        property_part_convertors::AddLeftSideConvertor,
+        property_part_generator::{Convertor, CustomizablePropertyDescriptionGenerator},
+    },
     type_description_generator::PropertyPartGenerator,
 };
 use npc::fns::to_pascal;
@@ -117,6 +120,14 @@ impl GoPropertyPartGeneratorBuilder {
             .add_property_key_convertor(Box::new(ToPascalConvertor {}));
         self
     }
+    pub fn all_pointer(mut self) -> Self {
+        let mut add_header = AddLeftSideConvertor::new("*");
+        add_header.set_all();
+        self.generator
+            .inner
+            .add_property_type_convertor(Box::new(add_header));
+        self
+    }
     pub fn build(self) -> GoPropertyPartGenerator {
         self.generator
     }
@@ -135,6 +146,23 @@ mod tests {
         property_part_generator::{GoPropertyPartGenerator, GoPropertyPartGeneratorBuilder},
     };
 
+    #[test]
+    fn フィールドの型を全てpointer型に設定可能() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type = make_usize_type();
+        let mapper = GoMapper;
+
+        let sut = GoPropertyPartGeneratorBuilder::new()
+            .pub_all()
+            .all_pointer()
+            .build();
+        assert_eq!(
+            sut.generate(&type_name, &property_key, &property_type, &mapper,),
+            r#"   Id *int
+"#
+        );
+    }
     #[test]
     fn optionalの設定だけでjsonの設定も行われる() {
         let type_name: TypeName = "Test".into();
