@@ -1,6 +1,6 @@
 use description_generator::{
     customizable::{
-        property_part_convertors::AddLeftSideConvertor,
+        property_part_convertors::{AddHeaderConvertor, AddLeftSideConvertor},
         property_part_generator::{Convertor, CustomizablePropertyDescriptionGenerator},
     },
     type_description_generator::PropertyPartGenerator,
