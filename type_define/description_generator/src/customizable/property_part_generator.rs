@@ -4,6 +4,8 @@ use structure::parts::{
 
 use crate::{type_description_generator::PropertyPartGenerator, type_mapper::TypeMapper};
 
+use super::property_part_convertors::WhiteListConvertor;
+
 pub trait Convertor<M: TypeMapper> {
     fn convert(
         &self,
@@ -58,6 +60,12 @@ where
     }
     pub fn add_property_key_convertor(&mut self, convertor: PropertyKeyConvertor<M>) {
         self.property_key_convertor.push(convertor);
+    }
+    pub fn set_whitelist_with_keys(&mut self, list: Vec<impl Into<String>>) {
+        let mut white_list = WhiteListConvertor::new();
+        list.into_iter()
+            .for_each(|s| white_list.add_match_property_key(s));
+        self.add_statement_convertor(Box::new(white_list));
     }
     fn gen_key_str(
         &self,
@@ -148,6 +156,26 @@ mod test {
     use crate::type_mapper::fake_mapper::FakeTypeMapper;
 
     use super::*;
+    #[test]
+    fn white_listによって指定したkeyのフィールドしか出力されない() {
+        let mapper = FakeTypeMapper;
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type: PropertyType = make_usize_type();
+        let mut generator = CustomizablePropertyDescriptionGenerator::default();
+        generator.set_whitelist_with_keys(vec!["id"]);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper),
+            "id:usize"
+        );
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "name".into();
+        let property_type: PropertyType = make_string_type();
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper),
+            ""
+        );
+    }
     #[test]
     fn test_case_multi_convertor() {
         struct Store<'a> {
