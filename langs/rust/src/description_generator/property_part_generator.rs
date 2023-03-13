@@ -79,21 +79,11 @@ impl RustPropertyPartGeneratorBuilder {
     }
 
     pub fn set_whitelist_with_keys(mut self, list: Vec<impl Into<String>>) -> Self {
-        let mut white_list = WhiteListConvertor::new();
-        list.into_iter()
-            .for_each(|s| white_list.add_match_property_key(s));
-        self.generator
-            .generator
-            .add_statement_convertor(Box::new(white_list));
+        self.generator.generator.set_whitelist_with_keys(list);
         self
     }
     pub fn set_blacklist_with_keys(mut self, list: Vec<impl Into<String>>) -> Self {
-        let mut black_list = BlackListConvertor::new();
-        list.into_iter()
-            .for_each(|s| black_list.add_match_property_key(s));
-        self.generator
-            .generator
-            .add_statement_convertor(Box::new(black_list));
+        self.generator.generator.set_blacklist_with_keys(list);
         self
     }
     pub fn all_attrs(mut self, attrs: Vec<impl Into<String>>) -> Self {
