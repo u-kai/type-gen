@@ -1,8 +1,7 @@
 use description_generator::{
     customizable::{
         property_part_convertors::{
-            AddHeaderConvertor, AddLastSideConvertor, AddLeftSideConvertor, BlackListConvertor,
-            ToOptionalConvertor, WhiteListConvertor,
+            AddHeaderConvertor, AddLastSideConvertor, AddLeftSideConvertor, ToOptionalConvertor,
         },
         property_part_generator::{
             Convertor, CustomizablePropertyDescriptionGenerator, DescriptionConvertor,

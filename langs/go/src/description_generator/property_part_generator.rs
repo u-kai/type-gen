@@ -90,6 +90,14 @@ impl GoPropertyPartGeneratorBuilder {
             .add_property_type_convertor(Box::new(AddJsonMarshalOptionalConvertor {}));
         self
     }
+    pub fn set_whitelist_with_keys(mut self, list: Vec<impl Into<String>>) -> Self {
+        self.generator.inner.set_whitelist_with_keys(list);
+        self
+    }
+    pub fn set_blacklist_with_keys(mut self, list: Vec<impl Into<String>>) -> Self {
+        self.generator.inner.set_blacklist_with_keys(list);
+        self
+    }
     pub fn pub_all(mut self) -> Self {
         struct ToPascalConvertor {}
         impl Convertor<GoMapper> for ToPascalConvertor {
