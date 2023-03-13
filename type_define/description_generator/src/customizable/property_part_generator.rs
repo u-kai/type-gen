@@ -4,7 +4,7 @@ use structure::parts::{
 
 use crate::{type_description_generator::PropertyPartGenerator, type_mapper::TypeMapper};
 
-use super::property_part_convertors::WhiteListConvertor;
+use super::property_part_convertors::{BlackListConvertor, WhiteListConvertor};
 
 pub trait Convertor<M: TypeMapper> {
     fn convert(
@@ -66,6 +66,12 @@ where
         list.into_iter()
             .for_each(|s| white_list.add_match_property_key(s));
         self.add_statement_convertor(Box::new(white_list));
+    }
+    pub fn set_blacklist_with_keys(&mut self, list: Vec<impl Into<String>>) {
+        let mut black_list = BlackListConvertor::new();
+        list.into_iter()
+            .for_each(|s| black_list.add_match_property_key(s));
+        self.add_statement_convertor(Box::new(black_list));
     }
     fn gen_key_str(
         &self,
@@ -156,6 +162,26 @@ mod test {
     use crate::type_mapper::fake_mapper::FakeTypeMapper;
 
     use super::*;
+    #[test]
+    fn blacklistによって指定したkeyのフィールドは出力されない() {
+        let mapper = FakeTypeMapper;
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id".into();
+        let property_type: PropertyType = make_usize_type();
+        let mut generator = CustomizablePropertyDescriptionGenerator::default();
+        generator.set_blacklist_with_keys(vec!["name"]);
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper),
+            "id:usize"
+        );
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "name".into();
+        let property_type: PropertyType = make_string_type();
+        assert_eq!(
+            generator.generate(&type_name, &property_key, &property_type, &mapper),
+            ""
+        );
+    }
     #[test]
     fn white_listによって指定したkeyのフィールドしか出力されない() {
         let mapper = FakeTypeMapper;
