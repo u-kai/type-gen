@@ -529,7 +529,6 @@ where
             *acc = acc.split("\n").fold(String::new(), |acc, line| {
                 format!("{}{}{}\n", acc, self.added, line)
             });
-            println!("{}", acc);
             acc.remove(acc.len() - 1);
             // * acc = format!("{}{}", self.added, acc.split("\n").)
         }

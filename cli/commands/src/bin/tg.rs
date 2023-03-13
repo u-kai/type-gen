@@ -31,7 +31,10 @@ fn main() {
     };
     match &args.lang {
         Some(Lang::Go) => {
-            let builder = GoTypeDescriptionGeneratorBuilder::new();
+            let mut builder = GoTypeDescriptionGeneratorBuilder::new();
+            if args.all_pointer {
+                builder = builder.property_part_all_pointer();
+            }
             let generator = args.build_generator(builder);
             json_to_go(args.source, dist, generator);
         }
@@ -41,7 +44,10 @@ fn main() {
             json_to_rust_(args.source, dist, generator);
         }
         _ => {
-            let builder = GoTypeDescriptionGeneratorBuilder::new();
+            let mut builder = GoTypeDescriptionGeneratorBuilder::new();
+            if args.all_pointer {
+                builder = builder.property_part_all_pointer();
+            }
             let generator = args.build_generator(builder);
             json_to_go(args.source, dist, generator);
         }
@@ -49,6 +55,8 @@ fn main() {
 }
 #[derive(Parser)]
 struct CommandArgs {
+    #[clap(short = 'P', long)]
+    all_pointer: bool,
     #[clap(short, long)]
     whitelist: Option<Vec<String>>,
     #[clap(short, long)]

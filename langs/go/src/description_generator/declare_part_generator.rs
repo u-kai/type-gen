@@ -56,8 +56,6 @@ impl GoDeclarePartGeneratorBuilder {
                     return None
                 };
                 let type_name = composite_type.type_name();
-                println!("private = {:?}", to_private(type_name));
-                println!("type_name = {:?}", type_name.as_str());
                 Some(acc.replace(&to_private(type_name), type_name.as_str()))
             }
         }
