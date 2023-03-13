@@ -42,6 +42,8 @@ impl_property_part_methods!(
     {pub_all,},
     {json_marshal,},
     {all_optional,}
+    ,{set_whitelist_with_keys,(list,Vec<impl Into<String>>)}
+    ,{set_blacklist_with_keys,(list,Vec<impl Into<String>>)}
 );
 impl_declare_part_methods!(
     {pub_all,}

@@ -10,3 +10,5 @@ clap = { version = "3.0.5", features = ["derive"] }
 sf_df={path = "../sf_df"}
 go={path = "../../langs/go"}
 rust={path = "../../langs/rust"}
+description_generator={path = "../../type_define/description_generator"}
+paste="*"

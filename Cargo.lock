@@ -308,7 +308,9 @@ name = "tg"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "description_generator",
  "go",
+ "paste",
  "rust",
  "sf_df",
 ]
