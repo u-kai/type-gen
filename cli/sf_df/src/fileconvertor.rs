@@ -73,37 +73,6 @@ mod file_structer_tests {
 
         assert_eq!(sut.name_without_extension(), "main");
     }
-    // #[test]
-    // fn file_structuresの配列からそのfile_structureが格納されている全てのディレクトリを返す() {
-    //     let source = vec![
-    //         FileStructer::new("dummy", PathStructure::new("./tests/rusts/test.rs", "rs")),
-    //         FileStructer::new(
-    //             "dummy",
-    //             PathStructure::new("./tests/rusts/nests/test-child.rs", "rs"),
-    //         ),
-    //         FileStructer::new(
-    //             "dummy",
-    //             PathStructure::new("./tests/rusts/nests/child/array.rs", "rs"),
-    //         ),
-    //         FileStructer::new(
-    //             "dummy",
-    //             PathStructure::new("./tests/rusts/nests/child/rs-placeholder.rs", "rs"),
-    //         ),
-    //     ];
-
-    //     let result = FileStructer::dir_set(&source, "tests/rusts")
-    //         .into_iter()
-    //         .collect::<Vec<_>>();
-
-    //     assert_eq!(
-    //         result,
-    //         vec![
-    //             "tests/rusts/",
-    //             "tests/rusts/nests/",
-    //             "tests/rusts/nests/child/",
-    //         ]
-    //     );
-    // }
 }
 
 pub struct FileConvetor {
@@ -211,8 +180,15 @@ impl PathStructure {
         dist_extension: impl Into<Extension>,
     ) -> Self {
         let dist_extension = dist_extension.into();
+        let dist_root = if dist_root.get(dist_root.len() - 1..dist_root.len()) != Some("/")
+            && src_root.get(src_root.len() - 1..src_root.len()) == Some("/")
+        {
+            format!("{}/", dist_root)
+        } else {
+            dist_root.to_string()
+        };
         let dist_path = Extension::replace(
-            &self.path.replacen(src_root, dist_root, 1),
+            &self.path.replacen(src_root, &dist_root, 1),
             &self.extension,
             &dist_extension,
         );
@@ -262,6 +238,11 @@ mod path_structure_tests {
         let sut = PathStructure::new("./src/main.rs", "rs");
 
         let result = sut.to_dist("./src", "./dist", Extension::Go);
+
+        assert_eq!(result, PathStructure::new("./dist/main.go", "go"));
+        let sut = PathStructure::new("./main.rs", "rs");
+
+        let result = sut.to_dist("./", "./dist", Extension::Go);
 
         assert_eq!(result, PathStructure::new("./dist/main.go", "go"));
     }

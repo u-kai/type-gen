@@ -101,7 +101,9 @@ pub fn json_to_rust_(
 pub fn json_to_go(source: impl AsRef<Path>, dist: &str, generator: GoTypeDescriptionGenerator) {
     let source = FileStructer::from_path(source);
     let convertor = JsonToGoConvertor::new("./", generator);
+    println!("{:#?}", dist);
     let result = convertor.convert(dist, &source, "go").to_snake_path();
+    println!("{:#?}", result);
     file_structures_to_files(&vec![result]);
 }
 pub fn json_dirs_to_go(config: FileToFileConfig, generator: GoTypeDescriptionGenerator) {
