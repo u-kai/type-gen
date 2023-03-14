@@ -181,7 +181,8 @@ impl PathStructure {
     ) -> Self {
         let dist_extension = dist_extension.into();
         let dist_root = if dist_root.get(dist_root.len() - 1..dist_root.len()) != Some("/")
-            && src_root.get(src_root.len() - 1..src_root.len()) == Some("/")
+            && (src_root.len() == 0
+                || src_root.get(src_root.len() - 1..src_root.len()) == Some("/"))
         {
             format!("{}/", dist_root)
         } else {
