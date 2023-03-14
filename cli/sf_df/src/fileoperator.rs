@@ -134,6 +134,9 @@ fn extract_dir<P: AsRef<Path>>(path: P) -> Option<String> {
 }
 pub fn all_file_structure(root: &str, extension: impl Into<Extension>) -> Vec<FileStructer> {
     let extension: Extension = extension.into();
+    if extension.is_this_extension(root) {
+        return vec![FileStructer::from_path(root)];
+    }
     all_file_path(root)
         .iter()
         .filter(move |p| extension.is_this_extension(p))
