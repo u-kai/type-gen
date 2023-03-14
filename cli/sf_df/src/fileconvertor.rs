@@ -180,14 +180,7 @@ impl PathStructure {
         dist_extension: impl Into<Extension>,
     ) -> Self {
         let dist_extension = dist_extension.into();
-        let dist_root = if dist_root.get(dist_root.len() - 1..dist_root.len()) != Some("/")
-            && (src_root.len() == 0
-                || src_root.get(src_root.len() - 1..src_root.len()) == Some("/"))
-        {
-            format!("{}/", dist_root)
-        } else {
-            dist_root.to_string()
-        };
+        let dist_root = Self::make_dist_root(src_root, dist_root);
         let dist_path = Extension::replace(
             &self.path.replacen(src_root, &dist_root, 1),
             &self.extension,
@@ -196,6 +189,17 @@ impl PathStructure {
         Self {
             path: dist_path,
             extension: dist_extension,
+        }
+    }
+    // case src_root end to "/", for example "./","/","src/" or empty, dist root end have to "/"
+    fn make_dist_root(src_root: &str, dist_root: &str) -> String {
+        if dist_root.get(dist_root.len() - 1..dist_root.len()) != Some("/")
+            && (src_root.len() == 0
+                || src_root.get(src_root.len() - 1..src_root.len()) == Some("/"))
+        {
+            format!("{}/", dist_root)
+        } else {
+            dist_root.to_string()
         }
     }
 }
