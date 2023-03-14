@@ -75,17 +75,78 @@ where
     }
 }
 
+// source -> dir or file
+// dist -> dir or file
+// 上記は一致しているべき？
+// config を賢くすればいい気もしてきた
+// configとしてはdirでもfileでも柔軟に変換の設定をできるようにしたい
+
 pub fn json_to_rust(config: FileToFileConfig, generator: RustTypeDescriptionGenerator) {
     let src = &config.src;
     let dist = &config.dist;
+    json_to_lang(src, dist, generator, "rs");
+    //let sources = all_file_structure(src, "json");
+    //let convertor = JsonToRustConvertor::new(src, generator);
+    //let dists = sources
+    //.iter()
+    //.map(|s| convertor.convert(dist, s, "rs").to_snake_path())
+    //.collect();
+    //file_structures_to_files(&dists);
+    create_rust_mod_files(dist);
+}
+pub fn json_to_lang<D, P, M>(
+    src: &str,
+    dist: &str,
+    generator: TypeDescriptionGenerator<D, P, M>,
+    extension: impl Into<Extension>,
+) where
+    D: DeclarePartGenerator<Mapper = M>,
+    P: PropertyPartGenerator<M>,
+    M: TypeMapper,
+{
+    let src_path: &Path = src.as_ref();
+    let extension: Extension = extension.into();
+    if src_path.is_file() && extension.is_this_extension(src_path) {
+        json_file_to_lang_file(src, dist, generator, extension)
+    } else {
+        json_dir_to_lang_dir(src, dist, generator, extension)
+    }
+}
+
+pub fn json_dir_to_lang_dir<D, P, M>(
+    src: &str,
+    dist: &str,
+    generator: TypeDescriptionGenerator<D, P, M>,
+    extension: impl Into<Extension>,
+) where
+    D: DeclarePartGenerator<Mapper = M>,
+    P: PropertyPartGenerator<M>,
+    M: TypeMapper,
+{
+    // src
     let sources = all_file_structure(src, "json");
-    let convertor = JsonToRustConvertor::new(src, generator);
+    let convertor = JsonToLangConvertor::new(src, generator);
+    let extension: Extension = extension.into();
     let dists = sources
         .iter()
-        .map(|s| convertor.convert(dist, s, "rs").to_snake_path())
+        .map(|s| convertor.convert(dist, s, extension).to_snake_path())
         .collect();
     file_structures_to_files(&dists);
-    create_rust_mod_files(dist);
+}
+pub fn json_file_to_lang_file<D, P, M>(
+    source: impl AsRef<Path>,
+    dist: &str,
+    generator: TypeDescriptionGenerator<D, P, M>,
+    extension: impl Into<Extension>,
+) where
+    D: DeclarePartGenerator<Mapper = M>,
+    P: PropertyPartGenerator<M>,
+    M: TypeMapper,
+{
+    let convertor = JsonToLangConvertor::new("", generator);
+    let source = FileStructer::from_path(source);
+    let result = convertor.convert(dist, &source, extension).to_snake_path();
+    file_structures_to_files(&vec![result]);
 }
 pub fn json_to_rust_(
     source: impl AsRef<Path>,

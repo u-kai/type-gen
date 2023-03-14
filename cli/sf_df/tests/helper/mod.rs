@@ -35,7 +35,7 @@ impl TestDirectoryOperator {
         let path = path.into();
         let content = content.into();
         assert!(Path::new(&path).exists());
-        assert_eq!(content, read_to_string(&path).unwrap());
+        assert_eq!(read_to_string(&path).unwrap(), content,);
         self.paths.push(path);
     }
     #[allow(unused)]

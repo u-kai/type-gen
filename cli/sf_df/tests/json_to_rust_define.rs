@@ -189,8 +189,7 @@ pub mod array;
         );
         rust_operator.assert_exist_with_content(
             "./tests/dist/nests/child/array.rs",
-            r#"#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
-pub type ArrayArray = Vec<Array>;
+            r#"pub type ArrayArray = Vec<Array>;
 #[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
 pub struct Array {
     pub arr: Vec<ArrayArr>,
@@ -211,8 +210,7 @@ pub struct ArrayArrData {
         );
         rust_operator.assert_exist_with_content(
             "./tests/dist/nests/child/json_placeholder.rs",
-            r#"#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
-pub type JsonPlaceholderArray = Vec<JsonPlaceholder>;
+            r#"pub type JsonPlaceholderArray = Vec<JsonPlaceholder>;
 #[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
 pub struct JsonPlaceholder {
     pub body: String,
