@@ -21,7 +21,7 @@ use crate::{
     configs::FileToFileConfig,
     extension::Extension,
     fileconvertor::{FileStructer, FileStructerConvertor, PathStructure},
-    fileoperator::{all_file_structure, file_structures_to_files},
+    fileoperator::{all_file_structure, file_structures_to_files, is_dir},
 };
 
 pub type JsonToRustConvertor =
@@ -104,12 +104,28 @@ pub fn json_to_lang<D, P, M>(
     P: PropertyPartGenerator<M>,
     M: TypeMapper,
 {
-    let src_path: &Path = src.as_ref();
-    let extension: Extension = extension.into();
-    if src_path.is_file() && extension.is_this_extension(src_path) {
-        json_file_to_lang_file(src, dist, generator, extension)
-    } else {
-        json_dir_to_lang_dir(src, dist, generator, extension)
+    let src = Fs::new(src);
+    let dist = Fs::new(dist);
+    match src {
+        Fs::Dir(src_root) => match dist {
+            Fs::Dir(dist_root) => {
+                json_dir_to_lang_dir(src_root, dist_root, generator, extension);
+            }
+            Fs::File(_dist_file) => {
+                todo!()
+            }
+        },
+        Fs::File(src_file) => match dist {
+            Fs::Dir(dist_root) => {
+                let src = FileStructer::from_path(src_file);
+                let convertor = JsonToLangConvertor::new(src.path().parent_str(), generator);
+                let dist = convertor.convert(dist_root, &src, extension);
+                file_structures_to_files(&vec![dist]);
+            }
+            Fs::File(dist_file) => {
+                json_file_to_lang_file(src_file, dist_file, generator, extension);
+            }
+        },
     }
 }
 
@@ -122,13 +138,11 @@ enum Fs<'a> {
     Dir(&'a str),
 }
 impl<'a> Fs<'a> {
-    fn new(path: &'a str, extension: impl Into<Extension>) -> Self {
-        let path_: &Path = path.as_ref();
-        let extension: Extension = extension.into();
-        if path_.is_file() && extension.is_this_extension(path) {
-            Self::File(path)
-        } else {
+    fn new(path: &'a str) -> Self {
+        if is_dir(path) {
             Self::Dir(path)
+        } else {
+            Self::File(path)
         }
     }
 }
