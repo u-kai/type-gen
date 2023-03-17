@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, fs::read_to_string, path::Path};
 
 use npc::fns::to_snake;
 
-use crate::extension::Extension;
+use crate::{extension::Extension, fileoperator::is_dir};
 
 pub trait FileStructerConvertor {
     fn convert(
@@ -119,11 +119,27 @@ impl PathStructure {
         let path = path.to_str().unwrap().to_string();
         Self { path, extension }
     }
+    pub fn to(&self, dist_path: &str, extension: impl Into<Extension>) -> Self {
+        let extension: Extension = extension.into();
+        let dist_path = if is_dir(dist_path) {
+            format!(
+                "{}/{}.{}",
+                dist_path,
+                self.name_without_extension(),
+                extension.to_str()
+            )
+        } else {
+            dist_path.to_string()
+        };
+        Self {
+            path: dist_path,
+            extension: extension,
+        }
+    }
     pub fn parent_str(&self) -> String {
         let path: &Path = self.path.as_ref();
         if let Some(Some(filename)) = path.file_name().map(|f| f.to_str()) {
             let mut result = self.path.replace(filename, "");
-            println!("{}", &result[result.len() - 2..]);
             if &result[result.len() - 2..] == "//" {
                 result.pop();
             }

@@ -63,6 +63,56 @@ mod integration_tests {
         operator.remove_dir_all(root);
         operator.clean_up();
     }
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn jsonのファイル名を指定した場合でも型変換されたrustのファイルが出力される() {
+        let mut json_operator = TestDirectoryOperator::new();
+        json_operator.clean_up_before_test("./tests/test.json");
+        json_operator.prepare_file(
+            "./tests/test.json",
+            r#"
+            {
+              "id": 0,
+              "name": "kai",
+              "obj": {
+                "from": "kanagawa",
+                "now": "????",
+                "age": 20
+              }
+            }"#,
+        );
+        let mut rust_operator = TestDirectoryOperator::new();
+        rust_operator.clean_up_before_test("./tests/dist");
+
+        let generator = RustTypeDescriptionGeneratorBuilder::new()
+            .declare_part_pub_all()
+            .property_part_pub_all()
+            .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"])
+            .build();
+        let config = FileToFileConfig::new("./tests/test.json", "./tests/dist");
+        json_to_rust(config, generator);
+
+        rust_operator.assert_exist_with_content(
+            "./tests/dist/test.rs",
+            r#"#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct Test {
+    pub id: usize,
+    pub name: String,
+    pub obj: TestObj,
+}
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestObj {
+    pub age: usize,
+    pub from: String,
+    pub now: String,
+}
+"#,
+        );
+        rust_operator.remove_dir_all("./tests/dist");
+        json_operator.remove_file("./tests/test.json");
+        json_operator.clean_up();
+        rust_operator.clean_up();
+    }
 
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]

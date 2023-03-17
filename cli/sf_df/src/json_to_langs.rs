@@ -70,8 +70,8 @@ where
         let json = Json::from(filestructer.content());
         let type_structure =
             json.into_type_structures(to_pascal(filestructer.name_without_extension()));
-        let rust_type_define = self.generator.generate_concat_define(type_structure);
-        filestructer.to_dist(&self.src_root, dist_root, extension, rust_type_define)
+        let type_define = self.generator.generate_concat_define(type_structure);
+        filestructer.to_dist(&self.src_root, dist_root, extension, type_define)
     }
 }
 
@@ -113,6 +113,34 @@ pub fn json_to_lang<D, P, M>(
     }
 }
 
+#[test]
+fn pathを指定した拡張子とディレクトリに変換する() {
+    let src = PathStructure::from_path("test/test.json");
+    let dist_parent = "dist";
+    let sut = src.to(dist_parent, "rs");
+
+    assert_eq!(sut.path_str(), "dist/test.rs");
+}
+// srcがファイルでdistがdir指定
+// srcがdirでdistがdir
+// srcがdirでdistがfile(一ファイルに集約？)
+
+enum Fs<'a> {
+    File(&'a str),
+    Dir(&'a str),
+}
+impl<'a> Fs<'a> {
+    fn new(path: &'a str, extension: impl Into<Extension>) -> Self {
+        let path_: &Path = path.as_ref();
+        let extension: Extension = extension.into();
+        if path_.is_file() && extension.is_this_extension(path) {
+            Self::File(path)
+        } else {
+            Self::Dir(path)
+        }
+    }
+}
+
 pub fn json_dir_to_lang_dir<D, P, M>(
     src: &str,
     dist: &str,
@@ -134,7 +162,7 @@ pub fn json_dir_to_lang_dir<D, P, M>(
     file_structures_to_files(&dists);
 }
 pub fn json_file_to_lang_file<D, P, M>(
-    source: impl AsRef<Path>,
+    src: &str,
     dist: &str,
     generator: TypeDescriptionGenerator<D, P, M>,
     extension: impl Into<Extension>,
@@ -144,8 +172,10 @@ pub fn json_file_to_lang_file<D, P, M>(
     M: TypeMapper,
 {
     let convertor = JsonToLangConvertor::new("", generator);
-    let source = FileStructer::from_path(source);
+    let source = FileStructer::from_path(src);
+    println!("{:#?}", source);
     let result = convertor.convert(dist, &source, extension).to_snake_path();
+    println!("{:#?}", result);
     file_structures_to_files(&vec![result]);
 }
 pub fn json_to_rust_(

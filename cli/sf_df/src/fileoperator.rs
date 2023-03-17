@@ -94,7 +94,7 @@ fn prepare_parents(path: impl AsRef<Path>) {
         .replacen(filename, "", 1);
     mkdir_rec(dirs).unwrap();
 }
-fn is_dir<P: AsRef<Path>>(path: P) -> bool {
+pub fn is_dir<P: AsRef<Path>>(path: P) -> bool {
     path.as_ref().is_dir() || path.as_ref().extension().is_none()
 }
 
