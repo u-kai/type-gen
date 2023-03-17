@@ -11,5 +11,5 @@ fn main() {
         .property_part_pub_all()
         .build();
 
-    json_to_rust(config, generator);
+    json_to_rust(&config.src, &config.dist, generator);
 }

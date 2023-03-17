@@ -90,7 +90,7 @@ mod integration_tests {
             .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"])
             .build();
         let config = FileToFileConfig::new("./tests/test.json", "./tests/dist");
-        json_to_rust(config, generator);
+        json_to_rust(&config.src, &config.dist, generator);
 
         rust_operator.assert_exist_with_content(
             "./tests/dist/test.rs",
@@ -110,6 +110,7 @@ pub struct TestObj {
         );
         rust_operator.remove_dir_all("./tests/dist");
         json_operator.remove_file("./tests/test.json");
+        json_operator.remove_file("./tests/dist/dist.rs");
         json_operator.clean_up();
         rust_operator.clean_up();
     }
@@ -187,8 +188,7 @@ pub struct TestObj {
             .property_part_pub_all()
             .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"])
             .build();
-        let config = FileToFileConfig::new("./tests/jsons", "./tests/dist");
-        json_to_rust(config, generator);
+        json_to_rust("./tests/jsons", "./tests/dist", generator);
 
         rust_operator.assert_exist_with_content(
             "./tests/dist.rs",

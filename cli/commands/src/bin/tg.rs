@@ -21,7 +21,7 @@ use rust::{
     },
     generator_builder::RustTypeDescriptionGeneratorBuilder,
 };
-use sf_df::json_to_langs::{json_to_go, json_to_rust_};
+use sf_df::json_to_langs::{json_to_go, json_to_rust};
 
 fn main() {
     let args = CommandArgs::parse();
@@ -41,7 +41,7 @@ fn main() {
         Some(Lang::Rust) => {
             let builder = RustTypeDescriptionGeneratorBuilder::new();
             let generator = args.build_generator(builder);
-            json_to_rust_(args.source, dist, generator);
+            json_to_rust(&args.source, dist, generator);
         }
         _ => {
             let mut builder = GoTypeDescriptionGeneratorBuilder::new();

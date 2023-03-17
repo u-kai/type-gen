@@ -3,8 +3,8 @@ use std::{fs::read_to_string, path::Path};
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 
 pub struct FileToFileConfig {
-    pub(crate) src: String,
-    pub(crate) dist: String,
+    pub src: String,
+    pub dist: String,
 }
 
 impl FileToFileConfig {
