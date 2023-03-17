@@ -113,14 +113,6 @@ pub fn json_to_lang<D, P, M>(
     }
 }
 
-#[test]
-fn pathを指定した拡張子とディレクトリに変換する() {
-    let src = PathStructure::from_path("test/test.json");
-    let dist_parent = "dist";
-    let sut = src.to(dist_parent, "rs");
-
-    assert_eq!(sut.path_str(), "dist/test.rs");
-}
 // srcがファイルでdistがdir指定
 // srcがdirでdistがdir
 // srcがdirでdistがfile(一ファイルに集約？)

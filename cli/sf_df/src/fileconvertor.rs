@@ -267,6 +267,14 @@ mod path_structure_tests {
 
         assert_eq!(result, PathStructure::new("./dist/main.go", "go"));
     }
+    #[test]
+    fn pathを指定した拡張子とディレクトリに変換する() {
+        let src = PathStructure::from_path("test/test.json");
+        let dist_parent = "dist";
+        let sut = src.to(dist_parent, "rs");
+
+        assert_eq!(sut.path_str(), "dist/test.rs");
+    }
 
     #[test]
     fn パスの名前をsnake_caseに変更する() {
