@@ -18,7 +18,6 @@ use rust::description_generator::{
 };
 
 use crate::{
-    configs::FileToFileConfig,
     extension::Extension,
     fileconvertor::{FileStructer, FileStructerConvertor, PathStructure},
     fileoperator::{all_file_structure, file_structures_to_files, is_dir},
@@ -178,34 +177,7 @@ pub fn json_file_to_lang_file<D, P, M>(
 
 pub fn json_to_go(src: &str, dist: &str, generator: GoTypeDescriptionGenerator) {
     json_to_lang(src, dist, generator, "go");
-    //let source = FileStructer::from_path(source);
-    //let convertor = JsonToGoConvertor::new("", generator);
-    //let result = convertor.convert(dist, &source, "go").to_snake_path();
-    //file_structures_to_files(&vec![result]);
 }
-pub fn json_dirs_to_go(config: FileToFileConfig, generator: GoTypeDescriptionGenerator) {
-    let src = &config.src;
-    let dist = &config.dist;
-    let sources = all_file_structure(src, "json");
-    let convertor = JsonToGoConvertor::new(src, generator);
-    let dists = sources
-        .iter()
-        .map(|s| convertor.convert(dist, s, "go").to_snake_path())
-        .collect();
-    file_structures_to_files(&dists);
-}
-// src/parts
-// src/parts/nests/data.rs
-// src/parts/nests/child.rs
-//
-// 1 ルートからlsしてdirの名前を.rsにする
-// 2 上で作成した.rsの中身をルートとして1をやるって感じか？
-// 新規作成によってタイミングがズレるのでぼつ
-// src/parts.rs->pub mod nests;
-// src/parts/nests.rs->pub mod child;pub mod data;
-// src/parts/nests/data.rs
-// src/parts/nests/child.rs
-//
 
 pub fn create_rust_mod_files(root: &str) {
     fn prepare_parent_files(root: &str) {
