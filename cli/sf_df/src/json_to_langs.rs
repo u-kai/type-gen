@@ -1,4 +1,4 @@
-use std::{io::ErrorKind, path::Path};
+use std::path::Path;
 
 use description_generator::{
     type_description_generator::{
@@ -176,11 +176,12 @@ pub fn json_file_to_lang_file<D, P, M>(
     file_structures_to_files(&vec![result]);
 }
 
-pub fn json_to_go(source: impl AsRef<Path>, dist: &str, generator: GoTypeDescriptionGenerator) {
-    let source = FileStructer::from_path(source);
-    let convertor = JsonToGoConvertor::new("", generator);
-    let result = convertor.convert(dist, &source, "go").to_snake_path();
-    file_structures_to_files(&vec![result]);
+pub fn json_to_go(src: &str, dist: &str, generator: GoTypeDescriptionGenerator) {
+    json_to_lang(src, dist, generator, "go");
+    //let source = FileStructer::from_path(source);
+    //let convertor = JsonToGoConvertor::new("", generator);
+    //let result = convertor.convert(dist, &source, "go").to_snake_path();
+    //file_structures_to_files(&vec![result]);
 }
 pub fn json_dirs_to_go(config: FileToFileConfig, generator: GoTypeDescriptionGenerator) {
     let src = &config.src;

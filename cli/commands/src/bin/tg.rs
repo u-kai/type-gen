@@ -36,7 +36,7 @@ fn main() {
                 builder = builder.property_part_all_pointer();
             }
             let generator = args.build_generator(builder);
-            json_to_go(args.source, dist, generator);
+            json_to_go(&args.source, dist, generator);
         }
         Some(Lang::Rust) => {
             let builder = RustTypeDescriptionGeneratorBuilder::new();
@@ -49,7 +49,7 @@ fn main() {
                 builder = builder.property_part_all_pointer();
             }
             let generator = args.build_generator(builder);
-            json_to_go(args.source, dist, generator);
+            json_to_go(&args.source, dist, generator);
         }
     };
 }

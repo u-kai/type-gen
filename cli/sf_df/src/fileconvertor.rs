@@ -115,7 +115,12 @@ impl PathStructure {
     }
     pub fn from_path(path: impl AsRef<Path>) -> Self {
         let path = path.as_ref();
-        let extension = Extension::from(path.extension().unwrap().to_str().unwrap());
+        let extension = Extension::from(
+            path.extension()
+                .expect(&format!("{:#?} is not has extension", path))
+                .to_str()
+                .unwrap(),
+        );
         let path = path.to_str().unwrap().to_string();
         Self { path, extension }
     }
