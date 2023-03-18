@@ -117,6 +117,138 @@ pub struct TestObj {
 
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
+    fn jsons配下のjsonファイルを一枚のrustの型定義に集約してdist配下に格納する() {
+        let mut json_operator = TestDirectoryOperator::new();
+        json_operator.clean_up_before_test("./tests/jsons");
+        json_operator.prepare_file(
+            "./tests/jsons/test.json",
+            r#"
+            {
+              "id": 0,
+              "name": "kai",
+              "obj": {
+                "from": "kanagawa",
+                "now": "????",
+                "age": 20
+              }
+            }"#,
+        );
+        json_operator.prepare_file(
+            "./tests/jsons/nests/test-child.json",
+            r#"
+            {
+              "id": 0,
+              "child": [
+                {
+                  "hello": "world"
+                }
+              ]
+            }
+        "#,
+        );
+        json_operator.prepare_file("./tests/jsons/nests/child/json-placeholder.json", r#"
+            [
+              {
+                "userId": 1,
+                "id": 1,
+                "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+                "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+              },
+              {
+                "userId": 1,
+                "id": 2,
+                "title": "qui est esse",
+                "body": "est rerum tempore vitae\nsequi sint nihil reprehenderit dolor beatae ea dolores neque\nfugiat blanditiis voluptate porro vel nihil molestiae ut reiciendis\nqui aperiam non debitis possimus qui neque nisi nulla"
+              }
+            ] 
+        "#);
+        json_operator.prepare_file(
+            "./tests/jsons/nests/child/array.json",
+            r#"
+            [
+              {
+                "id": 0,
+                "greet": "Hello",
+                "arr": [
+                  {
+                    "data": {
+                      "id": 0
+                    }
+                  }
+                ]
+              }
+            ]
+        "#,
+        );
+        let mut rust_operator = TestDirectoryOperator::new();
+        rust_operator.clean_up_before_test("./tests/dist");
+
+        let generator = RustTypeDescriptionGeneratorBuilder::new()
+            .declare_part_pub_all()
+            .property_part_pub_all()
+            .declare_part_set_all_derive_with_serde(vec!["Debug", "Clone"])
+            .build();
+        json_to_rust("./tests/jsons", "./tests/dist.rs", generator);
+
+        rust_operator.assert_exist_with_content(
+            "./tests/dist.rs",
+            r#"#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct Test {
+    pub id: usize,
+    pub name: String,
+    pub obj: TestObj,
+}
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestObj {
+    pub age: usize,
+    pub from: String,
+    pub now: String,
+}
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestChild {
+    pub child: Vec<TestChildChild>,
+    pub id: usize,
+}
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestChildChild {
+    pub hello: String,
+}
+pub type ArrayArray = Vec<Array>;
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct Array {
+    pub arr: Vec<ArrayArr>,
+    pub greet: String,
+    pub id: usize,
+}
+
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct ArrayArr {
+    pub data: ArrayArrData,
+}
+
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct ArrayArrData {
+    pub id: usize,
+}
+pub type JsonPlaceholderArray = Vec<JsonPlaceholder>;
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct JsonPlaceholder {
+    pub body: String,
+    pub id: usize,
+    pub title: String,
+    #[serde(rename = "userId")]
+    pub user_id: usize,
+}
+"#,
+        );
+        rust_operator.remove_file("./tests/dist.rs");
+        rust_operator.remove_dir_all("./tests/dist");
+        json_operator.remove_dir_all("./tests/jsons");
+        json_operator.clean_up();
+        rust_operator.clean_up();
+    }
+    #[test]
+    #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
     fn jsons配下のjsonファイルをrustの型定義に変換してdist配下に格納する() {
         let mut json_operator = TestDirectoryOperator::new();
         json_operator.clean_up_before_test("./tests/jsons");
