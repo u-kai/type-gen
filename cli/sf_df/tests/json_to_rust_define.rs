@@ -111,6 +111,7 @@ pub struct TestObj {
         rust_operator.remove_dir_all("./tests/dist");
         json_operator.remove_file("./tests/test.json");
         json_operator.remove_file("./tests/dist/dist.rs");
+        rust_operator.remove_file("./tests/dist.rs");
         json_operator.clean_up();
         rust_operator.clean_up();
     }
@@ -204,15 +205,6 @@ pub struct TestObj {
     pub from: String,
     pub now: String,
 }
-#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
-pub struct TestChild {
-    pub child: Vec<TestChildChild>,
-    pub id: usize,
-}
-#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
-pub struct TestChildChild {
-    pub hello: String,
-}
 pub type ArrayArray = Vec<Array>;
 #[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
 pub struct Array {
@@ -238,6 +230,15 @@ pub struct JsonPlaceholder {
     pub title: String,
     #[serde(rename = "userId")]
     pub user_id: usize,
+}
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestChild {
+    pub child: Vec<TestChildChild>,
+    pub id: usize,
+}
+#[derive(Debug,Clone,serde::Deserialize,serde::Serialize)]
+pub struct TestChildChild {
+    pub hello: String,
 }
 "#,
         );

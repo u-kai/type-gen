@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{io::ErrorKind, path::Path};
 
 use description_generator::{
     type_description_generator::{
@@ -96,8 +96,20 @@ pub fn json_to_lang<D, P, M>(
             Fs::Dir(dist_root) => {
                 json_dir_to_lang_dir(src_root, dist_root, generator, extension);
             }
-            Fs::File(_dist_file) => {
-                todo!()
+            Fs::File(dist_file) => {
+                let sources = all_file_structure(src_root, "json");
+                let contents = sources
+                    .into_iter()
+                    .map(|file| {
+                        (
+                            to_pascal(file.name_without_extension()),
+                            Json::from(file.content()),
+                        )
+                    })
+                    .map(|(filename, json)| json.into_type_structures(filename))
+                    .map(|type_structures| generator.generate_concat_define(type_structures))
+                    .fold(String::new(), |acc, cur| format!("{}{}", acc, cur));
+                FileStructer::new(contents, PathStructure::from_path(dist_file)).new_file();
             }
         },
         Fs::File(src_file) => match dist {
@@ -217,7 +229,7 @@ pub fn create_rust_mod_files(root: &str) {
                 )
                 .new_file();
             }
-            Err(e) => panic!("root {} {:#?}", root, e),
+            Err(e) => println!("not dirs {}, {:#?}", root, e),
         };
     }
     prepare_parent_files(root);
@@ -247,6 +259,6 @@ pub fn create_rust_mod_files(root: &str) {
             )
             .new_file();
         }
-        Err(e) => panic!("root {} {:#?}", root, e),
+        Err(e) => println!("not dirs {}, {:#?}", root, e),
     };
 }
