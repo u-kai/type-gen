@@ -144,7 +144,11 @@ impl PathStructure {
     pub fn parent_str(&self) -> String {
         let path: &Path = self.path.as_ref();
         if let Some(Some(filename)) = path.file_name().map(|f| f.to_str()) {
+            println!("{}", filename);
             let mut result = self.path.replace(filename, "");
+            if result == "" {
+                return "./".to_string();
+            }
             if &result[result.len() - 2..] == "//" {
                 result.pop();
             }

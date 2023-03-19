@@ -65,7 +65,6 @@ struct CommandArgs {
     #[clap(short, long)]
     pub_all: bool,
     #[clap(short, long)]
-    //   source: Source,
     source: String,
     #[clap(short, long)]
     dist: Option<String>,
@@ -74,19 +73,6 @@ struct CommandArgs {
     #[clap(short, long)]
     optional_all: bool,
 }
-
-//struct Source(String);
-//impl FromStr for Source {
-//type Err = String;
-//fn from_str(s: &str) -> Result<Self, Self::Err> {
-//Ok(Self(s.to_string()))
-//}
-//}
-//impl Source {
-//fn is_dir(&self) -> bool {
-
-//}
-//}
 
 trait TypeDescriptionGeneratorBuilder<D, P, M>
 where
