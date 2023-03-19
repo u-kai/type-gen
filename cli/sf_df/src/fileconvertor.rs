@@ -4,14 +4,6 @@ use npc::fns::to_snake;
 
 use crate::{extension::Extension, fileoperator::is_dir};
 
-pub trait FileStructerConvertor {
-    fn convert(
-        &self,
-        src_root: &str,
-        file: &FileStructer,
-        extension: impl Into<Extension>,
-    ) -> FileStructer;
-}
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FileStructer {
     content: String,
@@ -81,26 +73,6 @@ mod file_structer_tests {
         let sut = FileStructer::new("fn main(){}", PathStructure::new("src/main.rs", "rs"));
 
         assert_eq!(sut.name_without_extension(), "main");
-    }
-}
-
-pub struct FileConvetor {
-    source: Vec<FileStructer>,
-}
-impl FileConvetor {
-    pub fn new(source: Vec<FileStructer>) -> Self {
-        Self { source }
-    }
-    pub fn convert(
-        &self,
-        src_root: &str,
-        extension: Extension,
-        convertor: impl FileStructerConvertor,
-    ) -> Vec<FileStructer> {
-        self.source
-            .iter()
-            .map(|file| convertor.convert(src_root, file, extension))
-            .collect()
     }
 }
 

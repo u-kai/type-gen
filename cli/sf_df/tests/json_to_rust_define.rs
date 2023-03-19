@@ -4,8 +4,7 @@ mod integration_tests {
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
         configs::FileToFileConfig,
-        extension::Extension,
-        fileconvertor::{FileConvetor, FileStructer, PathStructure},
+        fileconvertor::{FileStructer, PathStructure},
         json_to_langs::{create_rust_mod_files, json_to_rust},
     };
 
