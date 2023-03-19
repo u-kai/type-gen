@@ -6,20 +6,14 @@ use description_generator::{
     },
     type_mapper::TypeMapper,
 };
-use go::description_generator::{
-    declare_part_generator::GoDeclarePartGenerator, mapper::GoMapper,
-    property_part_generator::GoPropertyPartGenerator, GoTypeDescriptionGenerator,
-};
+use go::description_generator::GoTypeDescriptionGenerator;
 use json::json::Json;
 use npc::fns::to_pascal;
-use rust::description_generator::{
-    declare_part_generator::RustDeclarePartGenerator, mapper::RustMapper,
-    property_part_generator::RustPropertyPartGenerator, RustTypeDescriptionGenerator,
-};
+use rust::description_generator::RustTypeDescriptionGenerator;
 
 use crate::{
     extension::Extension,
-    fileconvertor::{FileStructer, FileStructerConvertor, PathStructure},
+    fileconvertor::{FileStructer, PathStructure},
     fileoperator::{all_file_structure, file_structures_to_files, is_dir},
 };
 
@@ -68,8 +62,6 @@ pub fn json_to_lang<D, P, M>(
                     json.into_type_structures(to_pascal(src.name_without_extension()));
                 let content = generator.generate_concat_define(type_structure);
                 let dist = src.to(dist_root, extension, content).to_snake_path();
-                //let convertor = JsonToLangConvertor::new(src.path().parent_str(), generator);
-                //let dist = convertor.convert(dist_root, &src, extension);
                 file_structures_to_files(&vec![dist]);
             }
             FsType::File(dist_file) => {
@@ -131,7 +123,7 @@ pub fn json_file_to_lang_file<D, P, M>(
     let json = Json::from(source.content());
     let type_structure = json.into_type_structures(to_pascal(source.name_without_extension()));
     let content = generator.generate_concat_define(type_structure);
-    let dist = source.to_dist(src, dist, extension, content);
+    let dist = source.to(dist, extension, content);
     file_structures_to_files(&vec![dist]);
 }
 
