@@ -7,6 +7,7 @@ use description_generator::{
     type_mapper::TypeMapper,
 };
 use json::json::Json;
+use reqwest::{header::CONTENT_TYPE, Client, RequestBuilder};
 use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
 use sf_df::{
     extension::Extension,
@@ -59,16 +60,37 @@ where
             extension,
         }
     }
+
+    fn create_req(config: &RequestSourceConfig) -> RequestBuilder {
+        let req = Client::new();
+        let req = match &config.method {
+            Some(HttpMethod::Get) => req.get(&config.url),
+            Some(HttpMethod::Post) => req.post(&config.url),
+            None => req.get(&config.url),
+        };
+        let req = match &config.basic_auth {
+            Some(auth) => {
+                let username = std::env::var(&auth.username).unwrap();
+                let password = std::env::var(&auth.password).unwrap();
+                req.basic_auth(username, Some(password))
+            }
+            None => req,
+        };
+        let req = match &config.bearer_auth {
+            Some(auth) => {
+                let token = std::env::var(&auth.token).unwrap();
+                req.bearer_auth(token)
+            }
+            None => req,
+        };
+        req.header(CONTENT_TYPE, "application/json")
+            .header(reqwest::header::USER_AGENT, "RustProgram")
+    }
     async fn gen_all(&self) -> reqwest::Result<()> {
         for src in &self.config.sources {
-            let res = reqwest::Client::new()
-                .get(&src.url)
-                .header(reqwest::header::USER_AGENT, "Mac")
-                .send()
-                .await?
-                .text()
-                .await?;
-
+            let req = Self::create_req(src);
+            let res = req.send().await?.text().await?;
+            println!("res : {:#?}", res);
             let json = serde_json::from_str::<serde_json::Value>(&res)
                 .expect(&format!("Error res :{}", res));
             let json = Json::from(json);
@@ -102,9 +124,18 @@ impl RequestConfig {
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct RequestSourceConfig {
     name: String,
+    method: Option<HttpMethod>,
     url: String,
+    #[serde(rename = "basicAuth")]
     basic_auth: Option<BasicAuthConfig>,
+    #[serde(rename = "bearerAuth")]
     bearer_auth: Option<BearerAuthConfig>,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+enum HttpMethod {
+    Get,
+    Post,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
