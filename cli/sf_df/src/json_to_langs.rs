@@ -21,6 +21,11 @@ pub fn json_to_rust(src: &str, dist: &str, generator: RustTypeDescriptionGenerat
     json_to_lang(src, dist, generator, "rs");
     create_rust_mod_files(dist);
 }
+
+pub fn json_to_go(src: &str, dist: &str, generator: GoTypeDescriptionGenerator) {
+    json_to_lang(src, dist, generator, "go");
+}
+
 pub fn json_to_lang<D, P, M>(
     src: &str,
     dist: &str,
@@ -56,16 +61,10 @@ pub fn json_to_lang<D, P, M>(
         },
         FsType::File(src_file) => match dist {
             FsType::Dir(dist_root) => {
-                let src = FileStructer::from_path(src_file);
-                let json = Json::from(src.content());
-                let type_structure =
-                    json.into_type_structures(to_pascal(src.name_without_extension()));
-                let content = generator.generate_concat_define(type_structure);
-                let dist = src.to(dist_root, extension, content).to_snake_path();
-                file_structures_to_files(&vec![dist]);
+                json_file_into_dist(src_file, dist_root, generator, extension);
             }
             FsType::File(dist_file) => {
-                json_file_to_lang_file(src_file, dist_file, generator, extension);
+                json_file_into_dist(src_file, dist_file, generator, extension);
             }
         },
     }
@@ -85,7 +84,7 @@ impl<'a> FsType<'a> {
     }
 }
 
-pub fn json_dir_to_lang_dir<D, P, M>(
+fn json_dir_to_lang_dir<D, P, M>(
     src_root: &str,
     dist_root: &str,
     generator: TypeDescriptionGenerator<D, P, M>,
@@ -109,9 +108,9 @@ pub fn json_dir_to_lang_dir<D, P, M>(
         .collect();
     file_structures_to_files(&dists);
 }
-pub fn json_file_to_lang_file<D, P, M>(
-    src: &str,
-    dist: &str,
+fn json_file_into_dist<D, P, M>(
+    src_file: &str,
+    dist_root: &str,
     generator: TypeDescriptionGenerator<D, P, M>,
     extension: impl Into<Extension>,
 ) where
@@ -119,18 +118,13 @@ pub fn json_file_to_lang_file<D, P, M>(
     P: PropertyPartGenerator<M>,
     M: TypeMapper,
 {
-    let source = FileStructer::from_path(src);
-    let json = Json::from(source.content());
-    let type_structure = json.into_type_structures(to_pascal(source.name_without_extension()));
+    let src = FileStructer::from_path(src_file);
+    let json = Json::from(src.content());
+    let type_structure = json.into_type_structures(to_pascal(src.name_without_extension()));
     let content = generator.generate_concat_define(type_structure);
-    let dist = source.to(dist, extension, content);
-    file_structures_to_files(&vec![dist]);
+    let dist = src.to(dist_root, extension, content).to_snake_path();
+    dist.new_file();
 }
-
-pub fn json_to_go(src: &str, dist: &str, generator: GoTypeDescriptionGenerator) {
-    json_to_lang(src, dist, generator, "go");
-}
-
 pub fn create_rust_mod_files(root: &str) {
     fn prepare_parent_files(root: &str) {
         let root_path: &Path = root.as_ref();
