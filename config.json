@@ -1,4 +1,25 @@
 {
-  "src": "examples/jsons",
-  "dist": "examples/dist"
+  "dist_root": "requests/dist",
+  "sources": [
+    {
+      "name": "JsonPlaceHolder",
+      "url": "https://jsonplaceholder.typicode.com/posts/1"
+    },
+    {
+      "name": "GitHubRateLimit",
+      "url": "https://api.github.com/rate_limit",
+      "basicAuth": {
+        "userName": "GITHUB_OAUTH_CLIENT_ID",
+        "password": "GITHUB_OAUTH_CLIENT_SECRET"
+      }
+    },
+    {
+      "name": "TwitterResponse",
+      "url": "https://api.github.com/rate_limit",
+      "bearerAuth": {
+        "userName": "TWITTER_CLIENT_ID",
+        "password": "TWITTER_CLIENT_SECRET"
+      }
+    }
+  ]
 }
