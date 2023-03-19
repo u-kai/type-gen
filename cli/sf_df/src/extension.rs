@@ -9,6 +9,7 @@ pub enum Extension {
     Ts,
     Py,
     Json,
+    Empty,
 }
 impl Extension {
     pub fn to_str(&self) -> &'static str {
@@ -116,6 +117,7 @@ impl From<&str> for Extension {
             "ts" => Extension::Ts,
             "py" => Extension::Py,
             "json" => Extension::Json,
+            "" => Extension::Empty,
             _ => panic!("not impl extension {}", s),
         }
     }
@@ -131,6 +133,7 @@ impl Into<&'static str> for &Extension {
             Extension::Ts => "ts",
             Extension::Py => "py",
             Extension::Json => "json",
+            Extension::Empty => "",
         }
     }
 }
@@ -144,6 +147,7 @@ impl Into<&'static str> for Extension {
             Self::Ts => "ts",
             Self::Py => "py",
             Self::Json => "json",
+            Self::Empty => "",
         }
     }
 }

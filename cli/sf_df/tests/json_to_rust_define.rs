@@ -65,7 +65,8 @@ mod integration_tests {
     }
     #[test]
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
-    fn jsonのファイル名を指定した場合でも型変換されたrustのファイルが出力される() {
+    fn jsonのファイル名を指定した場合でも型変換されたrustのファイルが出力先のディレクトリに出力される(
+    ) {
         let mut json_operator = TestDirectoryOperator::new();
         json_operator.clean_up_before_test("./tests/test.json");
         json_operator.prepare_file(

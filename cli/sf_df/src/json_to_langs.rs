@@ -114,8 +114,13 @@ pub fn json_to_lang<D, P, M>(
         FsType::File(src_file) => match dist {
             FsType::Dir(dist_root) => {
                 let src = FileStructer::from_path(src_file);
-                let convertor = JsonToLangConvertor::new(src.path().parent_str(), generator);
-                let dist = convertor.convert(dist_root, &src, extension);
+                let json = Json::from(src.content());
+                let type_structure =
+                    json.into_type_structures(to_pascal(src.name_without_extension()));
+                let content = generator.generate_concat_define(type_structure);
+                let dist = src.to(dist_root, extension, content).to_snake_path();
+                //let convertor = JsonToLangConvertor::new(src.path().parent_str(), generator);
+                //let dist = convertor.convert(dist_root, &src, extension);
                 file_structures_to_files(&vec![dist]);
             }
             FsType::File(dist_file) => {
@@ -174,9 +179,7 @@ pub fn json_dir_to_lang_dir<D, P, M>(
     P: PropertyPartGenerator<M>,
     M: TypeMapper,
 {
-    // src
     let sources = all_file_structure(src_root, "json");
-    //let convertor = JsonToLangConvertor::new(src, generator);
     let extension = extension.into();
     let dists = sources
         .into_iter()
@@ -188,10 +191,6 @@ pub fn json_dir_to_lang_dir<D, P, M>(
             dist.to_snake_path()
         })
         .collect();
-    //let dists = sources
-    //.iter()
-    //.map(|s| convertor.convert(dist, s, extension).to_snake_path())
-    //.collect();
     file_structures_to_files(&dists);
 }
 pub fn json_file_to_lang_file<D, P, M>(
@@ -204,10 +203,12 @@ pub fn json_file_to_lang_file<D, P, M>(
     P: PropertyPartGenerator<M>,
     M: TypeMapper,
 {
-    let convertor = JsonToLangConvertor::new("", generator);
     let source = FileStructer::from_path(src);
-    let result = convertor.convert(dist, &source, extension).to_snake_path();
-    file_structures_to_files(&vec![result]);
+    let json = Json::from(source.content());
+    let type_structure = json.into_type_structures(to_pascal(source.name_without_extension()));
+    let content = generator.generate_concat_define(type_structure);
+    let dist = source.to_dist(src, dist, extension, content);
+    file_structures_to_files(&vec![dist]);
 }
 
 pub fn json_to_go(src: &str, dist: &str, generator: GoTypeDescriptionGenerator) {

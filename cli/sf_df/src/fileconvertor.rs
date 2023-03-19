@@ -45,6 +45,15 @@ impl FileStructer {
     pub fn path(&self) -> &PathStructure {
         &self.path
     }
+    pub fn to(
+        &self,
+        dist_root: &str,
+        dist_extension: impl Into<Extension>,
+        content: impl Into<String>,
+    ) -> Self {
+        let dist = self.path.to(dist_root, dist_extension);
+        Self::new(content, dist)
+    }
     pub fn to_dist(
         &self,
         src_root: &str,
@@ -144,12 +153,11 @@ impl PathStructure {
     pub fn parent_str(&self) -> String {
         let path: &Path = self.path.as_ref();
         if let Some(Some(filename)) = path.file_name().map(|f| f.to_str()) {
-            println!("{}", filename);
-            let mut result = self.path.replace(filename, "");
-            if result == "" {
+            if filename == path.to_str().unwrap() {
                 return "./".to_string();
             }
-            if &result[result.len() - 2..] == "//" {
+            let mut result = self.path.replace(filename, "");
+            if result.len() > 2 && &result[result.len() - 2..] == "//" {
                 result.pop();
             }
             result
@@ -246,6 +254,22 @@ mod path_structure_tests {
         let result = sut.parent_str();
 
         assert_eq!(result, "./project/src/lib/common/");
+    }
+    #[test]
+    fn 空文字の親のパスは空文字を返す() {
+        let sut = PathStructure::new("a", "");
+
+        let result = sut.parent_str();
+
+        assert_eq!(result, "./");
+    }
+    #[test]
+    fn 親のパスがない場合はカレントディレクトリを返す() {
+        let sut = PathStructure::new("util.rs", "rs");
+
+        let result = sut.parent_str();
+
+        assert_eq!(result, "./");
     }
     #[test]
     fn ルートの指定にルートより上のパスがあってもルート配下のディレクトリのみを返す() {
