@@ -6,7 +6,7 @@ mod integration_tests {
         configs::FileToFileConfig,
         extension::Extension,
         fileconvertor::{FileConvetor, FileStructer, PathStructure},
-        json_to_langs::{create_rust_mod_files, json_to_rust, JsonToRustConvertor},
+        json_to_langs::{create_rust_mod_files, json_to_rust},
     };
 
     use crate::helper::TestDirectoryOperator;
@@ -410,41 +410,5 @@ pub struct JsonPlaceholder {
         json_operator.remove_dir_all("./tests/jsons");
         json_operator.clean_up();
         rust_operator.clean_up();
-    }
-    #[test]
-    fn jsonのfile_structureをrustの型定義に変換する() {
-        let source = vec![
-            FileStructer::new(r#"{"id":0}"#, PathStructure::new("json/test.json", "json")),
-            FileStructer::new(
-                r#"{"arr":[{"id":0}]}"#,
-                PathStructure::new("json/arr.json", "json"),
-            ),
-        ];
-        let sut = FileConvetor::new(source);
-        let generator = RustTypeDescriptionGeneratorBuilder::new().build();
-        let convertor = JsonToRustConvertor::new("json", generator);
-        let result = sut.convert("src", Extension::Rs, convertor);
-
-        assert_eq!(
-            result,
-            vec![
-                FileStructer::new(
-                    r#"struct Test {
-    id: usize,
-}"#,
-                    PathStructure::new("src/test.rs", "rs"),
-                ),
-                FileStructer::new(
-                    r#"struct Arr {
-    arr: Vec<ArrArr>,
-}
-struct ArrArr {
-    id: usize,
-}
-"#,
-                    PathStructure::new("src/arr.rs", "rs"),
-                ),
-            ]
-        )
     }
 }

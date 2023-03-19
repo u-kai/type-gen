@@ -23,57 +23,6 @@ use crate::{
     fileoperator::{all_file_structure, file_structures_to_files, is_dir},
 };
 
-pub type JsonToRustConvertor =
-    JsonToLangConvertor<RustDeclarePartGenerator, RustPropertyPartGenerator, RustMapper>;
-pub type JsonToGoConvertor =
-    JsonToLangConvertor<GoDeclarePartGenerator, GoPropertyPartGenerator, GoMapper>;
-
-pub struct JsonToLangConvertor<Declare, Property, Mapper>
-where
-    Declare: DeclarePartGenerator<Mapper = Mapper>,
-    Property: PropertyPartGenerator<Mapper>,
-    Mapper: TypeMapper,
-{
-    src_root: String,
-    generator: TypeDescriptionGenerator<Declare, Property, Mapper>,
-}
-impl<Declare, Property, Mapper> JsonToLangConvertor<Declare, Property, Mapper>
-where
-    Declare: DeclarePartGenerator<Mapper = Mapper>,
-    Property: PropertyPartGenerator<Mapper>,
-    Mapper: TypeMapper,
-{
-    pub fn new(
-        src_root: impl Into<String>,
-        generator: TypeDescriptionGenerator<Declare, Property, Mapper>,
-    ) -> Self {
-        Self {
-            src_root: src_root.into(),
-            generator,
-        }
-    }
-}
-impl<Declare, Property, Mapper> FileStructerConvertor
-    for JsonToLangConvertor<Declare, Property, Mapper>
-where
-    Declare: DeclarePartGenerator<Mapper = Mapper>,
-    Property: PropertyPartGenerator<Mapper>,
-    Mapper: TypeMapper,
-{
-    fn convert(
-        &self,
-        dist_root: &str,
-        filestructer: &FileStructer,
-        extension: impl Into<Extension>,
-    ) -> FileStructer {
-        let json = Json::from(filestructer.content());
-        let type_structure =
-            json.into_type_structures(to_pascal(filestructer.name_without_extension()));
-        let type_define = self.generator.generate_concat_define(type_structure);
-        filestructer.to_dist(&self.src_root, dist_root, extension, type_define)
-    }
-}
-
 pub fn json_to_rust(src: &str, dist: &str, generator: RustTypeDescriptionGenerator) {
     json_to_lang(src, dist, generator, "rs");
     create_rust_mod_files(dist);
@@ -128,31 +77,6 @@ pub fn json_to_lang<D, P, M>(
             }
         },
     }
-}
-
-// src の読み込み-> 読み込んだ内容を変換 -> distに配置
-// srcがファイルでdistがdirならsrcの内容を変換したものをdistの子供として配置する
-// srcがファイルでdistもファイルならsrcの内容を変換したものをそのままdistのファイルとして作成すれば良い
-// srcがディレクトリでdistもディレクトリなら,srcのなかのファイル群をすべて読み取り，その親パスをそのままdist二編こすれば良い
-// src/test.json src/child/child.json -> dist/test.rs dist/child/child.rs
-
-//fn convert(src: FsType, dist: FsType) -> FsType {
-//src
-//}
-fn convert_json_to_lang(json_root: FsType, lang_root: FsType) {
-    let sources = read_json_files(json_root);
-}
-
-fn read_json_files(root: FsType) -> Vec<FileStructer> {
-    match root {
-        FsType::File(file) => vec![FileStructer::from_path(file)],
-        FsType::Dir(dir) => all_file_structure(dir, "json"),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    // #[test]
 }
 
 enum FsType<'a> {
