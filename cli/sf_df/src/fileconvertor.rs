@@ -1,6 +1,6 @@
 use std::{collections::BTreeSet, fs::read_to_string, path::Path};
 
-use npc::fns::to_snake;
+use npc::fns::{to_snake, to_snake_consider_with_wellknown_word};
 
 use crate::{extension::Extension, fileoperator::is_dir};
 
@@ -27,6 +27,12 @@ impl FileStructer {
     }
     pub fn to_snake_path(self) -> Self {
         Self::new(self.content, self.path.to_snake_path())
+    }
+    pub fn to_snake_path_consider_with_wellknown_words(self) -> Self {
+        Self::new(
+            self.content,
+            self.path.to_snake_path_consider_with_wellknown_words(),
+        )
     }
     pub fn name_without_extension(&self) -> &str {
         self.path.name_without_extension()
@@ -172,6 +178,11 @@ impl PathStructure {
             }
         }
         &self.path
+    }
+    pub fn to_snake_path_consider_with_wellknown_words(self) -> Self {
+        let new_name = to_snake_consider_with_wellknown_word(self.name_without_extension());
+        let new_path = self.path.replace(self.name_without_extension(), &new_name);
+        Self::new(new_path, self.extension)
     }
     pub fn to_snake_path(self) -> Self {
         let new_name = to_snake(self.name_without_extension());

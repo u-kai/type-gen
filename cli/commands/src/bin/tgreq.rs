@@ -102,7 +102,8 @@ where
                 src.name,
                 self.extension.to_str()
             );
-            let dist_path = PathStructure::new(dist_path, self.extension).to_snake_path();
+            let dist_path = PathStructure::new(dist_path, self.extension)
+                .to_snake_path_consider_with_wellknown_words();
             FileStructer::new(content, dist_path).new_file()
         }
         Ok(())

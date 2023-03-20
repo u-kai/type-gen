@@ -103,7 +103,7 @@ fn json_dir_to_lang_dir<D, P, M>(
             let type_structure = json.into_type_structures(to_pascal(src.name_without_extension()));
             let content = generator.generate_concat_define(type_structure);
             let dist = src.to_dist(src_root, dist_root, extension, content);
-            dist.to_snake_path()
+            dist.to_snake_path_consider_with_wellknown_words()
         })
         .collect();
     file_structures_to_files(&dists);
@@ -122,7 +122,9 @@ fn json_file_into_dist<D, P, M>(
     let json = Json::from(src.content());
     let type_structure = json.into_type_structures(to_pascal(src.name_without_extension()));
     let content = generator.generate_concat_define(type_structure);
-    let dist = src.to(dist_root, extension, content).to_snake_path();
+    let dist = src
+        .to(dist_root, extension, content)
+        .to_snake_path_consider_with_wellknown_words();
     dist.new_file();
 }
 pub fn create_rust_mod_files(root: &str) {
