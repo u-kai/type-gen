@@ -9,6 +9,45 @@ use description_generator::{
 use json::json::Json;
 use serde::de::value::Error;
 
+#[derive(Debug, Clone)]
+pub struct SourceValidator {
+    src: String,
+}
+#[derive(Debug, PartialEq, Eq)]
+pub enum TypeGenSource {
+    File(FileSource),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct FileSource {}
+impl FileSource {
+    fn new(src: &str) -> Self {
+        FileSource {}
+    }
+}
+impl SourceValidator {
+    pub fn new(src: impl Into<String>) -> Self {
+        Self { src: src.into() }
+    }
+    pub fn check_input(&self) -> Option<TypeGenSource> {
+        Some(TypeGenSource::File(FileSource::new(&self.src)))
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn 入力されたsrcからsrcの種類を判定するjson_fine版() {
+        let src = "input.json";
+        let sut = SourceValidator::new(src);
+
+        assert_eq!(
+            sut.check_input().unwrap(),
+            TypeGenSource::File(FileSource::new(src))
+        );
+    }
+}
+
 struct ReadSource {}
 
 struct RemoteSource<D, P, M>
