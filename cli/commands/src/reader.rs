@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, path::Path};
+use std::{collections::HashMap, fs::read_to_string, path::Path};
 
 use description_generator::{
     type_description_generator::{
@@ -7,8 +7,9 @@ use description_generator::{
     type_mapper::TypeMapper,
 };
 use json::json::Json;
-use serde::de::value::Error;
-use sf_df::fileoperator::is_dir;
+use serde::{de::value::Error, Deserialize};
+use serde_json::Value;
+use sf_df::{extension::Extension, fileconvertor::PathStructure, fileoperator::is_dir};
 
 #[derive(Debug, Clone)]
 pub struct SourceValidator {
@@ -19,12 +20,81 @@ pub enum TypeGenSource {
     File(FileSource),
     Dir(DirSource),
 }
+impl TypeGenSource {
+    pub fn new(src: &str, extension: impl Into<Extension>) -> TypeGenSource {
+        if Self::is_dir(src) {
+            return TypeGenSource::Dir(DirSource::new_with_extension(src, extension));
+        }
+        TypeGenSource::File(FileSource::new(src))
+    }
+    fn is_dir(src: &str) -> bool {
+        is_dir(src)
+    }
+    fn from_config_str(s: &str) -> Result<Self, serde_json::Error> {
+        let value = serde_json::from_str::<Value>(s)?;
+        match value.get("src") {
+            Some(value) => {
+                let root = match value.get("root") {
+                    Some(Value::String(s)) => s.as_str(),
+                    _ => todo!(),
+                };
+                let extension = value
+                    .get("extension")
+                    .map(|v| match v {
+                        Value::String(s) => s.as_str(),
+                        _ => todo!(),
+                    })
+                    .unwrap_or_else(|| "json");
+                Ok(TypeGenSource::new(root, extension))
+            }
+            None => todo!(),
+        }
+    }
+    //fn new(src: &str) -> Self {
+}
 
+//#[derive(Debug, PartialEq, Eq)]
+//pub struct ConfigSource {
+//src: TypeGenSource,
+//}
+//impl ConfigSource {
+//fn from_str(s: &str) -> Result<Self, serde_json::Error> {
+//let value = serde_json::from_str::<Value>(s)?;
+//match value.get("src") {
+//Some(value) => {
+//let Some(root) = value.get("root").map(|v| v.to_string())else{
+//todo!()
+//};
+//let extension = value
+//.get("extension")
+//.map(|v| v.to_string())
+//.unwrap_or_else(|| "json".to_string());
+//Ok(TypeGenSource::new(&root, extension))
+//}
+//None => todo!(),
+//}
+//}
+////fn new(src: &str) -> Self {
+////ConfigSource {}
+////}
+//}
 #[derive(Debug, PartialEq, Eq)]
-pub struct DirSource {}
+pub struct DirSource {
+    root: String,
+    extension: Extension,
+}
 impl DirSource {
     fn new(src: &str) -> Self {
-        DirSource {}
+        DirSource {
+            root: src.to_string(),
+            extension: Extension::Json,
+        }
+    }
+    fn new_with_extension(src: &str, extension: impl Into<Extension>) -> Self {
+        DirSource {
+            root: src.to_string(),
+            extension: extension.into(),
+        }
     }
 }
 #[derive(Debug, PartialEq, Eq)]
@@ -50,6 +120,8 @@ impl SourceValidator {
 }
 #[cfg(test)]
 mod tests {
+    use sf_df::{extension::Extension, fileconvertor::PathStructure};
+
     use super::*;
     #[test]
     fn 入力されたsrcからsrcの種類を判定するjson_fine版() {
@@ -71,6 +143,27 @@ mod tests {
             TypeGenSource::Dir(DirSource::new(src))
         );
     }
+    #[test]
+    fn 設定ファイルにはsrcの指定が必須() {
+        let config_src = r#"{"src":{"root":"./","extension":"json"}}"#;
+
+        let sut = TypeGenSource::from_config_str(config_src).unwrap();
+
+        assert_eq!(
+            sut,
+            TypeGenSource::Dir(DirSource::new_with_extension("./", "json"))
+        );
+    }
+    //#[test]
+    //fn 入力されたsrcからsrcの種類を判定するconfig_file版() {
+    //let src = "tg-config.json";
+    //let sut = SourceValidator::new(src);
+
+    //assert_eq!(
+    //sut.check_input().unwrap(),
+    //TypeGenSource::Config(ConfigSource::new(src))
+    //);
+    //}
 }
 
 struct ReadSource {}
