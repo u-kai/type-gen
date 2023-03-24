@@ -734,7 +734,7 @@ mod tests {
         assert_return_statement(stmt1, "5");
         assert_return_statement(stmt2, "10");
         assert_return_statement(stmt3, "838383");
-        fn assert_return_statement(stmt: Statement, value: &str) {
+        fn assert_return_statement(stmt: Statement, _value: &str) {
             match stmt {
                 Statement::ReturnStatement(s) => {
                     assert_eq!(s.token_literal(), "return");

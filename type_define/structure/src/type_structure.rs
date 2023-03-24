@@ -23,3 +23,7 @@ impl TypeStructure {
         Self::Alias(AliasTypeStructure::new(name.into(), property_type))
     }
 }
+
+pub trait IntoTypeStructures {
+    fn into_type_structures(self) -> Vec<TypeStructure>;
+}

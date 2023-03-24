@@ -519,7 +519,7 @@ dependencies = [
 [[package]]
 name = "npc"
 version = "0.1.0"
-source = "git+https://github.com/u-kai/npc.git?branch=main#d96fd250d21ad28bb39a8302fb524596e1b888a1"
+source = "git+https://github.com/u-kai/npc.git?branch=main#4123b5720ea7f81c5cdb4634eeaf3a8783457941"
 
 [[package]]
 name = "num_cpus"
