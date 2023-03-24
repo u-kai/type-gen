@@ -8,6 +8,7 @@ use description_generator::{
 };
 use json::json::Json;
 use serde::de::value::Error;
+use sf_df::fileoperator::is_dir;
 
 #[derive(Debug, Clone)]
 pub struct SourceValidator {
@@ -16,8 +17,16 @@ pub struct SourceValidator {
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeGenSource {
     File(FileSource),
+    Dir(DirSource),
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct DirSource {}
+impl DirSource {
+    fn new(src: &str) -> Self {
+        DirSource {}
+    }
+}
 #[derive(Debug, PartialEq, Eq)]
 pub struct FileSource {}
 impl FileSource {
@@ -30,7 +39,13 @@ impl SourceValidator {
         Self { src: src.into() }
     }
     pub fn check_input(&self) -> Option<TypeGenSource> {
+        if self.is_dir() {
+            return Some(TypeGenSource::Dir(DirSource::new(&self.src)));
+        }
         Some(TypeGenSource::File(FileSource::new(&self.src)))
+    }
+    fn is_dir(&self) -> bool {
+        is_dir(&self.src)
     }
 }
 #[cfg(test)]
@@ -44,6 +59,16 @@ mod tests {
         assert_eq!(
             sut.check_input().unwrap(),
             TypeGenSource::File(FileSource::new(src))
+        );
+    }
+    #[test]
+    fn 入力されたsrcからsrcの種類を判定するdir版() {
+        let src = "src";
+        let sut = SourceValidator::new(src);
+
+        assert_eq!(
+            sut.check_input().unwrap(),
+            TypeGenSource::Dir(DirSource::new(src))
         );
     }
 }
