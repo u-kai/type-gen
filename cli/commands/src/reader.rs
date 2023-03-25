@@ -12,7 +12,7 @@ use serde_json::Value;
 use sf_df::{
     extension::Extension,
     fileconvertor::{FileStructer, PathStructure},
-    fileoperator::is_dir,
+    fileoperator::{all_file_structure, is_dir},
 };
 
 #[derive(Debug, Clone)]
@@ -75,6 +75,12 @@ impl DirSource {
             extension: extension.into(),
         }
     }
+    fn to_files(&self) -> Vec<FileSource> {
+        all_file_structure(&self.root, self.extension)
+            .into_iter()
+            .map(|f| FileSource { src: f })
+            .collect()
+    }
 }
 #[derive(Debug, PartialEq, Eq)]
 pub struct FileSource {
@@ -119,13 +125,28 @@ mod tests {
     }
     #[test]
     fn 入力されたsrcからsrcの種類を判定するdir版() {
-        let src = "src";
-        //let sut = SourceValidator::new(src);
-
-        //assert_eq!(
-        //sut.check_input().unwrap(),
-        //TypeGenSource::Dir(DirSource::new(src))
-        //);
+        let src = "test-root";
+        let mut ope = TestDirectoryOperator::new();
+        let child1 = "test-root/test.json";
+        let child2 = "test-root/child/child.json";
+        ope.clean_up_before_test(src);
+        ope.prepare_file(child1, r#"{"test":"Hello"}"#);
+        ope.prepare_file(child2, r#"{"child":"World"}"#);
+        let sut = TypeGenSource::new(src, "json");
+        assert_eq!(
+            sut,
+            TypeGenSource::Dir(DirSource::new_with_extension(src, "json"))
+        );
+        match sut {
+            TypeGenSource::Dir(d) => {
+                assert_eq!(
+                    d.to_files(),
+                    vec![FileSource::new(child1), FileSource::new(child2)]
+                )
+            }
+            _ => panic!(),
+        }
+        ope.clean_up();
     }
     #[test]
     fn 設定ファイルにはsrcかr_srcの指定が必須() {
