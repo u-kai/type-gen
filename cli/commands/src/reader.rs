@@ -11,7 +11,7 @@ use npc::fns::to_pascal;
 use serde::{de::value::Error, Deserialize};
 use serde_json::Value;
 use sf_df::{
-    extension::Extension,
+    extension::{self, Extension},
     fileconvertor::{FileStructer, PathStructure},
     fileoperator::{all_file_structure, is_dir},
 };
@@ -27,11 +27,68 @@ use sf_df::{
 // 具体的にはdistのルートと
 // FileSourceからinto_type_structuresを作成できるのではないか？
 // 一旦Jsonだけ気にしてみる
-
-#[derive(Debug, Clone)]
-pub struct SourceValidator {
-    src: String,
+#[derive(Debug, PartialEq, Eq)]
+pub enum TypeGenDist {
+    File(FileDist),
+    Dir(DirDist),
 }
+impl TypeGenDist {
+    pub fn new(path: &str, extension: impl Into<Extension>) -> Self {
+        if Self::is_dir(path) {
+            return Self::Dir(DirDist::new_with_extension(path, extension));
+        }
+        Self::File(FileDist::new(path, extension))
+    }
+    pub fn distribution(&self, content: String) {}
+    fn extension(&self) -> Extension {
+        match self {
+            Self::File(f) => f.extension,
+            Self::Dir(d) => d.extension,
+        }
+    }
+    fn is_dir(path: &str) -> bool {
+        is_dir(path)
+    }
+}
+#[derive(Debug, PartialEq, Eq)]
+pub struct FileDist {
+    path: String,
+    extension: Extension,
+}
+impl FileDist {
+    fn new(path: impl Into<String>, extension: impl Into<Extension>) -> Self {
+        FileDist {
+            path: path.into(),
+            extension: extension.into(),
+        }
+    }
+}
+#[derive(Debug, PartialEq, Eq)]
+pub struct DirDist {
+    root: String,
+    extension: Extension,
+}
+impl DirDist {
+    fn new(src: &str) -> Self {
+        DirDist {
+            root: src.to_string(),
+            extension: Extension::Json,
+        }
+    }
+    fn new_with_extension(src: &str, extension: impl Into<Extension>) -> Self {
+        DirDist {
+            root: src.to_string(),
+            extension: extension.into(),
+        }
+    }
+    //fn to_files(&self) -> Vec<FileDist> {
+    //all_file_structure(&self.root, self.extension)
+    //.into_iter()
+    //.map(|f| FileDist { src: f })
+    //.collect()
+    //}
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeGenSource {
     File(FileSource),
@@ -102,21 +159,53 @@ impl SourceConvertor {
     fn new(src: TypeGenSource) -> Self {
         Self { src }
     }
-    fn convert<D, P, M>(&self, generator: TypeDescriptionGenerator<D, P, M>) -> String
+    fn convert<D, P, M>(
+        &self,
+        dist_root: &str,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+        extension: impl Into<Extension>,
+    ) -> Vec<FileStructer>
     where
         D: DeclarePartGenerator<Mapper = M>,
         P: PropertyPartGenerator<M>,
         M: TypeMapper,
     {
-        match &self.src {
-            TypeGenSource::File(f) => {
-                let json = Json::from(f.src.content());
-                let type_structure =
-                    json.into_type_structures(to_pascal(f.src.name_without_extension()));
-                generator.generate_concat_define(type_structure)
+        let dist = TypeGenDist::new(dist_root, extension);
+        match (&self.src, dist) {
+            (TypeGenSource::File(s), TypeGenDist::File(d)) => vec![s.src.to(
+                &d.path,
+                d.extension,
+                Self::file_source_to_type_description(s, generator),
+            )],
+            (TypeGenSource::Dir(s), TypeGenDist::Dir(d)) => {
+                let s_root = &s.root;
+                s.to_files()
+                    .iter()
+                    .map(|s| {
+                        s.src.to_dist(
+                            s_root,
+                            &d.root,
+                            d.extension,
+                            Self::file_source_to_type_description(s, generator),
+                        )
+                    })
+                    .collect()
             }
             _ => todo!(),
         }
+    }
+    fn file_source_to_type_description<D, P, M>(
+        f: &FileSource,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> String
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        let json = Json::from(f.src.content());
+        let type_structure = json.into_type_structures(to_pascal(f.src.name_without_extension()));
+        generator.generate_concat_define(type_structure)
     }
 }
 
@@ -153,7 +242,38 @@ mod tests {
     use super::*;
     #[test]
     #[ignore = "because create file"]
-    fn convetorはfile_sourceからtype_structuerの配列を生成できる() {
+    fn convertorはdir_sourceからtype_structuerの配列を生成できる() {
+        let src = "test-root";
+        let mut ope = TestDirectoryOperator::new();
+        let child1 = "test-root/test.json";
+        let child2 = "test-root/child/child.json";
+        ope.clean_up_before_test(src);
+        ope.prepare_file(child1, r#"{"test":"Hello"}"#);
+        ope.prepare_file(child2, r#"{"child":"World"}"#);
+        let src = TypeGenSource::new(src, "json");
+        let sut = SourceConvertor::new(src);
+        assert_eq!(
+            sut.convert(
+                "dist",
+                &RustTypeDescriptionGeneratorBuilder::new().build(),
+                "rs"
+            ),
+            vec![
+                FileStructer::new(
+                    "struct Test {\n    test: String,\n}",
+                    PathStructure::new("dist/test.rs", "rs")
+                ),
+                FileStructer::new(
+                    "struct Child {\n    child: String,\n}",
+                    PathStructure::new("dist/child/child.rs", "rs")
+                ),
+            ]
+        );
+        ope.clean_up();
+    }
+    #[test]
+    #[ignore = "because create file"]
+    fn convertorはfile_sourceからtype_structuerの配列を生成できる() {
         let src = "input.json";
         let mut ope = TestDirectoryOperator::new();
         ope.clean_up_before_test(src);
@@ -161,8 +281,15 @@ mod tests {
         let src = TypeGenSource::new(src, "json");
         let sut = SourceConvertor::new(src);
         assert_eq!(
-            sut.convert(RustTypeDescriptionGeneratorBuilder::new().build()),
-            "struct Input {\n    test: String,\n}"
+            sut.convert(
+                "test.rs",
+                &RustTypeDescriptionGeneratorBuilder::new().build(),
+                "rs"
+            ),
+            vec![FileStructer::new(
+                "struct Input {\n    test: String,\n}",
+                PathStructure::new("test.rs", "rs")
+            )]
         );
         ope.clean_up();
     }
