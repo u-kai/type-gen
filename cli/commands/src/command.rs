@@ -6,10 +6,7 @@ use sf_df::{
     json_to_langs::create_rust_mod_files,
 };
 
-use crate::{
-    config::TypeDescriptionGeneratorBuilder,
-    reader::{SourceConvertor, TypeGenSource},
-};
+use crate::config::{SourceConvertor, TypeGenSource};
 
 #[derive(Parser)]
 pub struct Cli {
@@ -114,13 +111,13 @@ impl Sub {
         remote_config_file: Option<String>,
         pub_all: bool,
         pointer_all: bool,
-        comment: Option<String>,
+        _comment: Option<String>,
         optional_all: bool,
     ) {
         let dist = if let Some(dist) = dist {
             dist
         } else {
-            "./".to_string()
+            "./dist".to_string()
         };
         let extension: Extension = if let Some(extension) = extension.as_ref() {
             extension.as_str().into()
@@ -134,7 +131,8 @@ impl Sub {
         };
         let mut builder = GoTypeDescriptionGeneratorBuilder::new();
         if pub_all {
-            builder = builder.pub_all()
+            builder = builder.declare_part_pub_all();
+            builder = builder.property_part_pub_all();
         }
         if pointer_all {
             builder = builder.property_part_all_pointer();
@@ -145,7 +143,7 @@ impl Sub {
         //builder = builder.property_part_all_comment(&comment.as_str());
         //}
         if optional_all {
-            builder = builder.all_optional();
+            builder = builder.property_part_all_optional();
         }
         let generator = builder.build();
         file_structures_to_files(
@@ -167,7 +165,7 @@ impl Sub {
         let dist = if let Some(dist) = dist {
             dist
         } else {
-            "./".to_string()
+            "./dist".to_string()
         };
         let extension: Extension = if let Some(extension) = extension.as_ref() {
             extension.as_str().into()
@@ -181,7 +179,8 @@ impl Sub {
         };
         let mut builder = RustTypeDescriptionGeneratorBuilder::new();
         if pub_all {
-            builder = builder.pub_all()
+            builder = builder.declare_part_pub_all();
+            builder = builder.property_part_pub_all();
         }
         if derives.is_some() {
             builder = builder.declare_part_all_attrs_with_serde(derives.unwrap());
@@ -192,7 +191,7 @@ impl Sub {
             builder = builder.property_part_all_comment(&comment.as_str());
         }
         if optional_all {
-            builder = builder.all_optional();
+            builder = builder.property_part_all_optional();
         }
         let generator = builder.build();
         file_structures_to_files(
