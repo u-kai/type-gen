@@ -619,6 +619,12 @@ impl From<&str> for Json {
         Json::from(json)
     }
 }
+impl From<String> for Json {
+    fn from(source: String) -> Self {
+        let json: Value = serde_json::from_str(&source).unwrap();
+        Json::from(json)
+    }
+}
 
 #[cfg(test)]
 mod test_json {

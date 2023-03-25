@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::read_to_string, path::Path};
+use std::{fs::read_to_string, path::Path};
 
 use description_generator::{
     type_description_generator::{
@@ -8,25 +8,14 @@ use description_generator::{
 };
 use json::json::Json;
 use npc::fns::to_pascal;
-use serde::{de::value::Error, Deserialize};
+use reqwest::{Client, RequestBuilder};
 use serde_json::Value;
 use sf_df::{
-    extension::{self, Extension},
+    extension::Extension,
     fileconvertor::{FileStructer, PathStructure},
     fileoperator::{all_file_structure, is_dir},
 };
 
-// dist に必要なもの
-// 変換先言語のGenerator
-// Vec<TypeStructure>
-// Vec<PathStructure>
-
-// TypeStructureにするのは誰の仕事？
-// Convertor?
-// ConvertorはVec<FileSource>をもらってDistを作る
-// 具体的にはdistのルートと
-// FileSourceからinto_type_structuresを作成できるのではないか？
-// 一旦Jsonだけ気にしてみる
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeGenDist {
     File(FileDist),
@@ -38,13 +27,6 @@ impl TypeGenDist {
             return Self::Dir(DirDist::new_with_extension(path, extension));
         }
         Self::File(FileDist::new(path, extension))
-    }
-    pub fn distribution(&self, content: String) {}
-    fn extension(&self) -> Extension {
-        match self {
-            Self::File(f) => f.extension,
-            Self::Dir(d) => d.extension,
-        }
     }
     fn is_dir(path: &str) -> bool {
         is_dir(path)
@@ -69,24 +51,12 @@ pub struct DirDist {
     extension: Extension,
 }
 impl DirDist {
-    fn new(src: &str) -> Self {
-        DirDist {
-            root: src.to_string(),
-            extension: Extension::Json,
-        }
-    }
     fn new_with_extension(src: &str, extension: impl Into<Extension>) -> Self {
         DirDist {
             root: src.to_string(),
             extension: extension.into(),
         }
     }
-    //fn to_files(&self) -> Vec<FileDist> {
-    //all_file_structure(&self.root, self.extension)
-    //.into_iter()
-    //.map(|f| FileDist { src: f })
-    //.collect()
-    //}
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -101,6 +71,18 @@ impl TypeGenSource {
             return TypeGenSource::Dir(DirSource::new_with_extension(src, extension));
         }
         TypeGenSource::File(FileSource::new(src))
+    }
+    pub fn from_config_file(file: impl AsRef<Path>) -> Result<Self, String> {
+        match read_to_string(&file) {
+            Ok(s) => match RemoteSource::from_path(&file) {
+                Ok(r) => Ok(Self::Remote(r)),
+                Err(_) => match Self::from_config_str(&s) {
+                    Ok(s) => Ok(s),
+                    Err(e) => Err(e.to_string()),
+                },
+            },
+            Err(e) => Err(e.to_string()),
+        }
     }
     fn is_dir(src: &str) -> bool {
         is_dir(src)
@@ -125,7 +107,6 @@ impl TypeGenSource {
             None => todo!(),
         }
     }
-    //fn new(src: &str) -> Self {
 }
 #[derive(Debug, PartialEq, Eq)]
 pub struct DirSource {
@@ -133,12 +114,6 @@ pub struct DirSource {
     extension: Extension,
 }
 impl DirSource {
-    fn new(src: &str) -> Self {
-        DirSource {
-            root: src.to_string(),
-            extension: Extension::Json,
-        }
-    }
     fn new_with_extension(src: &str, extension: impl Into<Extension>) -> Self {
         DirSource {
             root: src.to_string(),
@@ -159,7 +134,7 @@ impl SourceConvertor {
     pub fn new(src: TypeGenSource) -> Self {
         Self { src }
     }
-    pub fn convert<D, P, M>(
+    pub async fn convert<D, P, M>(
         &self,
         dist_root: &str,
         generator: &TypeDescriptionGenerator<D, P, M>,
@@ -173,10 +148,49 @@ impl SourceConvertor {
         let dist = TypeGenDist::new(dist_root, extension);
         match (&self.src, dist) {
             (TypeGenSource::File(s), TypeGenDist::File(d)) => Self::file_to_file(s, d, generator),
+            (TypeGenSource::File(s), TypeGenDist::Dir(d)) => Self::file_to_dir(s, d, generator),
             (TypeGenSource::Dir(s), TypeGenDist::Dir(d)) => Self::dir_to_dir(s, d, generator),
             (TypeGenSource::Dir(s), TypeGenDist::File(d)) => Self::dir_to_file(s, d, generator),
+            (TypeGenSource::Remote(s), TypeGenDist::Dir(d)) => {
+                Self::remote_to_dir(s, d, generator).await
+            }
+            (TypeGenSource::Remote(s), TypeGenDist::File(d)) => todo!(),
             _ => todo!(),
         }
+    }
+    async fn remote_to_dir<D, P, M>(
+        s: &RemoteSource,
+        d: DirDist,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> Vec<FileStructer>
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        let mut result = Vec::new();
+        for s in &s.sources {
+            let dist_path = format!("{}/{}.{}", &d.root, &s.name, d.extension.to_str());
+            let dist_path = PathStructure::new(dist_path, d.extension)
+                .to_snake_path_consider_with_wellknown_words();
+            result.push(Self::remote_to_file_structure(s, dist_path, generator).await);
+        }
+        result
+    }
+    async fn remote_to_file_structure<D, P, M>(
+        s: &RemoteSourceConfig,
+        dist_path: PathStructure,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> FileStructer
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        let client = RemoteClient::new();
+        let res = client.fetch(s).await.unwrap();
+        let content = Self::json_to_type_description(res, &s.name, generator);
+        FileStructer::new(content, dist_path)
     }
     fn dir_to_file<D, P, M>(
         s: &DirSource,
@@ -222,6 +236,22 @@ impl SourceConvertor {
             })
             .collect()
     }
+    fn file_to_dir<D, P, M>(
+        s: &FileSource,
+        d: DirDist,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> Vec<FileStructer>
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        vec![s.src.to(
+            &d.root,
+            d.extension,
+            Self::file_source_to_type_description(s, generator),
+        )]
+    }
     fn file_to_file<D, P, M>(
         s: &FileSource,
         d: FileDist,
@@ -247,9 +277,57 @@ impl SourceConvertor {
         P: PropertyPartGenerator<M>,
         M: TypeMapper,
     {
-        let json = Json::from(f.src.content());
-        let type_structure = json.into_type_structures(to_pascal(f.src.name_without_extension()));
+        Self::json_to_type_description(f.src.content(), f.src.name_without_extension(), generator)
+    }
+    fn json_to_type_description<D, P, M>(
+        json: impl Into<Json>,
+        name: &str,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> String
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        let json = json.into();
+        let type_structure = json.into_type_structures(to_pascal(name));
         generator.generate_concat_define(type_structure)
+    }
+}
+struct RemoteClient {}
+impl RemoteClient {
+    fn new() -> Self {
+        Self {}
+    }
+    fn create_req(config: &RemoteSourceConfig) -> RequestBuilder {
+        let req = reqwest::Client::new();
+        let req = match &config.method {
+            Some(HttpMethod::Get) => req.get(&config.url),
+            Some(HttpMethod::Post) => req.post(&config.url),
+            None => req.get(&config.url),
+        };
+        let req = match &config.basic_auth {
+            Some(auth) => {
+                let username = std::env::var(&auth.username).unwrap();
+                let password = std::env::var(&auth.password).unwrap();
+                req.basic_auth(username, Some(password))
+            }
+            None => req,
+        };
+        let req = match &config.bearer_auth {
+            Some(auth) => {
+                let token = std::env::var(&auth.token).unwrap();
+                req.bearer_auth(token)
+            }
+            None => req,
+        };
+        req.header(reqwest::header::CONTENT_TYPE, "application/json")
+            .header(reqwest::header::USER_AGENT, "RustProgram")
+    }
+    async fn fetch(&self, source: &RemoteSourceConfig) -> reqwest::Result<String> {
+        let req = Self::create_req(source);
+        let res = req.send().await?.text().await?;
+        Ok(res)
     }
 }
 
@@ -266,6 +344,8 @@ impl FileSource {
 }
 #[cfg(test)]
 mod tests {
+    use std::{fs::read_to_string, path::Path};
+
     use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
         extension::Extension, fileconvertor::PathStructure, fileoperator::create_new_file,
@@ -275,18 +355,10 @@ mod tests {
     fn url_to_dir() {}
     #[test]
     fn url_to_file() {}
-    #[test]
-    fn dir_to_dir() {}
-    #[test]
-    fn dir_to_file() {}
-    #[test]
-    fn file_to_dir() {}
-    #[test]
-    fn file_to_file() {}
     use super::*;
-    #[test]
+    #[tokio::test]
     #[ignore = "because create file"]
-    fn convertorはdir_sourceからtype_structuerの要素が一つの配列を生成できる() {
+    async fn convertorはdir_sourceからtype_structuerの要素が一つの配列を生成できる() {
         let src = "test-root";
         let mut ope = TestDirectoryOperator::new();
         let child1 = "test-root/test.json";
@@ -301,7 +373,8 @@ mod tests {
                 "dist/test.rs",
                 &RustTypeDescriptionGeneratorBuilder::new().build(),
                 "rs"
-            ),
+            )
+            .await,
             vec![FileStructer::new(
                 "struct Test {\n    test: String,\n}\nstruct Child {\n    child: String,\n}",
                 PathStructure::new("dist/test.rs", "rs")
@@ -309,9 +382,9 @@ mod tests {
         );
         ope.clean_up();
     }
-    #[test]
+    #[tokio::test]
     #[ignore = "because create file"]
-    fn convertorはdir_sourceからtype_structuerの配列を生成できる() {
+    async fn convertorはdir_sourceからtype_structuerの配列を生成できる() {
         let src = "test-root";
         let mut ope = TestDirectoryOperator::new();
         let child1 = "test-root/test.json";
@@ -326,7 +399,8 @@ mod tests {
                 "dist",
                 &RustTypeDescriptionGeneratorBuilder::new().build(),
                 "rs"
-            ),
+            )
+            .await,
             vec![
                 FileStructer::new(
                     "struct Test {\n    test: String,\n}",
@@ -340,9 +414,9 @@ mod tests {
         );
         ope.clean_up();
     }
-    #[test]
+    #[tokio::test]
     #[ignore = "because create file"]
-    fn convertorはfile_sourceからtype_structuerの配列を生成できる() {
+    async fn convertorはfile_sourceからtype_structuerの配列を生成できる() {
         let src = "input.json";
         let mut ope = TestDirectoryOperator::new();
         ope.clean_up_before_test(src);
@@ -354,7 +428,8 @@ mod tests {
                 "test.rs",
                 &RustTypeDescriptionGeneratorBuilder::new().build(),
                 "rs"
-            ),
+            )
+            .await,
             vec![FileStructer::new(
                 "struct Input {\n    test: String,\n}",
                 PathStructure::new("test.rs", "rs")
@@ -566,7 +641,19 @@ pub struct RemoteSource {
     sources: Vec<RemoteSourceConfig>,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
+impl RemoteSource {
+    fn from_path(file: impl AsRef<Path>) -> Result<Self, String> {
+        match read_to_string(file) {
+            Ok(file) => match serde_json::from_str(&file) {
+                Ok(s) => Ok(s),
+                Err(e) => Err(e.to_string()),
+            },
+            Err(e) => Err(e.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq, Clone)]
 struct RemoteSourceConfig {
     name: String,
     method: Option<HttpMethod>,
@@ -577,114 +664,19 @@ struct RemoteSourceConfig {
     bearer_auth: Option<BearerAuthConfig>,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq, Clone, Copy)]
 enum HttpMethod {
     Get,
     Post,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq, Clone)]
 struct BasicAuthConfig {
     username: String,
     password: String,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq, Clone)]
 struct BearerAuthConfig {
     token: String,
 }
-
-//struct RemoteSource<D, P, M>
-//where
-//D: DeclarePartGenerator<Mapper = M>,
-//P: PropertyPartGenerator<M>,
-//M: TypeMapper,
-//{
-//generator: TypeDescriptionGenerator<D, P, M>,
-//config: RemoteConfig,
-//}
-
-//impl<D, P, M> RemoteSource<D, P, M>
-//where
-//D: DeclarePartGenerator<Mapper = M>,
-//P: PropertyPartGenerator<M>,
-//M: TypeMapper,
-//{
-//fn create_req(config: &RemoteSourceConfig) -> reqwest::RequestBuilder {
-//let req = reqwest::Client::new();
-//let req = match &config.method {
-//Some(HttpMethod::Get) => req.get(&config.url),
-//Some(HttpMethod::Post) => req.post(&config.url),
-//None => req.get(&config.url),
-//};
-//let req = match &config.basic_auth {
-//Some(auth) => {
-//let username = std::env::var(&auth.username).unwrap();
-//let password = std::env::var(&auth.password).unwrap();
-//req.basic_auth(username, Some(password))
-//}
-//None => req,
-//};
-//let req = match &config.bearer_auth {
-//Some(auth) => {
-//let token = std::env::var(&auth.token).unwrap();
-//req.bearer_auth(token)
-//}
-//None => req,
-//};
-//req.header(reqwest::header::CONTENT_TYPE, "application/json")
-//.header(reqwest::header::USER_AGENT, "RustProgram")
-//}
-//async fn gen_all(&self) -> reqwest::Result<()> {
-////for src in &self.config.sources {
-////let req = Self::create_req(src);
-////let res = req.send().await?.text().await?;
-////println!("res : {:#?}", res);
-////let json = serde_json::from_str::<serde_json::Value>(&res)
-////.expect(&format!("Error res :{}", res));
-////let json = Json::from(json);
-////let type_structures = json.into_type_structures(&src.name);
-////let content = self.generator.generate_concat_define(type_structures);
-////let dist_path = format!("{}/{}.{}", s, src.name, self.extension.to_str());
-////let dist_path = PathStructure::new(dist_path, self.extension)
-////.to_snake_path_consider_with_wellknown_words();
-////FileStructer::new(content, dist_path).new_file()
-////}
-//Ok(())
-//}
-//}
-//impl RemoteConfig {
-//fn from_file_path(path: impl AsRef<Path>) -> std::io::Result<Self> {
-//let config = read_to_string(path)?;
-//Ok(serde_json::from_str(config.as_str()).unwrap())
-//}
-//fn from_direct(source: String) -> Result<Self, serde_json::Error> {
-//serde_json::from_str(&source)
-//}
-//}
-
-//#[derive(Debug, PartialEq, Eq)]
-//pub struct ConfigSource {
-//src: TypeGenSource,
-//}
-//impl ConfigSource {
-//fn from_str(s: &str) -> Result<Self, serde_json::Error> {
-//let value = serde_json::from_str::<Value>(s)?;
-//match value.get("src") {
-//Some(value) => {
-//let Some(root) = value.get("root").map(|v| v.to_string())else{
-//todo!()
-//};
-//let extension = value
-//.get("extension")
-//.map(|v| v.to_string())
-//.unwrap_or_else(|| "json".to_string());
-//Ok(TypeGenSource::new(&root, extension))
-//}
-//None => todo!(),
-//}
-//}
-////fn new(src: &str) -> Self {
-////ConfigSource {}
-////}
-//}

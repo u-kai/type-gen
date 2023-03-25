@@ -1,5 +1,6 @@
 use std::{fs::read_to_string, path::Path};
 
+use clap::Parser;
 use description_generator::{
     type_description_generator::{
         DeclarePartGenerator, PropertyPartGenerator, TypeDescriptionGenerator,
@@ -13,14 +14,16 @@ use sf_df::{
     extension::Extension,
     fileconvertor::{FileStructer, PathStructure},
 };
+use tg::command::Cli;
 
 #[tokio::main]
 async fn main() {
-    let generator = RustTypeDescriptionGeneratorBuilder::new()
-        .declare_part_pub_all()
-        .build();
-    let req = Requestor::from_path("config.json", generator, "rs");
-    req.gen_all().await.unwrap();
+    Cli::parse().exec().await;
+    //let generator = RustTypeDescriptionGeneratorBuilder::new()
+    //.declare_part_pub_all()
+    //.build();
+    //let req = Requestor::from_path("config.json", generator, "rs");
+    //req.gen_all().await.unwrap();
 }
 
 struct Requestor<D, P, M>
