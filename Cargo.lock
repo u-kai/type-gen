@@ -947,6 +947,7 @@ dependencies = [
  "description_generator",
  "go",
  "json",
+ "npc",
  "paste",
  "reqwest",
  "rust",

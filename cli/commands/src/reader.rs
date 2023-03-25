@@ -7,6 +7,7 @@ use description_generator::{
     type_mapper::TypeMapper,
 };
 use json::json::Json;
+use npc::fns::to_pascal;
 use serde::{de::value::Error, Deserialize};
 use serde_json::Value;
 use sf_df::{
@@ -14,6 +15,18 @@ use sf_df::{
     fileconvertor::{FileStructer, PathStructure},
     fileoperator::{all_file_structure, is_dir},
 };
+
+// dist に必要なもの
+// 変換先言語のGenerator
+// Vec<TypeStructure>
+// Vec<PathStructure>
+
+// TypeStructureにするのは誰の仕事？
+// Convertor?
+// ConvertorはVec<FileSource>をもらってDistを作る
+// 具体的にはdistのルートと
+// FileSourceからinto_type_structuresを作成できるのではないか？
+// 一旦Jsonだけ気にしてみる
 
 #[derive(Debug, Clone)]
 pub struct SourceValidator {
@@ -82,6 +95,31 @@ impl DirSource {
             .collect()
     }
 }
+struct SourceConvertor {
+    src: TypeGenSource,
+}
+impl SourceConvertor {
+    fn new(src: TypeGenSource) -> Self {
+        Self { src }
+    }
+    fn convert<D, P, M>(&self, generator: TypeDescriptionGenerator<D, P, M>) -> String
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        match &self.src {
+            TypeGenSource::File(f) => {
+                let json = Json::from(f.src.content());
+                let type_structure =
+                    json.into_type_structures(to_pascal(f.src.name_without_extension()));
+                generator.generate_concat_define(type_structure)
+            }
+            _ => todo!(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct FileSource {
     src: FileStructer,
@@ -95,6 +133,7 @@ impl FileSource {
 }
 #[cfg(test)]
 mod tests {
+    use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
     use sf_df::{
         extension::Extension, fileconvertor::PathStructure, fileoperator::create_new_file,
     };
@@ -114,6 +153,21 @@ mod tests {
     use super::*;
     #[test]
     #[ignore = "because create file"]
+    fn convetorはfile_sourceからtype_structuerの配列を生成できる() {
+        let src = "input.json";
+        let mut ope = TestDirectoryOperator::new();
+        ope.clean_up_before_test(src);
+        ope.prepare_file(src, r#"{"test":"Hello"}"#);
+        let src = TypeGenSource::new(src, "json");
+        let sut = SourceConvertor::new(src);
+        assert_eq!(
+            sut.convert(RustTypeDescriptionGeneratorBuilder::new().build()),
+            "struct Input {\n    test: String,\n}"
+        );
+        ope.clean_up();
+    }
+    #[test]
+    #[ignore = "because create file"]
     fn 入力されたsrcからsrcの種類を判定するjson_fine版() {
         let src = "input.json";
         let mut ope = TestDirectoryOperator::new();
@@ -123,6 +177,7 @@ mod tests {
         assert_eq!(sut, TypeGenSource::File(FileSource::new(src)));
         ope.clean_up();
     }
+    #[ignore = "because create file"]
     #[test]
     fn 入力されたsrcからsrcの種類を判定するdir版() {
         let src = "test-root";
