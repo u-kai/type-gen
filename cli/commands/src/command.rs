@@ -1,9 +1,12 @@
+use std::path::Path;
+
 use clap::{Parser, Subcommand};
 use go::generator_builder::GoTypeDescriptionGeneratorBuilder;
 use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
 use sf_df::{
-    extension::Extension, fileoperator::file_structures_to_files,
-    json_to_langs::create_rust_mod_files,
+    extension::Extension,
+    fileconvertor::{FileStructer, PathStructure},
+    fileoperator::file_structures_to_files,
 };
 
 use crate::config::{SourceConvertor, TypeGenSource};
@@ -147,9 +150,10 @@ impl Sub {
         }
         let generator = builder.build();
         file_structures_to_files(
-            &SourceConvertor::new(source)
+            SourceConvertor::new(source)
                 .convert(&dist, &generator, "go")
                 .await,
+            sf_df::fileoperator::NamingPrincipal::Snake,
         );
     }
     async fn exec_rust(
@@ -195,12 +199,70 @@ impl Sub {
         }
         let generator = builder.build();
         file_structures_to_files(
-            &SourceConvertor::new(source)
+            SourceConvertor::new(source)
                 .convert(&dist, &generator, "rs")
                 .await,
+            sf_df::fileoperator::NamingPrincipal::Snake,
         );
         if dist.len() > "../".len() {
             create_rust_mod_files(&dist);
         }
     }
+}
+
+pub fn create_rust_mod_files(root: &str) {
+    fn prepare_parent_files(root: &str) {
+        let root_path: &Path = root.as_ref();
+        match std::fs::read_dir(root_path) {
+            Ok(root_dir) => {
+                root_dir
+                    .filter_map(|entry| entry.ok())
+                    .filter_map(|entry| match entry.file_type() {
+                        Ok(file_type) => Some((file_type, entry.path())),
+                        Err(_) => None,
+                    })
+                    .for_each(|(file_type, path)| {
+                        if file_type.is_dir() {
+                            prepare_parent_files(path.to_str().unwrap());
+                        }
+                    });
+
+                FileStructer::new(
+                    "",
+                    PathStructure::new(Extension::to_filepath(root, "rs"), "rs"),
+                )
+                .new_file();
+            }
+            Err(e) => println!("not dirs {}, {:#?}", root, e),
+        };
+    }
+    prepare_parent_files(root);
+    let mut this_dirs_files = Vec::new();
+    let root_path: &Path = root.as_ref();
+    match std::fs::read_dir(root_path) {
+        Ok(root_dir) => {
+            root_dir
+                .filter_map(|entry| entry.ok())
+                .filter_map(|entry| match entry.file_type() {
+                    Ok(file_type) => Some((file_type, entry.path())),
+                    Err(_) => None,
+                })
+                .for_each(|(file_type, path)| {
+                    if file_type.is_dir() {
+                        create_rust_mod_files(path.to_str().unwrap());
+                    } else {
+                        this_dirs_files.push(path);
+                    }
+                });
+
+            FileStructer::new(
+                this_dirs_files.into_iter().fold(String::new(), |acc, s| {
+                    format!("{}pub mod {};\n", acc, Extension::remove_extension(s))
+                }),
+                PathStructure::new(Extension::to_filepath(root, "rs"), "rs"),
+            )
+            .new_file();
+        }
+        Err(e) => println!("not dirs {}, {:#?}", root, e),
+    };
 }

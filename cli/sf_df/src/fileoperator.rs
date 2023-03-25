@@ -19,9 +19,21 @@ impl FileStructer {
         create_new_file(self.path().path_str(), self.content())
     }
 }
-
-pub fn file_structures_to_files(v: &Vec<FileStructer>) {
-    v.iter().for_each(|f| f.new_file());
+pub enum NamingPrincipal {
+    Chain,
+    Snake,
+    Pascal,
+    Camel,
+    Constant,
+}
+pub fn file_structures_to_files(v: Vec<FileStructer>, file_principal: NamingPrincipal) {
+    match file_principal {
+        NamingPrincipal::Snake => {
+            v.into_iter()
+                .for_each(|f| f.to_snake_path_consider_with_wellknown_words().new_file());
+        }
+        _ => todo!("Other NamingPrincipal"),
+    }
 }
 #[cfg(not(target_os = "windows"))]
 pub const SEPARATOR: &'static str = r#"/"#;

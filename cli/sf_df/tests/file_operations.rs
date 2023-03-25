@@ -112,7 +112,7 @@ mod integration_tests {
     #[ignore = "watchでテストする際にwatchが生成のたびにループしてしまうので"]
     fn 受け取ったfilestructreの配列からディレクトリおよびファイルを生成する() {
         let mut operator = TestDirectoryOperator::new();
-        let root = "for-file_structure-to-file";
+        let root = "for_file_structure_to_file";
         operator.clean_up_before_test(root);
         let path1 = format!("{}/test.json", root);
         let path2 = format!("{}/arr.json", root);
@@ -126,7 +126,7 @@ mod integration_tests {
             ),
         ];
 
-        file_structures_to_files(&files);
+        file_structures_to_files(files, sf_df::fileoperator::NamingPrincipal::Snake);
         operator.assert_exist_with_content(&path1, r#"{"id":0}"#);
         operator.assert_exist_with_content(&path2, r#"{"arr":[{"id":0}]}"#);
         operator.assert_exist_with_content(&path3, r#"{"child":[{"id":0}]}"#);
