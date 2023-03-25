@@ -174,8 +174,30 @@ impl SourceConvertor {
         match (&self.src, dist) {
             (TypeGenSource::File(s), TypeGenDist::File(d)) => Self::file_to_file(s, d, generator),
             (TypeGenSource::Dir(s), TypeGenDist::Dir(d)) => Self::dir_to_dir(s, d, generator),
+            (TypeGenSource::Dir(s), TypeGenDist::File(d)) => Self::dir_to_file(s, d, generator),
             _ => todo!(),
         }
+    }
+    fn dir_to_file<D, P, M>(
+        s: &DirSource,
+        d: FileDist,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> Vec<FileStructer>
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        let contents = s
+            .to_files()
+            .iter()
+            .map(|f| Self::file_source_to_type_description(f, generator))
+            .reduce(|acc, cur| format!("{}\n{}", acc, cur))
+            .unwrap_or_default();
+        vec![FileStructer::new(
+            contents,
+            PathStructure::from_path(&d.path),
+        )]
     }
     fn dir_to_dir<D, P, M>(
         s: &DirSource,
@@ -262,6 +284,31 @@ mod tests {
     #[test]
     fn file_to_file() {}
     use super::*;
+    #[test]
+    #[ignore = "because create file"]
+    fn convertorはdir_sourceからtype_structuerの要素が一つの配列を生成できる() {
+        let src = "test-root";
+        let mut ope = TestDirectoryOperator::new();
+        let child1 = "test-root/test.json";
+        let child2 = "test-root/child/child.json";
+        ope.clean_up_before_test(src);
+        ope.prepare_file(child1, r#"{"test":"Hello"}"#);
+        ope.prepare_file(child2, r#"{"child":"World"}"#);
+        let src = TypeGenSource::new(src, "json");
+        let sut = SourceConvertor::new(src);
+        assert_eq!(
+            sut.convert(
+                "dist/test.rs",
+                &RustTypeDescriptionGeneratorBuilder::new().build(),
+                "rs"
+            ),
+            vec![FileStructer::new(
+                "struct Test {\n    test: String,\n}\nstruct Child {\n    child: String,\n}",
+                PathStructure::new("dist/test.rs", "rs")
+            ),]
+        );
+        ope.clean_up();
+    }
     #[test]
     #[ignore = "because create file"]
     fn convertorはdir_sourceからtype_structuerの配列を生成できる() {
