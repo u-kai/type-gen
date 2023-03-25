@@ -152,14 +152,14 @@ impl DirSource {
             .collect()
     }
 }
-struct SourceConvertor {
+pub struct SourceConvertor {
     src: TypeGenSource,
 }
 impl SourceConvertor {
-    fn new(src: TypeGenSource) -> Self {
+    pub fn new(src: TypeGenSource) -> Self {
         Self { src }
     }
-    fn convert<D, P, M>(
+    pub fn convert<D, P, M>(
         &self,
         dist_root: &str,
         generator: &TypeDescriptionGenerator<D, P, M>,
@@ -172,27 +172,49 @@ impl SourceConvertor {
     {
         let dist = TypeGenDist::new(dist_root, extension);
         match (&self.src, dist) {
-            (TypeGenSource::File(s), TypeGenDist::File(d)) => vec![s.src.to(
-                &d.path,
-                d.extension,
-                Self::file_source_to_type_description(s, generator),
-            )],
-            (TypeGenSource::Dir(s), TypeGenDist::Dir(d)) => {
-                let s_root = &s.root;
-                s.to_files()
-                    .iter()
-                    .map(|s| {
-                        s.src.to_dist(
-                            s_root,
-                            &d.root,
-                            d.extension,
-                            Self::file_source_to_type_description(s, generator),
-                        )
-                    })
-                    .collect()
-            }
+            (TypeGenSource::File(s), TypeGenDist::File(d)) => Self::file_to_file(s, d, generator),
+            (TypeGenSource::Dir(s), TypeGenDist::Dir(d)) => Self::dir_to_dir(s, d, generator),
             _ => todo!(),
         }
+    }
+    fn dir_to_dir<D, P, M>(
+        s: &DirSource,
+        d: DirDist,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> Vec<FileStructer>
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        let s_root = &s.root;
+        s.to_files()
+            .iter()
+            .map(|s| {
+                s.src.to_dist(
+                    s_root,
+                    &d.root,
+                    d.extension,
+                    Self::file_source_to_type_description(s, generator),
+                )
+            })
+            .collect()
+    }
+    fn file_to_file<D, P, M>(
+        s: &FileSource,
+        d: FileDist,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> Vec<FileStructer>
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        vec![s.src.to(
+            &d.path,
+            d.extension,
+            Self::file_source_to_type_description(s, generator),
+        )]
     }
     fn file_source_to_type_description<D, P, M>(
         f: &FileSource,
