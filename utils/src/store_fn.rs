@@ -24,11 +24,10 @@ where
     K: Hash + Eq,
     V: PartialEq,
 {
-    if let Some(bool) = store.get(key).map(|v| v.contains(value)) {
-        bool
-    } else {
-        false
-    }
+    store
+        .get(key)
+        .map(|v| v.contains(value))
+        .unwrap_or_default()
 }
 pub fn push_to_btree_vec<K, V>(store: &mut BTreeMap<K, Vec<V>>, key: K, value: V)
 where
