@@ -226,7 +226,6 @@ pub fn create_rust_mod_files(root: &str) {
                             prepare_parent_files(path.to_str().unwrap());
                         }
                     });
-
                 FileStructure::new(
                     "",
                     PathStructure::new(Extension::to_filepath(root, "rs"), "rs"),

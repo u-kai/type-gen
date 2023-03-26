@@ -89,7 +89,7 @@ pub struct PathStructure {
 }
 
 impl PathStructure {
-    #[cfg(not(target_os = "windows"))]
+    //#[cfg(not(target_os = "windows"))]
     pub const SEPARATOR: &'static str = "/";
     #[cfg(any(target_os = "windows", feature = "test_win"))]
     pub const SEPARATOR: &'static str = "\\";
