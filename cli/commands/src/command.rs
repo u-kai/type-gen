@@ -5,7 +5,7 @@ use go::generator_builder::GoTypeDescriptionGeneratorBuilder;
 use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
 use sf_df::{
     extension::Extension,
-    fileconvertor::{FileStructer, PathStructure},
+    fileconvertor::{FileStructure, PathStructure},
     fileoperator::file_structures_to_files,
 };
 
@@ -227,7 +227,7 @@ pub fn create_rust_mod_files(root: &str) {
                         }
                     });
 
-                FileStructer::new(
+                FileStructure::new(
                     "",
                     PathStructure::new(Extension::to_filepath(root, "rs"), "rs"),
                 )
@@ -255,7 +255,7 @@ pub fn create_rust_mod_files(root: &str) {
                     }
                 });
 
-            FileStructer::new(
+            FileStructure::new(
                 this_dirs_files.into_iter().fold(String::new(), |acc, s| {
                     format!("{}pub mod {};\n", acc, Extension::remove_extension(s))
                 }),

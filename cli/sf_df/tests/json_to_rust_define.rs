@@ -4,7 +4,7 @@
 //use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
 //use sf_df::{
 //configs::FileToFileConfig,
-//fileconvertor::{FileStructer, PathStructure},
+//fileconvertor::{FileStructure, PathStructure},
 //};
 
 //use crate::helper::TestDirectoryOperator;
@@ -16,19 +16,19 @@
 //let root = "./rust_mod_tests";
 //operator.clean_up_before_test(root);
 //let source = vec![
-//FileStructer::new(
+//FileStructure::new(
 //"pub type Test=String;",
 //PathStructure::new("./rust_mod_tests/rusts/test.rs", "rs"),
 //),
-//FileStructer::new(
+//FileStructure::new(
 //"pub type Test=String;",
 //PathStructure::new("./rust_mod_tests/rusts/nests/test_child.rs", "rs"),
 //),
-//FileStructer::new(
+//FileStructure::new(
 //"pub type Test=String;",
 //PathStructure::new("./rust_mod_tests/rusts/nests/child/array.rs", "rs"),
 //),
-//FileStructer::new(
+//FileStructure::new(
 //"pub type Test=String;",
 //PathStructure::new(
 //"./rust_mod_tests/rusts/nests/child/json_placeholder.rs",

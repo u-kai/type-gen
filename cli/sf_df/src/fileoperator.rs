@@ -6,9 +6,9 @@ use std::{
 
 use crate::{
     extension::Extension,
-    fileconvertor::{FileStructer, PathStructure},
+    fileconvertor::{FileStructure, PathStructure},
 };
-impl FileStructer {
+impl FileStructure {
     pub fn add_new_line_to_file(&self) {
         add_to_file(self.path().path_str(), format!("\n{}", self.content()));
     }
@@ -26,7 +26,7 @@ pub enum NamingPrincipal {
     Camel,
     Constant,
 }
-pub fn file_structures_to_files(v: Vec<FileStructer>, file_principal: NamingPrincipal) {
+pub fn file_structures_to_files(v: Vec<FileStructure>, file_principal: NamingPrincipal) {
     match file_principal {
         NamingPrincipal::Snake => {
             v.into_iter()
@@ -144,17 +144,17 @@ fn extract_dir<P: AsRef<Path>>(path: P) -> Option<String> {
     let filename = path.as_ref().file_name()?.to_str()?;
     path.as_ref().to_str().map(|s| s.replace(filename, ""))
 }
-pub fn all_file_structure(root: &str, extension: impl Into<Extension>) -> Vec<FileStructer> {
+pub fn all_file_structure(root: &str, extension: impl Into<Extension>) -> Vec<FileStructure> {
     let extension: Extension = extension.into();
     if extension.is_this_extension(root) {
-        return vec![FileStructer::from_path(root)];
+        return vec![FileStructure::from_path(root)];
     }
     all_file_path(root)
         .iter()
         .filter(move |p| extension.is_this_extension(p))
         .map(|p| {
             let path = p.to_str().unwrap_or_default();
-            FileStructer::new(
+            FileStructure::new(
                 read_to_string(p).unwrap(),
                 PathStructure::new(path, extension),
             )

@@ -5,11 +5,11 @@ use npc::fns::{to_snake, to_snake_consider_with_wellknown_word};
 use crate::{extension::Extension, fileoperator::is_dir};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct FileStructer {
+pub struct FileStructure {
     content: String,
     path: PathStructure,
 }
-impl FileStructer {
+impl FileStructure {
     pub fn new(content: impl Into<String>, path: PathStructure) -> Self {
         Self {
             content: content.into(),
@@ -63,7 +63,7 @@ impl FileStructer {
         Self::new(content, dist)
     }
 }
-impl FileStructer {
+impl FileStructure {
     pub fn dir_set(v: &Vec<Self>, this_root: &str) -> BTreeSet<String> {
         v.iter()
             .map(|f| f.path.all_child_dirs(this_root))
@@ -76,7 +76,7 @@ mod file_structer_tests {
     use super::*;
     #[test]
     fn pathと拡張子が取り除かれたファイル名を返す() {
-        let sut = FileStructer::new("fn main(){}", PathStructure::new("src/main.rs", "rs"));
+        let sut = FileStructure::new("fn main(){}", PathStructure::new("src/main.rs", "rs"));
 
         assert_eq!(sut.name_without_extension(), "main");
     }

@@ -4,7 +4,7 @@ mod integration_tests {
 
     use crate::helper::TestDirectoryOperator;
     use sf_df::{
-        fileconvertor::{FileStructer, PathStructure},
+        fileconvertor::{FileStructure, PathStructure},
         fileoperator::{
             add_to_file, all_file_path, all_file_structure, create_new_file,
             file_structures_to_files, mkdir_rec,
@@ -21,11 +21,11 @@ mod integration_tests {
         operator.prepare_file("./for-test/child/rust_child.rs", "fn main2(){}");
 
         let tobe = vec![
-            FileStructer::new(
+            FileStructure::new(
                 "fn main(){}",
                 PathStructure::new("./for-test/rust.rs", "rs"),
             ),
-            FileStructer::new(
+            FileStructure::new(
                 "fn main2(){}",
                 PathStructure::new("./for-test/child/rust_child.rs", "rs"),
             ),
@@ -118,9 +118,9 @@ mod integration_tests {
         let path2 = format!("{}/arr.json", root);
         let path3 = format!("{}/child/child.json", root);
         let files = vec![
-            FileStructer::new(r#"{"id":0}"#, PathStructure::new(&path1, "json")),
-            FileStructer::new(r#"{"arr":[{"id":0}]}"#, PathStructure::new(&path2, "json")),
-            FileStructer::new(
+            FileStructure::new(r#"{"id":0}"#, PathStructure::new(&path1, "json")),
+            FileStructure::new(r#"{"arr":[{"id":0}]}"#, PathStructure::new(&path2, "json")),
+            FileStructure::new(
                 r#"{"child":[{"id":0}]}"#,
                 PathStructure::new(&path3, "json"),
             ),
@@ -144,22 +144,22 @@ mod integration_tests {
         assert_eq!(
             files,
             vec![
-                FileStructer::new(
+                FileStructure::new(
                     read_to_string(format!("{}/test.json", root)).unwrap(),
                     PathStructure::new(format!("{}/test.json", root), "json"),
                 ),
-                FileStructer::new(
+                FileStructure::new(
                     read_to_string(format!("{}/nests/child/array.json", root)).unwrap(),
                     PathStructure::new(format!("{}/nests/child/array.json", root), "json"),
                 ),
-                FileStructer::new(
+                FileStructure::new(
                     read_to_string(format!("{}/nests/child/json-placeholder.json", root)).unwrap(),
                     PathStructure::new(
                         format!("{}/nests/child/json-placeholder.json", root),
                         "json"
                     ),
                 ),
-                FileStructer::new(
+                FileStructure::new(
                     read_to_string(format!("{}/nests/test-child.json", root)).unwrap(),
                     PathStructure::new(format!("{}/nests/test-child.json", root), "json"),
                 ),

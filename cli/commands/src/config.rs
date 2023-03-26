@@ -12,7 +12,7 @@ use reqwest::RequestBuilder;
 use serde_json::Value;
 use sf_df::{
     extension::Extension,
-    fileconvertor::{FileStructer, PathStructure},
+    fileconvertor::{FileStructure, PathStructure},
     fileoperator::{all_file_structure, is_dir},
 };
 
@@ -139,7 +139,7 @@ impl SourceConvertor {
         dist_root: &str,
         generator: &TypeDescriptionGenerator<D, P, M>,
         extension: impl Into<Extension>,
-    ) -> Vec<FileStructer>
+    ) -> Vec<FileStructure>
     where
         D: DeclarePartGenerator<Mapper = M>,
         P: PropertyPartGenerator<M>,
@@ -161,7 +161,7 @@ impl SourceConvertor {
         s: &RemoteSource,
         d: DirDist,
         generator: &TypeDescriptionGenerator<D, P, M>,
-    ) -> Vec<FileStructer>
+    ) -> Vec<FileStructure>
     where
         D: DeclarePartGenerator<Mapper = M>,
         P: PropertyPartGenerator<M>,
@@ -180,7 +180,7 @@ impl SourceConvertor {
         s: &RemoteSourceConfig,
         dist_path: PathStructure,
         generator: &TypeDescriptionGenerator<D, P, M>,
-    ) -> FileStructer
+    ) -> FileStructure
     where
         D: DeclarePartGenerator<Mapper = M>,
         P: PropertyPartGenerator<M>,
@@ -189,13 +189,13 @@ impl SourceConvertor {
         let client = RemoteClient::new();
         let res = client.fetch(s).await.unwrap();
         let content = Self::json_to_type_description(res, &s.name, generator);
-        FileStructer::new(content, dist_path)
+        FileStructure::new(content, dist_path)
     }
     fn dir_to_file<D, P, M>(
         s: &DirSource,
         d: FileDist,
         generator: &TypeDescriptionGenerator<D, P, M>,
-    ) -> Vec<FileStructer>
+    ) -> Vec<FileStructure>
     where
         D: DeclarePartGenerator<Mapper = M>,
         P: PropertyPartGenerator<M>,
@@ -207,7 +207,7 @@ impl SourceConvertor {
             .map(|f| Self::file_source_to_type_description(f, generator))
             .reduce(|acc, cur| format!("{}\n{}", acc, cur))
             .unwrap_or_default();
-        vec![FileStructer::new(
+        vec![FileStructure::new(
             contents,
             PathStructure::from_path(&d.path),
         )]
@@ -216,7 +216,7 @@ impl SourceConvertor {
         s: &DirSource,
         d: DirDist,
         generator: &TypeDescriptionGenerator<D, P, M>,
-    ) -> Vec<FileStructer>
+    ) -> Vec<FileStructure>
     where
         D: DeclarePartGenerator<Mapper = M>,
         P: PropertyPartGenerator<M>,
@@ -239,7 +239,7 @@ impl SourceConvertor {
         s: &FileSource,
         d: DirDist,
         generator: &TypeDescriptionGenerator<D, P, M>,
-    ) -> Vec<FileStructer>
+    ) -> Vec<FileStructure>
     where
         D: DeclarePartGenerator<Mapper = M>,
         P: PropertyPartGenerator<M>,
@@ -255,7 +255,7 @@ impl SourceConvertor {
         s: &FileSource,
         d: FileDist,
         generator: &TypeDescriptionGenerator<D, P, M>,
-    ) -> Vec<FileStructer>
+    ) -> Vec<FileStructure>
     where
         D: DeclarePartGenerator<Mapper = M>,
         P: PropertyPartGenerator<M>,
@@ -332,12 +332,12 @@ impl RemoteClient {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FileSource {
-    src: FileStructer,
+    src: FileStructure,
 }
 impl FileSource {
     fn new(src: &str) -> Self {
         FileSource {
-            src: FileStructer::from_path(src),
+            src: FileStructure::from_path(src),
         }
     }
 }
@@ -416,7 +416,7 @@ mod tests {
                 "rs"
             )
             .await,
-            vec![FileStructer::new(
+            vec![FileStructure::new(
                 "struct Test {\n    test: String,\n}\nstruct Child {\n    child: String,\n}",
                 PathStructure::new("dist/test.rs", "rs")
             ),]
@@ -443,11 +443,11 @@ mod tests {
             )
             .await,
             vec![
-                FileStructer::new(
+                FileStructure::new(
                     "struct Test {\n    test: String,\n}",
                     PathStructure::new("dist/test.rs", "rs")
                 ),
-                FileStructer::new(
+                FileStructure::new(
                     "struct Child {\n    child: String,\n}",
                     PathStructure::new("dist/child/child.rs", "rs")
                 ),
@@ -471,7 +471,7 @@ mod tests {
                 "rs"
             )
             .await,
-            vec![FileStructer::new(
+            vec![FileStructure::new(
                 "struct Input {\n    test: String,\n}",
                 PathStructure::new("test.rs", "rs")
             )]
