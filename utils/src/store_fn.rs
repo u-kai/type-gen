@@ -19,7 +19,7 @@ where
     None
 }
 
-pub fn containes_to_kv_vec<K, V>(store: &HashMap<K, Vec<V>>, key: &K, value: &V) -> bool
+pub fn contains_to_kv_vec<K, V>(store: &HashMap<K, Vec<V>>, key: &K, value: &V) -> bool
 where
     K: Hash + Eq,
     V: PartialEq,
@@ -70,11 +70,11 @@ mod test_store_fn {
         assert_eq!(get_tuple_key_store(&store, &"None", &"id"), None);
     }
     #[test]
-    fn test_containes_to_kv_vec() {
+    fn test_contains_to_kv_vec() {
         let mut store = HashMap::new();
         store.insert("test", vec!["value1"]);
-        assert!(containes_to_kv_vec(&mut store, &"test", &"value1"));
-        assert!(!containes_to_kv_vec(&mut store, &"test", &"value2"));
+        assert!(contains_to_kv_vec(&mut store, &"test", &"value1"));
+        assert!(!contains_to_kv_vec(&mut store, &"test", &"value2"));
     }
     #[test]
     fn test_push_to_kv_vec() {
