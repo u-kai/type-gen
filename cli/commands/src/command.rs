@@ -2,7 +2,10 @@ use std::path::Path;
 
 use clap::{Parser, Subcommand};
 use go::generator_builder::GoTypeDescriptionGeneratorBuilder;
-use rust::generator_builder::RustTypeDescriptionGeneratorBuilder;
+use rust::{
+    description_generator::RustTypeDescriptionGenerator,
+    generator_builder::RustTypeDescriptionGeneratorBuilder,
+};
 use sf_df::{
     extension::Extension,
     fileconvertor::{FileStructure, PathStructure},
@@ -207,6 +210,22 @@ impl Sub {
         if dist.len() > "../".len() {
             create_rust_mod_files(&dist);
         }
+    }
+}
+
+pub async fn json_to_rust(
+    src: TypeGenSource,
+    dist: &str,
+    generator: &RustTypeDescriptionGenerator,
+) {
+    file_structures_to_files(
+        SourceConvertor::new(src)
+            .convert(dist, generator, "rs")
+            .await,
+        sf_df::fileoperator::NamingPrincipal::Snake,
+    );
+    if dist.len() > "../".len() {
+        create_rust_mod_files(&dist);
     }
 }
 
