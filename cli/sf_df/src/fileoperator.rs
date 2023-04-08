@@ -37,7 +37,7 @@ pub fn file_structures_to_files(v: Vec<FileStructure>, file_principal: NamingPri
 }
 #[cfg(not(target_os = "windows"))]
 pub const SEPARATOR: &'static str = r#"/"#;
-#[cfg(any(target_os = "windows", feature = "test_win"))]
+#[cfg(any(target_os = "windows"))]
 pub const SEPARATOR: &'static str = "\\";
 pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
     match fs::read_dir(root_dir_path.as_ref()) {
