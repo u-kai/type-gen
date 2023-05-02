@@ -1,3 +1,18 @@
+# TypeGen Cli
+
+## TypeGenByJsonFile
+
+- set json files
+- below run command
+
+```shell
+# -s: source json dir
+# -d: dist dir
+#     if dist dir not exist, then create dist dir rec
+#
+tg rust -s json -d dist/json
+```
+
 ## TypeGenByRequestApi
 
 - set config.json
@@ -30,3 +45,10 @@
 ```
 tg go -r config.json
 ```
+
+## Common Options
+
+- -o,--option
+  - to optional filed
+- -p,--pub
+  - to pub struct and filed
