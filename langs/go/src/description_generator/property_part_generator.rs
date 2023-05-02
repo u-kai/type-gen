@@ -229,6 +229,19 @@ mod tests {
         );
     }
     #[test]
+    fn 不正な文字列はフィールド名に指定できない() {
+        let type_name: TypeName = "Test".into();
+        let property_key: PropertyKey = "id:invalid".into();
+        let property_type = make_usize_type();
+        let mapper = GoMapper;
+
+        let sut = GoPropertyPartGenerator::new();
+        assert_eq!(
+            sut.generate(&type_name, &property_key, &property_type, &mapper,),
+            "   idInvalid int\n"
+        );
+    }
+    #[test]
     fn idという整数型のプロパティの作成() {
         let type_name: TypeName = "Test".into();
         let property_key: PropertyKey = "id".into();

@@ -18,6 +18,10 @@ impl PropertyKey {
     pub fn as_str(&self) -> &str {
         &self.original
     }
+    pub fn invalid_lang_str(&self) -> String {
+        let corrector = npc::corrector::InvalidCharacterCorrector::default();
+        corrector.to_camel(self.as_str())
+    }
 }
 impl<I> From<I> for PropertyKey
 where

@@ -80,7 +80,7 @@ where
         property_type: &PropertyType,
         mapper: &M,
     ) -> String {
-        let mut key_str = property_key.as_str().to_string();
+        let mut key_str = property_key.invalid_lang_str();
         self.property_key_convertor
             .iter()
             .for_each(|c| c.convert(&mut key_str, type_name, property_key, property_type, mapper));

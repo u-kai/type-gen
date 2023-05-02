@@ -11,7 +11,7 @@ impl TypeMapper for GoMapper {
         self.case_any()
     }
     fn case_custom_type(&self, custom_type: &TypeName) -> String {
-        replace_cannot_use_char(custom_type.as_str())
+        custom_type.valid_lang_str()
     }
     fn case_any(&self) -> TypeString {
         "interface {}".to_string()
@@ -34,15 +34,5 @@ impl TypeMapper for GoMapper {
     }
     fn case_usize(&self) -> TypeString {
         "int".to_string()
-    }
-}
-fn replace_cannot_use_char(str: &str) -> String {
-    str.replace(cannot_use_char, "")
-}
-fn cannot_use_char(c: char) -> bool {
-    match c {
-        ':' | ';' | '#' | '$' | '%' | '&' | '~' | '=' | '|' | '\"' | '\'' | '{' | '}' | '?'
-        | '!' | '<' | '>' | '[' | ']' | '*' | '^' => true,
-        _ => false,
     }
 }

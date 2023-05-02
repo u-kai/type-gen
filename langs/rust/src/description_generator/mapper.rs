@@ -11,8 +11,7 @@ impl TypeMapper for RustMapper {
         self.case_any()
     }
     fn case_custom_type(&self, custom_type: &TypeName) -> String {
-        let corrector = npc::corrector::InvalidCharacterCorrector::default();
-        corrector.to_pascal(custom_type.as_str())
+        custom_type.valid_lang_str()
     }
     fn case_any(&self) -> TypeString {
         "serde_json::Value".to_string()

@@ -358,7 +358,7 @@ mod tests {
         let generator = RustPropertyPartGeneratorBuilder::new()
             .all_visibility(RustVisibility::Public)
             .build();
-        let tobe = format!("    #[serde(rename = \"id:value\")]\n    pub idvalue: usize,\n",);
+        let tobe = format!("    #[serde(rename = \"id:value\")]\n    pub id_value: usize,\n",);
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
@@ -371,7 +371,7 @@ mod tests {
             .all_visibility(RustVisibility::PublicSuper)
             .build();
         let tobe =
-            format!("    #[serde(rename = \"id:value\")]\n    pub(super) idvalue: usize,\n",);
+            format!("    #[serde(rename = \"id:value\")]\n    pub(super) id_value: usize,\n",);
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
@@ -384,7 +384,7 @@ mod tests {
         let property_type = make_usize_type();
         let mapper = RustMapper;
         let generator = RustPropertyPartGeneratorBuilder::new().build();
-        let tobe = format!("    #[serde(rename = \"id:value\")]\n    idvalue: usize,\n",);
+        let tobe = format!("    #[serde(rename = \"id:value\")]\n    id_value: usize,\n",);
         assert_eq!(
             generator.generate(&type_name, &property_key, &property_type, &mapper,),
             tobe
@@ -481,16 +481,6 @@ impl Convertor<RustMapper> for RustRenameConvertor {
         _: &structure::parts::property_type::PropertyType,
         _: &RustMapper,
     ) -> () {
-        fn cannot_use_char(c: char) -> bool {
-            match c {
-                ':' | ';' | '#' | '$' | '%' | '&' | '~' | '=' | '|' | '\"' | '\'' | '{' | '}'
-                | '?' | '!' | '<' | '>' | '[' | ']' | '*' | '^' | '(' | ')' => true,
-                _ => false,
-            }
-        }
-        fn replace_cannot_use_char(str: &str) -> String {
-            str.replace(cannot_use_char, "")
-        }
         if self
             .judger
             .reserved_words
@@ -507,9 +497,7 @@ impl Convertor<RustMapper> for RustRenameConvertor {
             *acc = format!("{}_", acc);
             return;
         }
-        if self.judger.do_need_rename(property_key.as_str()) {
-            *acc = format!("{}", to_snake(&replace_cannot_use_char(acc)))
-        }
+        *acc = to_snake(&property_key.invalid_lang_str());
     }
 }
 pub struct RustAddSerdeRenameConvertor {
