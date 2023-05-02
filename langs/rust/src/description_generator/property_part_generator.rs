@@ -173,8 +173,8 @@ impl RustPropertyPartGenerator {
     fn add_default_convertors(&mut self) {
         let mut add_space_convertor = AddLeftSideConvertor::new(Self::INDENT);
         add_space_convertor.set_all();
-        let rename_convertor = RustRenameConverotor::new();
-        let add_serde_rename_convertor = RustAddSerdeRenameConverotor::new();
+        let rename_convertor = RustRenameConvertor::new();
+        let add_serde_rename_convertor = RustAddSerdeRenameConvertor::new();
         let mut add_last_side_convertor = AddLastSideConvertor::new(Self::NEXT_LINE);
         add_last_side_convertor.set_all();
         self.generator
@@ -462,17 +462,17 @@ impl RustRenameJudger {
         }
     }
 }
-pub struct RustRenameConverotor {
+pub struct RustRenameConvertor {
     judger: RustRenameJudger,
 }
-impl RustRenameConverotor {
+impl RustRenameConvertor {
     pub fn new() -> Self {
         Self {
             judger: RustRenameJudger::new(),
         }
     }
 }
-impl Convertor<RustMapper> for RustRenameConverotor {
+impl Convertor<RustMapper> for RustRenameConvertor {
     fn convert(
         &self,
         acc: &mut String,
@@ -512,17 +512,17 @@ impl Convertor<RustMapper> for RustRenameConverotor {
         }
     }
 }
-pub struct RustAddSerdeRenameConverotor {
+pub struct RustAddSerdeRenameConvertor {
     judger: RustRenameJudger,
 }
-impl RustAddSerdeRenameConverotor {
+impl RustAddSerdeRenameConvertor {
     pub fn new() -> Self {
         Self {
             judger: RustRenameJudger::new(),
         }
     }
 }
-impl DescriptionConvertor<RustMapper> for RustAddSerdeRenameConverotor {
+impl DescriptionConvertor<RustMapper> for RustAddSerdeRenameConvertor {
     fn convert(
         &self,
         acc: Option<String>,
@@ -543,7 +543,7 @@ impl DescriptionConvertor<RustMapper> for RustAddSerdeRenameConverotor {
         acc
     }
 }
-impl Convertor<RustMapper> for RustAddSerdeRenameConverotor {
+impl Convertor<RustMapper> for RustAddSerdeRenameConvertor {
     fn convert(
         &self,
         acc: &mut String,
@@ -566,7 +566,7 @@ mod rust_rename_convertor_tests {
     };
 
     use crate::description_generator::{
-        mapper::RustMapper, property_part_generator::RustAddSerdeRenameConverotor,
+        mapper::RustMapper, property_part_generator::RustAddSerdeRenameConvertor,
     };
 
     #[test]
@@ -577,7 +577,7 @@ mod rust_rename_convertor_tests {
         let property_type = make_usize_type();
         let tobe = format!("#[serde(rename = \"id:value\")]\nidvalue:usize");
         let mapper = RustMapper;
-        let convertor = RustAddSerdeRenameConverotor::new();
+        let convertor = RustAddSerdeRenameConvertor::new();
         convertor.convert(&mut acc, &type_name, &property_key, &property_type, &mapper);
         assert_eq!(acc, tobe);
     }
