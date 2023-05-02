@@ -355,6 +355,21 @@ pub struct Test {
         );
     }
     #[test]
+    fn 不正な文字列は型名に指定できない() {
+        let type_name: TypeName = "Test:invalidName".into();
+        let mapper = RustMapper;
+        let generator = RustDeclarePartGeneratorBuilder::new()
+            .set_all_derive(vec!["Debug", "Clone"])
+            .build();
+
+        let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
+        let tobe = format!("type TestinvalidName = String;");
+        assert_eq!(
+            generator.generate_case_alias(&primitive_type, &mapper,),
+            tobe
+        );
+    }
+    #[test]
     fn alias_typeにはderiveを設定できない() {
         let type_name: TypeName = "Test".into();
         let mapper = RustMapper;

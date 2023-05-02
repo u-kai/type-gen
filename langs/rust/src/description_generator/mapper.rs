@@ -11,7 +11,8 @@ impl TypeMapper for RustMapper {
         self.case_any()
     }
     fn case_custom_type(&self, custom_type: &TypeName) -> String {
-        replace_cannot_use_char(custom_type.as_str())
+        let corrector = npc::corrector::InvalidCharacterCorrector::default();
+        corrector.to_pascal(custom_type.as_str())
     }
     fn case_any(&self) -> TypeString {
         "serde_json::Value".to_string()
@@ -35,13 +36,13 @@ impl TypeMapper for RustMapper {
         "usize".to_string()
     }
 }
-fn replace_cannot_use_char(str: &str) -> String {
-    str.replace(cannot_use_char, "")
-}
-fn cannot_use_char(c: char) -> bool {
-    match c {
-        ':' | ';' | '#' | '$' | '%' | '&' | '~' | '=' | '|' | '\"' | '\'' | '{' | '}' | '?'
-        | '!' | '<' | '>' | '[' | ']' | '*' | '^' => true,
-        _ => false,
-    }
-}
+//fn replace_cannot_use_char(str: &str) -> String {
+//str.replace(cannot_use_char, "")
+//}
+//fn cannot_use_char(c: char) -> bool {
+//match c {
+//':' | ';' | '#' | '$' | '%' | '&' | '~' | '=' | '|' | '\"' | '\'' | '{' | '}' | '?'
+//| '!' | '<' | '>' | '[' | ']' | '*' | '^' => true,
+//_ => false,
+//}
+//}
