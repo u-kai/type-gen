@@ -447,11 +447,11 @@ impl RustRenameJudger {
         !is_snake(word)
     }
     fn is_cannot_use_word(&self, word: &str) -> bool {
-        Self::containe_cannot_use_char(word)
+        Self::contain_cannot_use_char(word)
             || self.reserved_words.is_reserved_keywords(word)
             || self.reserved_words.is_strict_keywords(word)
     }
-    fn containe_cannot_use_char(str: &str) -> bool {
+    fn contain_cannot_use_char(str: &str) -> bool {
         str.contains(Self::cannot_use_char)
     }
     fn cannot_use_char(c: char) -> bool {

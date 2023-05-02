@@ -206,7 +206,7 @@ impl CannotUseCharConvertor {
     }
     fn replace_cannot_use_char(&self, str: &str) -> String {
         str.chars().fold(String::new(), |mut acc, c| {
-            if self.containe_cannot_use_char(c) {
+            if self.contain_cannot_use_char(c) {
                 acc
             } else {
                 acc.push(c);
@@ -214,7 +214,7 @@ impl CannotUseCharConvertor {
             }
         })
     }
-    fn containe_cannot_use_char(&self, c: char) -> bool {
+    fn contain_cannot_use_char(&self, c: char) -> bool {
         self.cannot_uses.contains(&c) && !self.removes.contains(&c)
     }
     pub fn add(&mut self, c: char) {
@@ -686,7 +686,7 @@ mod test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_add_head_case_containe() {
+    fn test_add_head_case_contain() {
         use crate::customizable::property_part_generator::Convertor;
         let space = "// this is comment";
         let mut acc = String::from("id:usize");
@@ -746,7 +746,7 @@ mod test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_add_left_side_case_containe() {
+    fn test_add_left_side_case_contain() {
         use crate::customizable::property_part_generator::Convertor;
         let space = "    ";
         let mut acc = String::from("id:usize");

@@ -167,7 +167,7 @@ impl JsonType {
 mod test_count_nest {
     use super::*;
     #[test]
-    fn test_case_array_json_containe_mulit_type() {
+    fn test_case_array_json_contain_mulit_type() {
         let Json::Array(array_json) = Json::from(r#"[[{"key":"value"}],{"id":0}]"#)else{
             panic!()
         };
@@ -207,7 +207,7 @@ mod test_put_together {
 
     use super::*;
     #[test]
-    fn test_case_array_containe_multi_type_tobe_any() {
+    fn test_case_array_contain_multi_type_tobe_any() {
         let obj = r#"
             [
                 "string",0

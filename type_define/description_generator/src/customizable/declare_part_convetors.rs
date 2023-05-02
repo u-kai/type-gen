@@ -81,7 +81,7 @@ impl ConvertorStore {
     fn add(&mut self, type_name: impl Into<String>) {
         self.store.borrow_mut().push(type_name.into())
     }
-    fn containe_list(&self, type_name: &str) -> bool {
+    fn contain_list(&self, type_name: &str) -> bool {
         self.is_all || self.store.borrow().iter().any(|name| name == type_name)
     }
 }
@@ -182,7 +182,7 @@ pub mod composite_type {
             acc: &mut String,
             type_name: &structure::parts::type_name::TypeName,
         ) -> () {
-            if self.store.containe_list(type_name.as_str()) {
+            if self.store.contain_list(type_name.as_str()) {
                 *acc = format!("{}{}", self.header, acc)
             }
         }
@@ -194,10 +194,7 @@ pub mod composite_type {
             acc: Option<String>,
             composite_type: &structure::composite_type_structure::CompositeTypeStructure,
         ) -> Option<String> {
-            if self
-                .store
-                .containe_list(composite_type.type_name().as_str())
-            {
+            if self.store.contain_list(composite_type.type_name().as_str()) {
                 None
             } else {
                 acc
@@ -211,10 +208,7 @@ pub mod composite_type {
             acc: Option<String>,
             composite_type: &structure::composite_type_structure::CompositeTypeStructure,
         ) -> Option<String> {
-            if self
-                .store
-                .containe_list(composite_type.type_name().as_str())
-            {
+            if self.store.contain_list(composite_type.type_name().as_str()) {
                 if let Some(acc) = acc {
                     return Some(format!("{}\n{}", self.header, acc));
                 }
@@ -228,10 +222,7 @@ pub mod composite_type {
             acc: Option<String>,
             composite_type: &structure::composite_type_structure::CompositeTypeStructure,
         ) -> Option<String> {
-            if !self
-                .store
-                .containe_list(composite_type.type_name().as_str())
-            {
+            if !self.store.contain_list(composite_type.type_name().as_str()) {
                 None
             } else {
                 acc
@@ -248,21 +239,21 @@ pub mod alias_type {
 
     impl AliasTypeDeclareConvertor for AddHeaderConvertor {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
-            if self.store.containe_list(alias_type.type_name().as_str()) {
+            if self.store.contain_list(alias_type.type_name().as_str()) {
                 *acc = format!("{}\n{}", self.header, acc)
             }
         }
     }
     impl AliasTypeIdentifyConvertor for AddHeaderConvertor {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
-            if self.store.containe_list(alias_type.type_name().as_str()) {
+            if self.store.contain_list(alias_type.type_name().as_str()) {
                 *acc = format!("{}{}", self.header, acc)
             }
         }
     }
     impl AliasTypeDeclareConvertor for BlackListConvertor {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
-            if self.store.containe_list(alias_type.type_name().as_str()) {
+            if self.store.contain_list(alias_type.type_name().as_str()) {
                 *acc = String::new()
             }
         }
@@ -270,7 +261,7 @@ pub mod alias_type {
 
     impl AliasTypeDeclareConvertor for WhiteListConvertor {
         fn convert(&self, acc: &mut String, alias_type: &AliasTypeStructure) -> () {
-            if !self.store.containe_list(alias_type.type_name().as_str()) {
+            if !self.store.contain_list(alias_type.type_name().as_str()) {
                 *acc = String::new()
             }
         }
@@ -353,7 +344,7 @@ mod composite_case_test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_add_comment_convertor_case_containe() {
+    fn test_add_comment_convertor_case_contain() {
         use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
@@ -376,7 +367,7 @@ mod composite_case_test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_add_header_convertor_case_containe() {
+    fn test_add_header_convertor_case_contain() {
         use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
@@ -387,18 +378,18 @@ mod composite_case_test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_add_header_convertor_case_not_containe() {
+    fn test_add_header_convertor_case_not_contain() {
         use crate::customizable::declare_part_generator::TypeIdentifyConvertor;
         let name = "Test";
         let mut acc = String::from("struct Test {id:usize}");
         let tobe = acc.clone();
         let mut add_header = AddHeaderConvertor::new("pub ");
         add_header.add(name);
-        add_header.convert(&mut acc, &TypeName::from("NotContaine"));
+        add_header.convert(&mut acc, &TypeName::from("Notcontain"));
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_black_list_convertor_case_containe() {
+    fn test_black_list_convertor_case_contain() {
         use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
         let acc = String::from("struct Test {id:usize}");
@@ -409,7 +400,7 @@ mod composite_case_test {
         assert_eq!(result, None);
     }
     #[test]
-    fn test_black_list_convertor_case_not_containe() {
+    fn test_black_list_convertor_case_not_contain() {
         use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
         let acc = String::from("struct Test {id:usize}");
@@ -420,7 +411,7 @@ mod composite_case_test {
         assert_eq!(result.unwrap(), tobe);
     }
     #[test]
-    fn test_white_list_convertor_case_containe() {
+    fn test_white_list_convertor_case_contain() {
         use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
         let acc = String::from("struct Test {id:usize}");
@@ -432,7 +423,7 @@ mod composite_case_test {
         assert_eq!(result.unwrap(), tobe);
     }
     #[test]
-    fn test_white_list_convertor_case_not_containe() {
+    fn test_white_list_convertor_case_not_contain() {
         use crate::customizable::declare_part_generator::CompositeTypeDeclareConvertor;
         let name = "Test";
         let acc = String::from("struct Test {id:usize}");
@@ -452,7 +443,7 @@ mod alias_case_test {
         parts::property_type::property_type_factories::make_string_type,
     };
     #[test]
-    fn test_add_header_case_containe() {
+    fn test_add_header_case_contain() {
         use crate::customizable::declare_part_generator::AliasTypeIdentifyConvertor;
         let mut acc = String::from("type Test = String;");
         let tobe = format!("pub {}", acc);
@@ -464,19 +455,19 @@ mod alias_case_test {
         assert_eq!(acc, tobe)
     }
     #[test]
-    fn test_add_header_case_not_containe() {
+    fn test_add_header_case_not_contain() {
         use crate::customizable::declare_part_generator::AliasTypeIdentifyConvertor;
         let mut acc = String::from("type Test = String;");
         let tobe = acc.clone();
         let mut add_header_convertor = AddHeaderConvertor::new("pub ");
         let name = "Test";
         add_header_convertor.add(name);
-        let dummy_alias_type = AliasTypeStructure::new("NotContaine", make_string_type());
+        let dummy_alias_type = AliasTypeStructure::new("Notcontain", make_string_type());
         add_header_convertor.convert(&mut acc, &dummy_alias_type);
         assert_eq!(acc, tobe)
     }
     #[test]
-    fn test_black_list_convertor_case_containe() {
+    fn test_black_list_convertor_case_contain() {
         use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("type Test = String;");
@@ -488,7 +479,7 @@ mod alias_case_test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_black_list_convertor_case_not_containe() {
+    fn test_black_list_convertor_case_not_contain() {
         use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("type Test = String;");
@@ -499,7 +490,7 @@ mod alias_case_test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_white_list_convertor_case_containe() {
+    fn test_white_list_convertor_case_contain() {
         use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("type Test = String;");
@@ -511,7 +502,7 @@ mod alias_case_test {
         assert_eq!(acc, tobe);
     }
     #[test]
-    fn test_white_list_convertor_case_not_containe() {
+    fn test_white_list_convertor_case_not_contain() {
         use crate::customizable::declare_part_generator::AliasTypeDeclareConvertor;
         let name = "Test";
         let mut acc = String::from("type Test = String;");
