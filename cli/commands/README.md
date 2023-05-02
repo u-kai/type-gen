@@ -1,4 +1,4 @@
-# TypeGenByRequestApi
+## TypeGenByRequestApi
 
 - set config.json
 
@@ -28,5 +28,5 @@
 - run below command
 
 ```
-tgreq
+tg go -r config.json
 ```
