@@ -8,6 +8,10 @@ impl TypeName {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+    pub fn valid_lang_str(&self) -> String {
+        let corrector = npc::corrector::InvalidCharacterCorrector::default();
+        corrector.to_pascal(self.as_str())
+    }
 }
 impl<I> From<I> for TypeName
 where

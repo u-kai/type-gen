@@ -34,7 +34,12 @@ impl DeclarePartGenerator for RustDeclarePartGenerator {
 impl RustDeclarePartGenerator {
     fn new() -> Self {
         fn alias_concat(identify: &str, type_name: &TypeName, description: String) -> String {
-            format!("{} {} = {};", identify, type_name.as_str(), description)
+            format!(
+                "{} {} = {};",
+                identify,
+                type_name.valid_lang_str(),
+                description
+            )
         }
         fn concat_composite_description_use_curly_bracket(
             identify: &str,
@@ -44,7 +49,7 @@ impl RustDeclarePartGenerator {
             format!(
                 "{} {} {{\n{}}}",
                 identify,
-                type_name.as_str(),
+                type_name.valid_lang_str(),
                 property_descriptions
             )
         }
@@ -363,7 +368,7 @@ pub struct Test {
             .build();
 
         let primitive_type = AliasTypeStructure::new(type_name, make_string_type());
-        let tobe = format!("type TestinvalidName = String;");
+        let tobe = format!("type TestInvalidName = String;");
         assert_eq!(
             generator.generate_case_alias(&primitive_type, &mapper,),
             tobe
