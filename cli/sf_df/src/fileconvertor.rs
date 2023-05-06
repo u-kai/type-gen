@@ -1,4 +1,8 @@
-use std::{collections::BTreeSet, fs::read_to_string, path::Path};
+use std::{
+    collections::BTreeSet,
+    fs::read_to_string,
+    path::{self, Path},
+};
 
 use npc::fns::{to_snake, to_snake_consider_with_wellknown_word};
 
@@ -89,11 +93,6 @@ pub struct PathStructure {
 }
 
 impl PathStructure {
-    //#[cfg(not(target_os = "windows"))]
-    pub const SEPARATOR: &'static str = "/";
-    #[cfg(any(target_os = "windows", feature = "test_win"))]
-    pub const SEPARATOR: &'static str = "\\";
-
     pub fn new(path: impl Into<String>, extension: impl Into<Extension>) -> Self {
         Self {
             path: path.into(),
@@ -150,11 +149,11 @@ impl PathStructure {
         let all_child_dirs = self.extract_dir();
         let mut dir = String::new();
         all_child_dirs
-            .split(Self::SEPARATOR)
+            .split(path::MAIN_SEPARATOR)
             .into_iter()
             .filter(|s| *s != "." && *s != "")
             .fold(Vec::new(), |mut acc, s| {
-                dir += &format!("{}{}", s, Self::SEPARATOR);
+                dir += &format!("{}{}", s, path::MAIN_SEPARATOR);
                 acc.push(dir.clone());
                 acc
             })

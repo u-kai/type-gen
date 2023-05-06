@@ -1,7 +1,7 @@
 use std::{
     fs::{self, read_to_string, File, OpenOptions},
     io::{BufWriter, Write},
-    path::{Path, PathBuf},
+    path::{self, Path, PathBuf},
 };
 
 use crate::{
@@ -35,10 +35,6 @@ pub fn file_structures_to_files(v: Vec<FileStructure>, file_principal: NamingPri
         _ => todo!("Other NamingPrincipal"),
     }
 }
-#[cfg(not(target_os = "windows"))]
-pub const SEPARATOR: &'static str = r#"/"#;
-#[cfg(any(target_os = "windows"))]
-pub const SEPARATOR: &'static str = "\\";
 pub fn all_file_path(root_dir_path: impl AsRef<Path>) -> Vec<PathBuf> {
     match fs::read_dir(root_dir_path.as_ref()) {
         Ok(root_dir) => root_dir
@@ -126,11 +122,11 @@ fn split_dirs(path: impl AsRef<Path>) -> Option<impl Iterator<Item = String>> {
     let mut dir = String::new();
     Some(
         all_dir
-            .split(SEPARATOR)
+            .split(path::MAIN_SEPARATOR)
             .into_iter()
             .filter(|s| *s != "." && *s != "")
             .fold(Vec::new().clone(), |mut acc, s| {
-                dir += &format!("{}{}", s, SEPARATOR);
+                dir += &format!("{}{}", s, path::MAIN_SEPARATOR);
                 acc.push(dir.clone());
                 acc
             })
