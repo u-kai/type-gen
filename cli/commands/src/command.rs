@@ -190,7 +190,8 @@ impl Sub {
             builder = builder.property_part_pub_all();
         }
         if derives.is_some() {
-            builder = builder.declare_part_all_attrs_with_serde(derives.unwrap());
+            builder = builder.declare_part_set_all_derive_with_serde(derives.unwrap());
+            //declare_part_all_attrs_with_serde(derives.unwrap());
         }
         if comment.is_some() {
             let comment = comment.unwrap();
