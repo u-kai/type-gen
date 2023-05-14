@@ -12,7 +12,7 @@ use sf_df::{
     fileoperator::file_structures_to_files,
 };
 
-use crate::config::{SourceConvertor, TypeGenSource};
+use crate::config::{InlineSource, SourceConvertor, TypeGenSource};
 
 #[derive(Parser)]
 pub struct Cli {
@@ -31,6 +31,7 @@ impl Cli {
                 comment,
                 extension,
                 optional_all,
+                name,
             } => {
                 Sub::exec_go(
                     dist,
@@ -41,6 +42,7 @@ impl Cli {
                     all_pointer,
                     comment,
                     optional_all,
+                    name,
                 )
                 .await;
             }
@@ -53,6 +55,7 @@ impl Cli {
                 derives,
                 comment,
                 optional_all,
+                name,
             } => {
                 Sub::exec_rust(
                     dist,
@@ -63,6 +66,7 @@ impl Cli {
                     derives,
                     comment,
                     optional_all,
+                    name,
                 )
                 .await;
             }
@@ -89,6 +93,8 @@ enum Sub {
         comment: Option<String>,
         #[clap(short, long)]
         optional_all: bool,
+        #[clap(short, long)]
+        name: Option<String>,
     },
     Rust {
         #[clap(short, long)]
@@ -107,6 +113,8 @@ enum Sub {
         comment: Option<String>,
         #[clap(short, long)]
         optional_all: bool,
+        #[clap(short, long)]
+        name: Option<String>,
     },
 }
 impl Sub {
@@ -119,6 +127,7 @@ impl Sub {
         pointer_all: bool,
         _comment: Option<String>,
         optional_all: bool,
+        name: Option<String>,
     ) {
         let dist = if let Some(dist) = dist {
             dist
@@ -130,11 +139,7 @@ impl Sub {
         } else {
             "json".into()
         };
-        let source = match (source, remote_config_file) {
-            (Some(source), _) => TypeGenSource::new(&source, extension),
-            (None, Some(config)) => TypeGenSource::from_config_file(&config).unwrap(),
-            _ => TypeGenSource::new("./", extension),
-        };
+        let source = Self::make_source(name, source, remote_config_file, extension);
         let mut builder = GoTypeDescriptionGeneratorBuilder::new();
         if pub_all {
             builder = builder.declare_part_pub_all();
@@ -168,6 +173,7 @@ impl Sub {
         derives: Option<Vec<String>>,
         comment: Option<String>,
         optional_all: bool,
+        name: Option<String>,
     ) {
         let dist = if let Some(dist) = dist {
             dist
@@ -179,11 +185,7 @@ impl Sub {
         } else {
             "json".into()
         };
-        let source = match (source, remote_config_file) {
-            (Some(source), _) => TypeGenSource::new(&source, extension),
-            (None, Some(config)) => TypeGenSource::from_config_file(&config).unwrap(),
-            _ => TypeGenSource::new("./", extension),
-        };
+        let source = Self::make_source(name, source, remote_config_file, extension);
         let mut builder = RustTypeDescriptionGeneratorBuilder::new();
         if pub_all {
             builder = builder.declare_part_pub_all();
@@ -210,6 +212,19 @@ impl Sub {
         );
         if dist.len() > "../".len() {
             create_rust_mod_files(&dist);
+        }
+    }
+    fn make_source(
+        name: Option<String>,
+        source: Option<String>,
+        remote_config_file: Option<String>,
+        extension: Extension,
+    ) -> TypeGenSource {
+        match (name, source, remote_config_file) {
+            (Some(name), Some(source), _) => TypeGenSource::Inline(InlineSource::new(source, name)),
+            (None, Some(source), _) => TypeGenSource::new(&source, extension),
+            (None, None, Some(config)) => TypeGenSource::from_config_file(&config).unwrap(),
+            _ => TypeGenSource::new("./", extension),
         }
     }
 }

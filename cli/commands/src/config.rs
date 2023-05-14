@@ -60,7 +60,22 @@ impl DirDist {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct InlineSource {
+    content: String,
+    name: String,
+}
+impl InlineSource {
+    pub fn new(content: impl Into<String>, name: impl Into<String>) -> Self {
+        Self {
+            content: content.into(),
+            name: name.into(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum TypeGenSource {
+    Inline(InlineSource),
     File(FileSource),
     Dir(DirSource),
     Remote(RemoteSource),
@@ -71,6 +86,9 @@ impl TypeGenSource {
             return TypeGenSource::Dir(DirSource::new_with_extension(src, extension));
         }
         TypeGenSource::File(FileSource::new(src))
+    }
+    pub fn new_inline(content: &str, name: &str) -> TypeGenSource {
+        TypeGenSource::Inline(InlineSource::new(content, name))
     }
     pub fn from_config_file(file: impl AsRef<Path>) -> Result<Self, String> {
         match read_to_string(&file) {
@@ -154,6 +172,10 @@ impl SourceConvertor {
             (TypeGenSource::Remote(s), TypeGenDist::Dir(d)) => {
                 Self::remote_to_dir(s, d, generator).await
             }
+            (TypeGenSource::Inline(s), TypeGenDist::File(d)) => {
+                Self::inline_to_file(s, d, generator)
+            }
+            (TypeGenSource::Inline(_s), TypeGenDist::Dir(_d)) => todo!(),
             (TypeGenSource::Remote(_s), TypeGenDist::File(_d)) => todo!(),
         }
     }
@@ -190,6 +212,24 @@ impl SourceConvertor {
         let res = client.fetch(s).await.unwrap();
         let content = Self::json_to_type_description(res, &s.name, generator);
         FileStructure::new(content, dist_path)
+    }
+
+    fn inline_to_file<D, P, M>(
+        s: &InlineSource,
+        d: FileDist,
+        generator: &TypeDescriptionGenerator<D, P, M>,
+    ) -> Vec<FileStructure>
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        let json = Json::from(s.content.as_str());
+        let type_description = Self::json_to_type_description(json, &s.name, generator);
+        vec![FileStructure::new(
+            type_description,
+            PathStructure::from_path(&d.path),
+        )]
     }
     fn dir_to_file<D, P, M>(
         s: &DirSource,
@@ -488,6 +528,18 @@ mod tests {
         let sut = TypeGenSource::new(src, "json");
         assert_eq!(sut, TypeGenSource::File(FileSource::new(src)));
         ope.clean_up();
+    }
+    #[ignore = "because create file"]
+    #[test]
+    fn 入力されたsrcからsrcの種類を判定するinline版() {
+        let sut = TypeGenSource::new(r#"{"key":"value"}"#, "json");
+        assert_eq!(
+            sut,
+            TypeGenSource::Inline(InlineSource {
+                content: String::from(r#"{"key":"value"}"#),
+                name: "Test".to_string()
+            })
+        );
     }
     #[ignore = "because create file"]
     #[test]
