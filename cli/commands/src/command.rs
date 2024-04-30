@@ -32,6 +32,7 @@ impl Cli {
                 extension,
                 optional_all,
                 name,
+                json_tag,
             } => {
                 Sub::exec_go(
                     dist,
@@ -43,6 +44,7 @@ impl Cli {
                     comment,
                     optional_all,
                     name,
+                    json_tag,
                 )
                 .await;
             }
@@ -95,6 +97,8 @@ enum Sub {
         optional_all: bool,
         #[clap(short, long)]
         name: Option<String>,
+        #[clap(short, long)]
+        json_tag: bool,
     },
     Rust {
         #[clap(short, long)]
@@ -128,6 +132,7 @@ impl Sub {
         _comment: Option<String>,
         optional_all: bool,
         name: Option<String>,
+        json_tag: bool,
     ) {
         let dist = if let Some(dist) = dist {
             dist
@@ -148,11 +153,9 @@ impl Sub {
         if pointer_all {
             builder = builder.property_part_all_pointer();
         }
-        //if comment.is_some() {
-        //let comment = comment.unwrap();
-        //builder = builder.declare_part_all_comment(&comment.as_str());
-        //builder = builder.property_part_all_comment(&comment.as_str());
-        //}
+        if json_tag {
+            builder = builder.property_part_json_marshal();
+        }
         if optional_all {
             builder = builder.property_part_all_optional();
         }
