@@ -33,6 +33,7 @@ impl Cli {
                 optional_all,
                 name,
                 json_tag,
+                row,
             } => {
                 Sub::exec_go(
                     dist,
@@ -45,6 +46,7 @@ impl Cli {
                     optional_all,
                     name,
                     json_tag,
+                    row,
                 )
                 .await;
             }
@@ -58,6 +60,7 @@ impl Cli {
                 comment,
                 optional_all,
                 name,
+                row,
             } => {
                 Sub::exec_rust(
                     dist,
@@ -69,6 +72,7 @@ impl Cli {
                     comment,
                     optional_all,
                     name,
+                    row,
                 )
                 .await;
             }
@@ -99,6 +103,8 @@ enum Sub {
         name: Option<String>,
         #[clap(short, long)]
         json_tag: bool,
+        #[clap(long)]
+        row: Option<String>,
     },
     Rust {
         #[clap(short, long)]
@@ -119,6 +125,8 @@ enum Sub {
         optional_all: bool,
         #[clap(short, long)]
         name: Option<String>,
+        #[clap(long)]
+        row: Option<String>,
     },
 }
 impl Sub {
@@ -133,6 +141,7 @@ impl Sub {
         optional_all: bool,
         name: Option<String>,
         json_tag: bool,
+        row: Option<String>,
     ) {
         let dist = if let Some(dist) = dist {
             dist
@@ -144,7 +153,9 @@ impl Sub {
         } else {
             "json".into()
         };
-        let source = Self::make_source(name, source, remote_config_file, extension);
+
+        let source = Self::make_source(name, source, remote_config_file, extension, row);
+
         let mut builder = GoTypeDescriptionGeneratorBuilder::new();
         if pub_all {
             builder = builder.declare_part_pub_all();
@@ -177,6 +188,7 @@ impl Sub {
         comment: Option<String>,
         optional_all: bool,
         name: Option<String>,
+        row: Option<String>,
     ) {
         let dist = if let Some(dist) = dist {
             dist
@@ -188,7 +200,7 @@ impl Sub {
         } else {
             "json".into()
         };
-        let source = Self::make_source(name, source, remote_config_file, extension);
+        let source = Self::make_source(name, source, remote_config_file, extension, row);
         let mut builder = RustTypeDescriptionGeneratorBuilder::new();
         if pub_all {
             builder = builder.declare_part_pub_all();
@@ -222,11 +234,12 @@ impl Sub {
         source: Option<String>,
         remote_config_file: Option<String>,
         extension: Extension,
+        row: Option<String>,
     ) -> TypeGenSource {
-        match (name, source, remote_config_file) {
-            (Some(name), Some(source), _) => TypeGenSource::Inline(InlineSource::new(source, name)),
-            (None, Some(source), _) => TypeGenSource::new(&source, extension),
-            (None, None, Some(config)) => TypeGenSource::from_config_file(&config).unwrap(),
+        match (name, source, remote_config_file, row) {
+            (Some(name), _, _, Some(row)) => TypeGenSource::Inline(InlineSource::new(row, name)),
+            (None, Some(source), _, _) => TypeGenSource::new(&source, extension),
+            (None, None, Some(config), _) => TypeGenSource::from_config_file(&config).unwrap(),
             _ => TypeGenSource::new("./", extension),
         }
     }
