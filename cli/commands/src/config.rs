@@ -152,6 +152,18 @@ impl SourceConvertor {
     pub fn new(src: TypeGenSource) -> Self {
         Self { src }
     }
+    pub fn console<D, P, M>(&self, generator: &TypeDescriptionGenerator<D, P, M>)
+    where
+        D: DeclarePartGenerator<Mapper = M>,
+        P: PropertyPartGenerator<M>,
+        M: TypeMapper,
+    {
+        if let TypeGenSource::Inline(s) = &self.src {
+            let json = Json::from(s.content.as_str());
+            let type_description = Self::json_to_type_description(json, &s.name, generator);
+            println!("{}", type_description);
+        }
+    }
     pub async fn convert<D, P, M>(
         &self,
         dist_root: &str,

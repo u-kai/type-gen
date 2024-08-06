@@ -34,6 +34,7 @@ impl Cli {
                 name,
                 json_tag,
                 row,
+                console,
             } => {
                 Sub::exec_go(
                     dist,
@@ -47,6 +48,7 @@ impl Cli {
                     name,
                     json_tag,
                     row,
+                    console,
                 )
                 .await;
             }
@@ -61,6 +63,7 @@ impl Cli {
                 optional_all,
                 name,
                 row,
+                console,
             } => {
                 Sub::exec_rust(
                     dist,
@@ -73,6 +76,7 @@ impl Cli {
                     optional_all,
                     name,
                     row,
+                    console,
                 )
                 .await;
             }
@@ -105,6 +109,8 @@ enum Sub {
         json_tag: bool,
         #[clap(long)]
         row: Option<String>,
+        #[clap(long)]
+        console: bool,
     },
     Rust {
         #[clap(short, long)]
@@ -127,6 +133,8 @@ enum Sub {
         name: Option<String>,
         #[clap(long)]
         row: Option<String>,
+        #[clap(long)]
+        console: bool,
     },
 }
 impl Sub {
@@ -142,6 +150,7 @@ impl Sub {
         name: Option<String>,
         json_tag: bool,
         row: Option<String>,
+        console: bool,
     ) {
         let dist = if let Some(dist) = dist {
             dist
@@ -171,6 +180,10 @@ impl Sub {
             builder = builder.property_part_all_optional();
         }
         let generator = builder.build();
+        if console {
+            SourceConvertor::new(source).console(&generator);
+            return;
+        }
         file_structures_to_files(
             SourceConvertor::new(source)
                 .convert(&dist, &generator, "go")
@@ -189,6 +202,7 @@ impl Sub {
         optional_all: bool,
         name: Option<String>,
         row: Option<String>,
+        console: bool,
     ) {
         let dist = if let Some(dist) = dist {
             dist
@@ -219,6 +233,10 @@ impl Sub {
             builder = builder.property_part_all_optional();
         }
         let generator = builder.build();
+        if console {
+            SourceConvertor::new(source).console(&generator);
+            return;
+        }
         file_structures_to_files(
             SourceConvertor::new(source)
                 .convert(&dist, &generator, "rs")
